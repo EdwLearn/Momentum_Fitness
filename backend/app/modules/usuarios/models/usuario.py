@@ -1,0 +1,38 @@
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, Float
+from sqlalchemy.orm import relationship
+from datetime import datetime
+import enum
+from app.core.database import Base
+
+class TipoUsuario(str, enum.Enum):
+    ADMIN = "admin"
+    ENTRENADOR = "entrenador"
+    CLIENTE = "cliente"
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, nullable=False)
+    apellido = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    telefono = Column(String)
+    tipo = Column(Enum(TipoUsuario), default=TipoUsuario.CLIENTE)
+    activo = Column(Boolean, default=True)
+
+    # Campos específicos del gimnasio
+    peso_inicial = Column(Float, nullable=True)
+    peso_actual = Column(Float, nullable=True)
+    altura = Column(Float, nullable=True)
+
+    # Fechas
+    fecha_registro = Column(DateTime, default=datetime.utcnow, index=True)
+    fecha_nacimiento = Column(DateTime, nullable=True)
+    ultima_asistencia = Column(DateTime, nullable=True)
+
+    # Relaciones
+    membresias = relationship("Membresia", back_populates="usuario", cascade="all, delete-orphan")
+    asistencias = relationship("Asistencia", back_populates="usuario", cascade="all, delete-orphan")
+    metricas = relationship("Metrica", back_populates="usuario", cascade="all, delete-orphan")
+    conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")
+    logros = relationship("Logro", back_populates="usuario", cascade="all, delete-orphan")
