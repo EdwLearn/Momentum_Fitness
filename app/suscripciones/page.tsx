@@ -1,23 +1,145 @@
 "use client"
 
+import { useMemo } from "react"
+import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ChartCard } from "@/components/chart-card"
 import { DataTable, StatusBadge } from "@/components/data-table"
 import { CreditCard, Calendar, Repeat, Clock, Trophy, Gift } from "lucide-react"
-import { subscriptions, subscriptionsByPlan } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
-
-const planCounts = [
-  { name: "Diario", count: 45, icon: Clock, color: "text-chart-4" },
-  { name: "Ticketera", count: 32, icon: CreditCard, color: "text-chart-5" },
-  { name: "Mensual", count: 412, icon: Calendar, color: "text-primary" },
-  { name: "Trimestral", count: 187, icon: Repeat, color: "text-chart-2" },
-  { name: "Anual", count: 156, icon: Trophy, color: "text-chart-3" },
-  { name: "Cortesía", count: 15, icon: Gift, color: "text-chart-1" },
-]
+import { useMembresias } from "@/lib/hooks/useMembresias"
+import { useUsuarios } from "@/lib/hooks/useUsuarios"
+import { Membresia, Usuario, TipoPlan, TipoPago } from "@/types"
 
 export default function SuscripcionesPage() {
+  const { data: membresias, isLoading: isLoadingMembresias } = useMembresias()
+  const { data: usuarios, isLoading: isLoadingUsuarios } = useUsuarios()
+
+  // Crear lookup map de usuarios
+  const usuariosMap = useMemo(() => {
+    if (!usuarios) return new Map()
+    return new Map(usuarios.map(u => [u.id, u]))
+  }, [usuarios])
+
+  // Mapear nombres de planes
+  const planNameMap: Record<string, string> = {
+    "pase_diario": "Pase Diario",
+    "pase_flex": "Pase Flex",
+    "mensual": "Mensual",
+    "plan_3_meses": "Plan 3 Meses",
+    "plan_6_meses": "Plan 6 Meses",
+    "elite_anual": "Elite Anual",
+  }
+
+  // Mapear nombres de métodos de pago
+  const pagoNameMap: Record<string, string> = {
+    "efectivo": "Efectivo",
+    "tarjeta": "Tarjeta",
+    "transferencia": "Transferencia",
+    "nequi": "Nequi",
+    "daviplata": "Daviplata",
+    "otro": "Otro",
+  }
+
+  // Calcular conteos por tipo de plan (solo activas)
+  const planCounts = useMemo(() => {
+    if (!membresias) return []
+
+    const counts: Record<string, number> = {
+      "pase_diario": 0,
+      "pase_flex": 0,
+      "mensual": 0,
+      "plan_3_meses": 0,
+      "plan_6_meses": 0,
+      "elite_anual": 0,
+    }
+
+    membresias.forEach(m => {
+      if (m.activo && m.estado === "activa") {
+        counts[m.tipo_plan] = (counts[m.tipo_plan] || 0) + 1
+      }
+    })
+
+    return [
+      { name: "Pase Diario", count: counts["pase_diario"], icon: Clock, color: "text-chart-4", key: "pase_diario" },
+      { name: "Pase Flex", count: counts["pase_flex"], icon: CreditCard, color: "text-chart-5", key: "pase_flex" },
+      { name: "Mensual", count: counts["mensual"], icon: Calendar, color: "text-primary", key: "mensual" },
+      { name: "3 Meses", count: counts["plan_3_meses"], icon: Repeat, color: "text-chart-2", key: "plan_3_meses" },
+      { name: "6 Meses", count: counts["plan_6_meses"], icon: Trophy, color: "text-chart-3", key: "plan_6_meses" },
+      { name: "Elite Anual", count: counts["elite_anual"], icon: Gift, color: "text-chart-1", key: "elite_anual" },
+    ]
+  }, [membresias])
+
+  // Datos para la gráfica de barras
+  const chartData = useMemo(() => {
+    return planCounts.map(plan => ({
+      plan: plan.name,
+      cantidad: plan.count,
+    }))
+  }, [planCounts])
+
+  // Preparar datos para la tabla
+  const subscriptionsData = useMemo(() => {
+    if (!membresias || !usuarios) return []
+
+    return membresias
+      .filter(m => m.activo) // Solo mostrar activas
+      .map(m => {
+        const usuario = usuariosMap.get(m.usuario_id)
+        const fechaFin = new Date(m.fecha_fin)
+        const hoy = new Date()
+        const diasRestantes = Math.ceil((fechaFin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+
+        // Determinar estado visual
+        let estadoVisual = "Activa"
+        if (m.estado === "vencida") {
+          estadoVisual = "Vencido"
+        } else if (m.estado === "suspendida") {
+          estadoVisual = "Suspendida"
+        } else if (m.estado === "cancelada") {
+          estadoVisual = "Cancelada"
+        } else if (diasRestantes <= 7 && diasRestantes > 0) {
+          estadoVisual = "Por vencer"
+        }
+
+        // Determinar origen (referido o normal)
+        const origen = usuario?.referido_por_cedula ? "Referido" : "Directo"
+
+        return {
+          id: m.id,
+          cliente: usuario ? `${usuario.nombre} ${usuario.apellido}` : "Desconocido",
+          plan: planNameMap[m.tipo_plan] || m.tipo_plan,
+          fechaInicio: m.fecha_inicio.split('T')[0],
+          fechaFin: m.fecha_fin.split('T')[0],
+          estado: estadoVisual,
+          metodoPago: m.tipo_pago ? (pagoNameMap[m.tipo_pago] || m.tipo_pago) : "N/A",
+          origen: origen,
+          precio: m.precio,
+          diasRestantes: diasRestantes,
+        }
+      })
+      .sort((a, b) => {
+        // Ordenar por estado (activas primero) y luego por días restantes
+        if (a.estado === "Activa" && b.estado !== "Activa") return -1
+        if (a.estado !== "Activa" && b.estado === "Activa") return 1
+        return a.diasRestantes - b.diasRestantes
+      })
+  }, [membresias, usuarios, usuariosMap])
+
+  // Calcular totales
+  const totalActivas = useMemo(() => {
+    return membresias?.filter(m => m.activo && m.estado === "activa").length || 0
+  }, [membresias])
+
+  const totalReferidos = useMemo(() => {
+    if (!membresias || !usuarios) return 0
+    return membresias.filter(m => {
+      const usuario = usuariosMap.get(m.usuario_id)
+      return m.activo && m.estado === "activa" && usuario?.referido_por_cedula
+    }).length
+  }, [membresias, usuarios, usuariosMap])
+
   const subscriptionColumns = [
     { key: "cliente", header: "Cliente" },
     { key: "plan", header: "Plan" },
@@ -26,21 +148,19 @@ export default function SuscripcionesPage() {
     {
       key: "estado",
       header: "Estado",
-      render: (item: (typeof subscriptions)[0]) => <StatusBadge status={item.estado} />,
+      render: (item: any) => <StatusBadge status={item.estado} />,
     },
     { key: "metodoPago", header: "Método de Pago" },
     {
       key: "origen",
       header: "Origen",
-      render: (item: (typeof subscriptions)[0]) => (
+      render: (item: any) => (
         <Badge
           variant="outline"
           className={
             item.origen === "Referido"
               ? "bg-chart-2/20 text-chart-2 border-chart-2/30"
-              : item.origen === "Cupón"
-                ? "bg-chart-3/20 text-chart-3 border-chart-3/30"
-                : "bg-secondary text-secondary-foreground border-border"
+              : "bg-secondary text-secondary-foreground border-border"
           }
         >
           {item.origen}
@@ -49,12 +169,60 @@ export default function SuscripcionesPage() {
     },
   ]
 
+  // Loading state
+  if (isLoadingMembresias || isLoadingUsuarios) {
+    return (
+      <ProtectedRoute>
+        <DashboardLayout title="Suscripciones y Planes" subtitle="Gestiona las suscripciones activas y tipos de planes">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Cargando suscripciones...</p>
+            </div>
+          </div>
+        </DashboardLayout>
+      </ProtectedRoute>
+    )
+  }
+
   return (
-    <DashboardLayout title="Suscripciones y Planes" subtitle="Gestiona las suscripciones activas y tipos de planes">
+    <ProtectedRoute>
+      <DashboardLayout title="Suscripciones y Planes" subtitle="Gestiona las suscripciones activas y tipos de planes">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Activas</p>
+              <p className="text-3xl font-bold text-primary mt-1">{totalActivas}</p>
+            </div>
+            <Calendar className="h-10 w-10 text-primary/30" />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Por Referidos</p>
+              <p className="text-3xl font-bold text-chart-2 mt-1">{totalReferidos}</p>
+            </div>
+            <Gift className="h-10 w-10 text-chart-2/30" />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Tipos de Planes</p>
+              <p className="text-3xl font-bold text-chart-3 mt-1">6</p>
+            </div>
+            <Trophy className="h-10 w-10 text-chart-3/30" />
+          </div>
+        </div>
+      </div>
+
       {/* Plan Count Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         {planCounts.map((plan) => (
-          <div key={plan.name} className="bg-card border border-border rounded-xl p-4 glow-green-sm">
+          <div key={plan.key} className="bg-card border border-border rounded-xl p-4 glow-green-sm">
             <div className="flex items-center gap-2 mb-2">
               <plan.icon className={`h-5 w-5 ${plan.color}`} />
               <span className="text-sm text-muted-foreground">{plan.name}</span>
@@ -72,7 +240,7 @@ export default function SuscripcionesPage() {
       >
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={subscriptionsByPlan} layout="vertical">
+            <BarChart data={chartData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#2A2B35" horizontal={true} vertical={false} />
               <XAxis type="number" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis
@@ -82,7 +250,7 @@ export default function SuscripcionesPage() {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                width={80}
+                width={100}
               />
               <Tooltip
                 contentStyle={{
@@ -99,14 +267,16 @@ export default function SuscripcionesPage() {
       </ChartCard>
 
       {/* Subscriptions Table */}
-      <ChartCard title="Suscripciones Actuales" subtitle="Lista completa de suscripciones">
+      <ChartCard
+        title="Suscripciones Actuales"
+        subtitle={`${subscriptionsData.length} suscripciones activas (${totalReferidos} por referidos)`}
+      >
         <DataTable
           columns={subscriptionColumns}
-          data={subscriptions}
-          onRowAction={(item) => console.log("Ver suscripción:", item)}
-          actionLabel="Ver"
+          data={subscriptionsData}
         />
       </ChartCard>
-    </DashboardLayout>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }

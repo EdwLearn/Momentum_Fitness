@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ChartCard } from "@/components/chart-card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -37,7 +38,8 @@ export default function ReportesPage() {
   const COLORS = ["#A4FF1A", "#22D3EE", "#8B5CF6", "#F97316", "#EC4899"]
 
   return (
-    <DashboardLayout title="Reportes" subtitle="Visualiza el rendimiento del gimnasio por periodos">
+    <ProtectedRoute>
+      <DashboardLayout title="Reportes" subtitle="Visualiza el rendimiento del gimnasio por periodos">
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-card border border-border rounded-lg">
         <div className="flex-1 min-w-[200px]">
@@ -285,6 +287,7 @@ export default function ReportesPage() {
           Selecciona un rango de fechas y tipo de reporte para exportar.
         </p>
       </ChartCard>
-    </DashboardLayout>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }

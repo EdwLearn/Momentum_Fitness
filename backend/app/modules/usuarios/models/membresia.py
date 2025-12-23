@@ -1,14 +1,17 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 import enum
 from app.core.database import Base
 
-class TipoMembresia(str, enum.Enum):
+class TipoPlan(str, enum.Enum):
+    """Tipos de planes de membresía disponibles"""
+    PASE_DIARIO = "pase_diario"
+    PASE_FLEX = "pase_flex"
     MENSUAL = "mensual"
-    TRIMESTRAL = "trimestral"
-    SEMESTRAL = "semestral"
-    ANUAL = "anual"
+    PLAN_3_MESES = "plan_3_meses"
+    PLAN_6_MESES = "plan_6_meses"
+    ELITE_ANUAL = "elite_anual"
 
 class EstadoMembresia(str, enum.Enum):
     ACTIVA = "activa"
@@ -16,23 +19,88 @@ class EstadoMembresia(str, enum.Enum):
     SUSPENDIDA = "suspendida"
     CANCELADA = "cancelada"
 
+class TipoPago(str, enum.Enum):
+    """Métodos de pago disponibles"""
+    EFECTIVO = "efectivo"
+    TARJETA = "tarjeta"
+    TRANSFERENCIA = "transferencia"
+    NEQUI = "nequi"
+    DAVIPLATA = "daviplata"
+    OTRO = "otro"
+
+# Configuración de planes con precios y duración
+PLANES_CONFIG = {
+    TipoPlan.PASE_DIARIO: {"nombre": "Pase Diario", "precio": 5000, "dias": 1, "puede_referir": False},
+    TipoPlan.PASE_FLEX: {"nombre": "Pase Flex", "precio": 39900, "dias": 14, "puede_referir": False},
+    TipoPlan.MENSUAL: {"nombre": "Mensual", "precio": 59900, "dias": 30, "puede_referir": True},
+    TipoPlan.PLAN_3_MESES: {"nombre": "Plan 3 Meses", "precio": 149900, "dias": 90, "puede_referir": True},
+    TipoPlan.PLAN_6_MESES: {"nombre": "Plan 6 Meses", "precio": 269900, "dias": 180, "puede_referir": True},
+    TipoPlan.ELITE_ANUAL: {"nombre": "Membresía Platinum", "precio": 479900, "dias": 365, "puede_referir": True},
+}
+
+# Planes válidos para referir (solo planes largos)
+PLANES_VALIDOS_REFERIR = [
+    TipoPlan.MENSUAL,
+    TipoPlan.PLAN_3_MESES,
+    TipoPlan.PLAN_6_MESES,
+    TipoPlan.ELITE_ANUAL,
+]
+
+# Configuración del sistema de referidos
+REFERIDOS_CONFIG = {
+    "referidos_por_mes_gratis": 3,  # Cada 3 referidos activos = 1 mes gratis
+    "dias_por_recompensa": 30,  # 30 días por cada recompensa
+    "descuento_referido": 0.05,  # 5% de descuento para el referido
+}
+
+# Mantener compatibilidad con código legacy
+class TipoMembresia(str, enum.Enum):
+    """DEPRECATED: Usar TipoPlan en su lugar"""
+    MENSUAL = "mensual"
+    TRIMESTRAL = "trimestral"
+    SEMESTRAL = "semestral"
+    ANUAL = "anual"
+
 class Membresia(Base):
     __tablename__ = "membresias"
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
 
-    # Tipo y estado
-    tipo = Column(Enum(TipoMembresia), nullable=False)
-    estado = Column(Enum(EstadoMembresia), default=EstadoMembresia.ACTIVA, index=True)
+    # Tipo de plan y estado
+    tipo_plan = Column(Enum(TipoPlan, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    estado = Column(Enum(EstadoMembresia, values_callable=lambda x: [e.value for e in x]), default=EstadoMembresia.ACTIVA, index=True)
 
     # Fechas
-    fecha_inicio = Column(DateTime, default=datetime.utcnow)
+    fecha_inicio = Column(DateTime, default=datetime.utcnow, nullable=False)
     fecha_fin = Column(DateTime, nullable=False, index=True)
 
-    # Precio y descripción
-    precio = Column(Float, nullable=False)
+    # Precio y duración
+    precio = Column(Integer, nullable=False)  # Precio en COP
+    duracion_dias = Column(Integer, nullable=False)  # Duración en días
+
+    # Tipo de pago
+    tipo_pago = Column(Enum(TipoPago, values_callable=lambda x: [e.value for e in x]), nullable=True)
+
+    # Campo opcional para notas
     descripcion = Column(String, nullable=True)
+
+    # Control
+    activo = Column(Boolean, default=True, nullable=False)
 
     # Relación
     usuario = relationship("Usuario", back_populates="membresias")
+
+    @staticmethod
+    def calcular_fecha_fin(fecha_inicio: datetime, duracion_dias: int) -> datetime:
+        """Calcula la fecha fin basado en fecha inicio y duración"""
+        return fecha_inicio + timedelta(days=duracion_dias)
+
+    @staticmethod
+    def get_config_plan(tipo_plan: TipoPlan) -> dict:
+        """Obtiene la configuración de un plan específico"""
+        return PLANES_CONFIG.get(tipo_plan)
+
+    def esta_activa(self) -> bool:
+        """Verifica si la membresía está activa y vigente"""
+        return self.activo and self.estado == EstadoMembresia.ACTIVA and self.fecha_fin >= datetime.utcnow()

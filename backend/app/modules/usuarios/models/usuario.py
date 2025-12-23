@@ -17,8 +17,11 @@ class Usuario(Base):
     apellido = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     telefono = Column(String)
-    tipo = Column(Enum(TipoUsuario), default=TipoUsuario.CLIENTE)
+    tipo = Column(Enum(TipoUsuario, values_callable=lambda x: [e.value for e in x]), default=TipoUsuario.CLIENTE)
     activo = Column(Boolean, default=True)
+
+    # Campo de referido
+    referido_por_cedula = Column(String, nullable=True, index=True)
 
     # Campos específicos del gimnasio
     peso_inicial = Column(Float, nullable=True)

@@ -15,22 +15,23 @@ import {
   Settings,
   HelpCircle,
   Zap,
+  Lock,
 } from "lucide-react"
 
 const mainMenuItems = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Asistencia", href: "/asistencia", icon: UserCheck },
   { name: "Clientes", href: "/clientes", icon: Users },
-  { name: "Suscripciones", href: "/suscripciones", icon: CreditCard },
   { name: "Empleados", href: "/empleados", icon: UsersRound },
   { name: "Cupones & Referidos", href: "/cupones", icon: Ticket },
   { name: "Notificaciones", href: "/notificaciones", icon: Bell },
-  { name: "Reportes", href: "/reportes", icon: FileBarChart },
 ]
 
-const otherMenuItems = [
-  { name: "Configuración", href: "/configuracion", icon: Settings },
-  { name: "Soporte", href: "/soporte", icon: HelpCircle },
+const protectedMenuItems = [
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, protected: true },
+  { name: "Suscripciones", href: "/suscripciones", icon: CreditCard, protected: true },
+  { name: "Reportes", href: "/reportes", icon: FileBarChart, protected: true },
+  { name: "Configuración", href: "/configuracion", icon: Settings, protected: true },
+  { name: "Soporte", href: "/soporte", icon: HelpCircle, protected: true },
 ]
 
 export function Sidebar() {
@@ -74,10 +75,12 @@ export function Sidebar() {
             )
           })}
 
-          {/* Others Section */}
+          {/* Protected Section */}
           <div className="pt-6">
-            <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Otros</p>
-            {otherMenuItems.map((item) => {
+            <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Protegido
+            </p>
+            {protectedMenuItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
@@ -92,6 +95,7 @@ export function Sidebar() {
                 >
                   <item.icon className={cn("h-5 w-5", isActive && "text-primary-foreground")} />
                   {item.name}
+                  <Lock className="h-3.5 w-3.5 ml-auto opacity-60" />
                 </Link>
               )
             })}

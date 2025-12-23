@@ -1,5 +1,6 @@
 "use client"
 
+import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
@@ -41,9 +42,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout title="Bienvenido, Admin" subtitle="Gestiona Momentum Fitness con métricas en tiempo real.">
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <ProtectedRoute>
+      <DashboardLayout title="Bienvenido, Admin" subtitle="Gestiona Momentum Fitness con métricas en tiempo real.">
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <MetricCard
           title="Clientes Activos"
           value={dashboardMetrics.clientesActivos}
@@ -142,6 +144,7 @@ export default function DashboardPage() {
           actionLabel="Ver"
         />
       </ChartCard>
-    </DashboardLayout>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }

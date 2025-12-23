@@ -1,29 +1,53 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
-from app.models.membresia import TipoMembresia, EstadoMembresia
+from app.modules.usuarios.models.membresia import TipoPlan, EstadoMembresia, TipoMembresia, TipoPago
 
-class MembresiaBase(BaseModel):
+# Schema para listar planes disponibles
+class PlanDisponible(BaseModel):
+    """Información de un plan de membresía disponible"""
+    tipo: str = Field(..., description="Tipo de plan (pase_diario, pase_flex, etc)")
+    nombre: str = Field(..., description="Nombre del plan")
+    precio: int = Field(..., description="Precio en COP")
+    duracion_dias: int = Field(..., description="Duración en días")
+
+# Schema simplificado para crear membresía (solo tipo_plan y usuario_id)
+class MembresiaCreateSimple(BaseModel):
+    """Schema para crear una membresía - solo requiere usuario_id y tipo_plan"""
+    usuario_id: int = Field(..., description="ID del usuario")
+    tipo_plan: TipoPlan = Field(..., description="Tipo de plan seleccionado")
+    tipo_pago: Optional[TipoPago] = Field(None, description="Método de pago utilizado")
+    descripcion: Optional[str] = Field(None, description="Notas adicionales opcionales")
+
+# Schema completo para crear membresía (usado internamente)
+class MembresiaCreate(BaseModel):
     usuario_id: int
-    tipo: TipoMembresia
+    tipo_plan: TipoPlan
+    precio: int
+    duracion_dias: int
+    fecha_inicio: datetime
     fecha_fin: datetime
-    precio: float
     descripcion: Optional[str] = None
-
-class MembresiaCreate(MembresiaBase):
-    pass
 
 class MembresiaUpdate(BaseModel):
-    tipo: Optional[TipoMembresia] = None
     estado: Optional[EstadoMembresia] = None
     fecha_fin: Optional[datetime] = None
-    precio: Optional[float] = None
+    activo: Optional[bool] = None
     descripcion: Optional[str] = None
 
-class Membresia(MembresiaBase):
+# Schema de respuesta
+class Membresia(BaseModel):
     id: int
+    usuario_id: int
+    tipo_plan: TipoPlan
     estado: EstadoMembresia
+    precio: int
+    duracion_dias: int
     fecha_inicio: datetime
+    fecha_fin: datetime
+    tipo_pago: Optional[TipoPago] = None
+    descripcion: Optional[str] = None
+    activo: bool
 
     class Config:
         from_attributes = True

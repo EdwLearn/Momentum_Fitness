@@ -6,8 +6,8 @@
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+python -m venv momentum
+source momentum/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 

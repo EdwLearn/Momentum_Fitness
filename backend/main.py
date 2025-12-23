@@ -2,11 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-# Configuración
+# 1. CONFIGURACIÓN (primero)
 from app.core.config import settings
 from app.core.database import engine, Base
 
-# Importar todos los modelos para que SQLAlchemy los registre
+# 2. MODELOS (después de Base, para que SQLAlchemy los registre)
+# IMPORTANTE: Estos imports deben ocurrir DESPUÉS de definir Base
 from app.modules.usuarios.models.usuario import Usuario
 from app.modules.usuarios.models.membresia import Membresia
 from app.modules.asistencia.models.asistencia import Asistencia
@@ -14,7 +15,8 @@ from app.modules.metricas.models.metrica import Metrica
 from app.modules.bot.models.conversacion import Conversacion
 from app.modules.bot.models.logro import Logro
 
-# Endpoints (usar los antiguos que ya existen)
+# 3. ENDPOINTS (al final)
+# Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
 from app.api.endpoints import usuarios, membresias, asistencia, metricas
 
 # Nuevos endpoints del bot

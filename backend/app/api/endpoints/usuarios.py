@@ -51,3 +51,43 @@ def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
             detail="Usuario no encontrado"
         )
     return None
+
+@router.get("/buscar-cedula/{cedula}", response_model=schemas.UsuarioBusqueda)
+def buscar_usuario_por_cedula(cedula: str, db: Session = Depends(get_db)):
+    """
+    Busca un usuario por su cédula (campo telefono).
+    Retorna información básica del usuario si existe.
+    Valida si el usuario puede referir a otros (solo planes largos).
+    """
+    db_usuario = crud.get_usuario_by_cedula(db, cedula=cedula)
+    if db_usuario is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado con esa cédula"
+        )
+
+    # Verificar si puede referir
+    puede_ref = crud.puede_referir(db, cedula)
+    if not puede_ref:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este cliente no puede referir. Solo clientes con planes Mensual, 3 Meses, 6 Meses o Elite Anual pueden referir."
+        )
+
+    return db_usuario
+
+@router.get("/estadisticas-referidos/{cedula}")
+def obtener_estadisticas_referidos(cedula: str, db: Session = Depends(get_db)):
+    """
+    Obtiene estadísticas de referidos de un usuario.
+    - Referidos activos
+    - Meses gratis ganados
+    - Referidos que faltan para el próximo mes gratis
+    """
+    estadisticas = crud.get_estadisticas_referidos(db, cedula)
+    if "error" in estadisticas:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=estadisticas["error"]
+        )
+    return estadisticas
