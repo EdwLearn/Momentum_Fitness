@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/ui/date-picker"
 import { useCreateUsuario, useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useCreateMembresia } from "@/lib/hooks/useMembresias"
+import { useCreateAsistencia } from "@/lib/hooks/useAsistencia"
 import { TipoUsuario, TipoPlan, TipoPago, OBJETIVOS_FITNESS } from "@/types"
 
 interface NewClientDrawerProps {
@@ -63,6 +64,7 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
   const { data: usuarios } = useUsuarios()
   const createUsuario = useCreateUsuario()
   const createMembresia = useCreateMembresia()
+  const createAsistencia = useCreateAsistencia()
 
   // Auto-calcular fecha fin cuando cambia plan o fecha inicio
   useEffect(() => {
@@ -90,11 +92,8 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       if (plan) {
         let precio = plan.precio
 
-        // Aplicar 5% descuento si marcó checkbox referidos, tiene referido y plan >= Mensual
-        const planIndex = PLANES.findIndex(p => p.id === formData.tipoPlan)
-        const mensualIndex = PLANES.findIndex(p => p.id === TipoPlan.MENSUAL)
-
-        if (formData.usarPlanReferidos && formData.referidoPorCedula && planIndex >= mensualIndex) {
+        // Aplicar 5% descuento si marcó checkbox referidos, tiene referido y plan != PASE_DIARIO
+        if (formData.usarPlanReferidos && formData.referidoPorCedula && formData.tipoPlan !== TipoPlan.PASE_DIARIO) {
           precio = precio * 0.95 // 5% descuento
           setDescuentoAplicado(true)
         } else {
@@ -142,12 +141,14 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     }
 
     // Validar que el referido existe si se marcó checkbox y se proporcionó
+    let referidoId: number | null = null
     if (formData.usarPlanReferidos && formData.referidoPorCedula) {
-      const referidoExiste = usuarios?.some(u => u.telefono === formData.referidoPorCedula)
-      if (!referidoExiste) {
+      const referido = usuarios?.find(u => u.telefono === formData.referidoPorCedula)
+      if (!referido) {
         setError("El referido no existe en el sistema")
         return
       }
+      referidoId = referido.id
     }
 
     try {
@@ -162,7 +163,6 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
         peso_inicial: formData.peso ? parseFloat(formData.peso) : null,
         altura: formData.altura ? parseFloat(formData.altura) : null,
         objetivo: formData.objetivos.length > 0 ? formData.objetivos.join(", ") : null,
-        referido_por_cedula: formData.usarPlanReferidos ? formData.referidoPorCedula : null,
       }
 
       const nuevoUsuario = await createUsuario.mutateAsync(usuarioData)
@@ -174,7 +174,25 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
           tipo_plan: formData.tipoPlan as TipoPlan,
           tipo_pago: TipoPago.EFECTIVO, // Default, puede cambiarse después
           descripcion: descuentoAplicado ? "Descuento 5% por referido aplicado" : null,
+          referido_por_id: referidoId,
         })
+
+        // Si es Pase Diario, registrar asistencia automáticamente
+        if (formData.tipoPlan === TipoPlan.PASE_DIARIO) {
+          try {
+            const now = new Date()
+            const horaEntrada = now.toTimeString().split(' ')[0] // "HH:MM:SS"
+
+            await createAsistencia.mutateAsync({
+              usuario_id: nuevoUsuario.id,
+              hora_entrada: horaEntrada,
+            })
+          } catch (asistenciaError: any) {
+            // Si falla el registro de asistencia, mostrar error pero no bloquear la creación del usuario
+            console.error('Error al registrar asistencia automática:', asistenciaError)
+            setError(`Cliente creado exitosamente, pero hubo un error al registrar la asistencia automática: ${asistenciaError.response?.data?.detail || 'Error desconocido'}`)
+          }
+        }
       }
 
       onSuccess()
@@ -236,10 +254,8 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     return edad
   }
 
-  // Determinar si debe mostrar el campo de referido
-  const planIndex = PLANES.findIndex(p => p.id === formData.tipoPlan)
-  const mensualIndex = PLANES.findIndex(p => p.id === TipoPlan.MENSUAL)
-  const mostrarReferido = planIndex >= mensualIndex && planIndex !== -1
+  // Determinar si debe mostrar el campo de referido (todos los planes excepto Pase Diario)
+  const mostrarReferido = formData.tipoPlan && formData.tipoPlan !== TipoPlan.PASE_DIARIO
 
   if (!isOpen) return null
 

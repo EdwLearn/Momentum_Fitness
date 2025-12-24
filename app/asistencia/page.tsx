@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { usuariosService } from "@/lib/services/usuarios"
-import { useCreateAsistencia, useAsistenciasByFecha } from "@/lib/hooks/useAsistencia"
+import { useCreateAsistencia, useAsistenciasByFecha, usePromedioDiario, useUsuariosInactivos } from "@/lib/hooks/useAsistencia"
 import { useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useMembresias } from "@/lib/hooks/useMembresias"
 import { UsuarioBusqueda, Asistencia } from "@/types"
@@ -29,6 +29,8 @@ export default function AsistenciaPage() {
   const { data: asistenciasHoy } = useAsistenciasByFecha(today)
   const { data: usuarios } = useUsuarios()
   const { data: membresias } = useMembresias()
+  const { data: promedioDiario } = usePromedioDiario()
+  const { data: usuariosInactivos } = useUsuariosInactivos()
   const createAsistencia = useCreateAsistencia()
 
   // Debug logging
@@ -40,7 +42,8 @@ export default function AsistenciaPage() {
 
   // Calcular métricas
   const asistenciasHoyCount = asistenciasHoy?.length || 0
-  const promedioMensual = 142 // TODO: Calcular del backend
+  const promedioMensual = promedioDiario ?? 0
+  const usuariosSinAsistir = usuariosInactivos?.length || 0
 
   // Agrupar asistencias por hora para la gráfica
   const hourlyData = useMemo(() => {
@@ -173,6 +176,8 @@ export default function AsistenciaPage() {
 
       if (errorMsg.includes("membresía activa")) {
         setSearchError("Este usuario no tiene una membresía activa")
+      } else if (errorMsg.includes("ya tiene asistencia registrada")) {
+        setSearchError("Este usuario ya registró su entrada el día de hoy")
       } else {
         setSearchError(errorMsg)
       }
@@ -206,7 +211,7 @@ export default function AsistenciaPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <MetricCard title="Asistencias Hoy" value={asistenciasHoyCount} icon={UserCheck} />
         <MetricCard title="Promedio Diario (30 días)" value={promedioMensual} icon={TrendingUp} />
-        <MetricCard title="Sin asistir (+4 días)" value={0} variant="warning" icon={UserX} />
+        <MetricCard title="Sin asistir (+4 días)" value={usuariosSinAsistir} variant="warning" icon={UserX} />
       </div>
 
       {/* Check-in Section */}

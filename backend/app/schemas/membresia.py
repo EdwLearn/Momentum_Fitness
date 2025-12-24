@@ -30,6 +30,7 @@ class MembresiaCreate(BaseModel):
     duracion_dias: int
     fecha_inicio: datetime
     fecha_fin: datetime
+    tipo_pago: Optional[TipoPago] = None
     descripcion: Optional[str] = None
     referido_por_id: Optional[int] = None
 

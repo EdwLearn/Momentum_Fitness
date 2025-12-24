@@ -33,10 +33,10 @@ function mapUsuarioToClient(usuario: Usuario, membresias: Membresia[], todosUsua
     "elite_anual": "Elite Anual",
   }
 
-  // Buscar quién refirió a este usuario
+  // Buscar quién refirió a este usuario (buscar en la membresía activa)
   let referidoPor = "N/A"
-  if (usuario.referido_por_cedula) {
-    const usuarioReferidor = todosUsuarios.find(u => u.telefono === usuario.referido_por_cedula)
+  if (membresiaActiva?.referido_por_id) {
+    const usuarioReferidor = todosUsuarios.find(u => u.id === membresiaActiva.referido_por_id)
     if (usuarioReferidor) {
       referidoPor = `${usuarioReferidor.nombre} ${usuarioReferidor.apellido}`
     }

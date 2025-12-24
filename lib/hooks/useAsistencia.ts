@@ -11,6 +11,8 @@ export const asistenciaKeys = {
   detail: (id: number) => [...asistenciaKeys.details(), id] as const,
   byUsuario: (usuarioId: number) => [...asistenciaKeys.all, 'usuario', usuarioId] as const,
   byFecha: (fecha: string) => [...asistenciaKeys.all, 'fecha', fecha] as const,
+  promedioDiario: () => [...asistenciaKeys.all, 'promedio-diario'] as const,
+  usuariosInactivos: () => [...asistenciaKeys.all, 'usuarios-inactivos'] as const,
 };
 
 // Hook para obtener todas las asistencias
@@ -105,5 +107,23 @@ export function useDeleteAsistencia() {
       // Invalidar la caché para refrescar la lista
       queryClient.invalidateQueries({ queryKey: asistenciaKeys.lists() });
     },
+  });
+}
+
+// Hook para obtener el promedio diario de asistencias (últimos 30 días)
+export function usePromedioDiario() {
+  return useQuery({
+    queryKey: asistenciaKeys.promedioDiario(),
+    queryFn: () => asistenciaService.getPromedioDiario(),
+    refetchInterval: 60000, // Refetch cada minuto
+  });
+}
+
+// Hook para obtener usuarios inactivos (4+ días sin asistir)
+export function useUsuariosInactivos() {
+  return useQuery({
+    queryKey: asistenciaKeys.usuariosInactivos(),
+    queryFn: () => asistenciaService.getUsuariosInactivos(),
+    refetchInterval: 300000, // Refetch cada 5 minutos
   });
 }

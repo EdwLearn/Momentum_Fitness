@@ -28,7 +28,21 @@ def create_asistencia(asistencia: schemas.AsistenciaCreate, db: Session = Depend
             detail="El usuario no tiene una membresía activa"
         )
 
-    return crud.create_asistencia(db=db, asistencia=asistencia)
+    # Intentar crear la asistencia
+    try:
+        return crud.create_asistencia(db=db, asistencia=asistencia)
+    except ValueError as e:
+        # Si ya tiene asistencia hoy, retornar error 409 Conflict
+        if "ya tiene asistencia registrada" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        # Otros errores de validación
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 @router.get("/", response_model=List[schemas.Asistencia])
 def read_asistencias(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -74,3 +88,13 @@ def delete_asistencia(asistencia_id: int, db: Session = Depends(get_db)):
             detail="Asistencia no encontrada"
         )
     return None
+
+@router.get("/estadisticas/promedio-diario", response_model=float)
+def get_promedio_diario(db: Session = Depends(get_db)):
+    """Obtiene el promedio diario de asistencias de los últimos 30 días"""
+    return crud.get_promedio_diario_30_dias(db)
+
+@router.get("/estadisticas/usuarios-inactivos", response_model=List[dict])
+def get_usuarios_inactivos(db: Session = Depends(get_db)):
+    """Obtiene usuarios con pase flex o superior que no han asistido en 4+ días"""
+    return crud.get_usuarios_sin_asistir_4_dias(db)

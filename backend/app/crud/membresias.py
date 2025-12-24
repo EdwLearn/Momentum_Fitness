@@ -5,8 +5,11 @@ from app.models.usuario import Usuario
 from app.schemas.membresia import MembresiaCreate, MembresiaUpdate, MembresiaCreateSimple
 from app.schemas.asistencia import AsistenciaCreate
 from app.crud import asistencias as asistencias_crud
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 
 def get_membresia(db: Session, membresia_id: int) -> Optional[Membresia]:
     return db.query(Membresia).filter(Membresia.id == membresia_id).first()
@@ -20,7 +23,7 @@ def get_membresias_by_usuario(db: Session, usuario_id: int) -> List[Membresia]:
 
 def get_membresia_activa_by_usuario(db: Session, usuario_id: int) -> Optional[Membresia]:
     """Obtiene la membresía activa y vigente de un usuario"""
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
     return db.query(Membresia).filter(
         and_(
             Membresia.usuario_id == usuario_id,
@@ -77,9 +80,14 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
         descuento = REFERIDOS_CONFIG["descuento_referido"]
         precio_con_descuento = int(precio_base * (1 - descuento))
 
-    # 4. Calcular fechas
-    fecha_inicio = datetime.utcnow()
-    fecha_fin = Membresia.calcular_fecha_fin(fecha_inicio, config_plan["dias"])
+    # 4. Calcular fechas (usar hora local de Colombia)
+    fecha_inicio = datetime.now(COLOMBIA_TZ)
+
+    # Pase Diario expira el mismo día (23:59:59), otros planes usan cálculo normal
+    if membresia_simple.tipo_plan == TipoPlan.PASE_DIARIO:
+        fecha_fin = fecha_inicio.replace(hour=23, minute=59, second=59, microsecond=999999)
+    else:
+        fecha_fin = Membresia.calcular_fecha_fin(fecha_inicio, config_plan["dias"])
 
     # 5. Crear membresía completa
     membresia_data = MembresiaCreate(
@@ -91,6 +99,7 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
         duracion_dias=config_plan["dias"],
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
+        tipo_pago=membresia_simple.tipo_pago,  # NUEVO
         descripcion=membresia_simple.descripcion,
         referido_por_id=membresia_simple.referido_por_id  # NUEVO
     )
@@ -98,26 +107,28 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
     # 6. Crear el objeto Membresia y guardar en BD
     db_membresia = Membresia(**membresia_data.model_dump())
 
-    # Agregar tipo de pago si se proporcionó
-    if membresia_simple.tipo_pago:
-        db_membresia.tipo_pago = membresia_simple.tipo_pago
-
     db.add(db_membresia)
     db.commit()
     db.refresh(db_membresia)
 
     # 7. Registrar asistencia automática (primera visita al crear membresía)
     try:
-        ahora = datetime.utcnow()
+        # Usar hora local de Colombia (UTC-5)
+        ahora_colombia = datetime.now(COLOMBIA_TZ)
         asistencia_data = AsistenciaCreate(
             usuario_id=membresia_simple.usuario_id,
-            hora_entrada=ahora.strftime("%H:%M:%S"),
+            hora_entrada=ahora_colombia.strftime("%H:%M:%S"),
             notas="Primera asistencia - Creación de membresía"
         )
         asistencias_crud.create_asistencia(db, asistencia_data)
+    except ValueError as e:
+        # Si ya tiene asistencia hoy, es esperado - no es un error
+        if "ya tiene asistencia registrada" in str(e):
+            print(f"Info: Usuario ya tiene asistencia hoy, omitiendo registro automático")
+        else:
+            print(f"Warning: Error al registrar asistencia automática: {e}")
     except Exception as e:
-        # Si falla la asistencia, no queremos que falle toda la creación de membresía
-        # Solo registramos el error pero continuamos
+        # Si falla la asistencia por otro motivo, no queremos que falle toda la creación de membresía
         print(f"Warning: No se pudo registrar asistencia automática: {e}")
 
     return db_membresia

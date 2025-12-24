@@ -67,4 +67,25 @@ export const asistenciaService = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`${BASE_PATH}/${id}`);
   },
+
+  /**
+   * Obtener promedio diario de asistencias (últimos 30 días)
+   */
+  getPromedioDiario: async (): Promise<number> => {
+    const response = await api.get<number>(`${BASE_PATH}/estadisticas/promedio-diario`);
+    return response.data;
+  },
+
+  /**
+   * Obtener usuarios inactivos (pase flex o superior sin asistir en 4+ días)
+   */
+  getUsuariosInactivos: async (): Promise<Array<{
+    usuario_id: number;
+    nombre: string;
+    ultima_asistencia: string | null;
+    dias_sin_asistir: number | null;
+  }>> => {
+    const response = await api.get(`${BASE_PATH}/estadisticas/usuarios-inactivos`);
+    return response.data;
+  },
 };
