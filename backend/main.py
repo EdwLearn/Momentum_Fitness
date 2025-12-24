@@ -14,10 +14,12 @@ from app.modules.asistencia.models.asistencia import Asistencia
 from app.modules.metricas.models.metrica import Metrica
 from app.modules.bot.models.conversacion import Conversacion
 from app.modules.bot.models.logro import Logro
+from app.models.cupon import Cupon
+from app.models.referido import Referido
 
 # 3. ENDPOINTS (al final)
 # Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
-from app.api.endpoints import usuarios, membresias, asistencia, metricas
+from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos
 
 # Nuevos endpoints del bot
 from app.modules.bot.endpoints import bot_endpoints
@@ -94,6 +96,18 @@ app.include_router(
     tags=["📊 Métricas"]
 )
 
+app.include_router(
+    cupones.router,
+    prefix="/api/cupones",
+    tags=["🎟️ Cupones"]
+)
+
+app.include_router(
+    referidos.router,
+    prefix="/api/referidos",
+    tags=["👥 Referidos"]
+)
+
 # Bot de Hospitalidad
 app.include_router(
     bot_endpoints.router,
@@ -127,6 +141,8 @@ async def root():
             "membresias": "✅ Activo",
             "asistencia": "✅ Activo",
             "metricas": "✅ Activo",
+            "cupones": "✅ Activo",
+            "referidos": "✅ Activo",
             "bot_hospitalidad": "✅ Activo",
             "computer_vision": "⏳ Planificado"
         },
@@ -145,6 +161,8 @@ async def root():
             "membresias": "/api/membresias",
             "asistencia": "/api/asistencia",
             "metricas": "/api/metricas",
+            "cupones": "/api/cupones",
+            "referidos": "/api/referidos",
             "bot_chat": "/api/bot/chat",
             "bot_triggers": "/api/bot/triggers"
         }

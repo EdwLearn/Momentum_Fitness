@@ -10,6 +10,8 @@ from app.modules.usuarios.models.usuario import Usuario, TipoUsuario
 from app.modules.usuarios.models.membresia import Membresia, TipoMembresia, EstadoMembresia
 from app.modules.asistencia.models.asistencia import Asistencia
 from app.modules.metricas.models.metrica import Metrica, TipoMetrica
+from app.models.cupon import Cupon, NichoCupon
+from app.models.referido import Referido
 
 __all__ = [
     "Usuario",
@@ -20,4 +22,7 @@ __all__ = [
     "Asistencia",
     "Metrica",
     "TipoMetrica",
+    "Cupon",
+    "NichoCupon",
+    "Referido",
 ]

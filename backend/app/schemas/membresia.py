@@ -18,16 +18,20 @@ class MembresiaCreateSimple(BaseModel):
     tipo_plan: TipoPlan = Field(..., description="Tipo de plan seleccionado")
     tipo_pago: Optional[TipoPago] = Field(None, description="Método de pago utilizado")
     descripcion: Optional[str] = Field(None, description="Notas adicionales opcionales")
+    referido_por_id: Optional[int] = Field(None, description="ID del usuario que refirió")
 
 # Schema completo para crear membresía (usado internamente)
 class MembresiaCreate(BaseModel):
     usuario_id: int
     tipo_plan: TipoPlan
     precio: int
+    precio_original: Optional[int] = None
+    precio_final: Optional[int] = None
     duracion_dias: int
     fecha_inicio: datetime
     fecha_fin: datetime
     descripcion: Optional[str] = None
+    referido_por_id: Optional[int] = None
 
 class MembresiaUpdate(BaseModel):
     estado: Optional[EstadoMembresia] = None
@@ -42,12 +46,15 @@ class Membresia(BaseModel):
     tipo_plan: TipoPlan
     estado: EstadoMembresia
     precio: int
+    precio_original: Optional[int] = None
+    precio_final: Optional[int] = None
     duracion_dias: int
     fecha_inicio: datetime
     fecha_fin: datetime
     tipo_pago: Optional[TipoPago] = None
     descripcion: Optional[str] = None
     activo: bool
+    referido_por_id: Optional[int] = None
 
     class Config:
         from_attributes = True

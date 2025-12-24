@@ -303,19 +303,7 @@ export default function ClientesPage() {
         />
       </ChartCard>
 
-      {/* Employees Table */}
-      {totalEmpleados > 0 && (
-        <ChartCard
-          title="Lista de Empleados"
-          subtitle={`${filteredEmployees.length} empleados registrados`}
-          className="mt-6"
-        >
-          <DataTable
-            columns={employeeColumns}
-            data={filteredEmployees}
-          />
-        </ChartCard>
-      )}
+
 
       {/* Client Detail Modal */}
       {selectedClient && <ClientDetailModal client={selectedClient} onClose={() => setSelectedClient(null)} />}

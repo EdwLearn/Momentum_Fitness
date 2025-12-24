@@ -27,6 +27,8 @@ class Usuario(Base):
     peso_inicial = Column(Float, nullable=True)
     peso_actual = Column(Float, nullable=True)
     altura = Column(Float, nullable=True)
+    objetivo = Column(String, nullable=True)  # Objetivos fitness del cliente
+    genero = Column(String, nullable=True)    # Masculino/Femenino
 
     # Fechas
     fecha_registro = Column(DateTime, default=datetime.utcnow, index=True)
@@ -34,7 +36,7 @@ class Usuario(Base):
     ultima_asistencia = Column(DateTime, nullable=True)
 
     # Relaciones
-    membresias = relationship("Membresia", back_populates="usuario", cascade="all, delete-orphan")
+    membresias = relationship("Membresia", foreign_keys="[Membresia.usuario_id]", back_populates="usuario", cascade="all, delete-orphan")
     asistencias = relationship("Asistencia", back_populates="usuario", cascade="all, delete-orphan")
     metricas = relationship("Metrica", back_populates="usuario", cascade="all, delete-orphan")
     conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")

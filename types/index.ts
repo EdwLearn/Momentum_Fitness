@@ -41,6 +41,20 @@ export enum TipoPago {
   OTRO = "otro",
 }
 
+export enum Genero {
+  MASCULINO = "masculino",
+  FEMENINO = "femenino",
+}
+
+export const OBJETIVOS_FITNESS = [
+  "Perder peso",
+  "Ganar músculo",
+  "Mantenimiento",
+  "Resistencia",
+  "Flexibilidad",
+  "Tonificación",
+] as const;
+
 // ==========================================
 // USUARIO TYPES
 // ==========================================
@@ -58,6 +72,8 @@ export interface UsuarioBase {
   peso_inicial?: number | null;
   peso_actual?: number | null;
   altura?: number | null;
+  objetivo?: string | null;
+  genero?: string | null;
 }
 
 export interface UsuarioCreate extends UsuarioBase {}
@@ -76,6 +92,8 @@ export interface UsuarioUpdate {
   peso_inicial?: number | null;
   peso_actual?: number | null;
   altura?: number | null;
+  objetivo?: string | null;
+  genero?: string | null;
 }
 
 export interface Usuario extends UsuarioBase {
@@ -111,6 +129,7 @@ export interface MembresiaCreateSimple {
   tipo_plan: TipoPlan;
   tipo_pago?: TipoPago | null;
   descripcion?: string | null;
+  referido_por_id?: number | null;
 }
 
 // Schema completo de membresía (respuesta del backend)
@@ -120,12 +139,15 @@ export interface Membresia {
   tipo_plan: TipoPlan;
   estado: EstadoMembresia;
   precio: number;
+  precio_original?: number | null;
+  precio_final?: number | null;
   duracion_dias: number;
   fecha_inicio: string;
   fecha_fin: string;
   tipo_pago?: TipoPago | null;
   descripcion?: string | null;
   activo: boolean;
+  referido_por_id?: number | null;
 }
 
 // Legacy types (mantener compatibilidad)

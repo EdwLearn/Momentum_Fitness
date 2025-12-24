@@ -50,6 +50,48 @@ def create_membresia(membresia: schemas.MembresiaCreateSimple, db: Session = Dep
             detail=str(e)
         )
 
+@router.post("/renovar/{usuario_id}", response_model=schemas.Membresia, status_code=status.HTTP_201_CREATED)
+def renovar_membresia_usuario(
+    usuario_id: int,
+    datos_renovacion: schemas.MembresiaCreateSimple,
+    db: Session = Depends(get_db)
+):
+    """
+    Renueva o cambia el plan de un usuario existente.
+    Desactiva automáticamente la membresía anterior.
+    """
+    # Validar que el usuario existe
+    db_usuario = usuarios_crud.get_usuario(db, usuario_id=usuario_id)
+    if not db_usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Usuario con ID {usuario_id} no encontrado"
+        )
+
+    # Validar que referido_por_id es válido si se proporciona
+    if datos_renovacion.referido_por_id:
+        referidor = usuarios_crud.get_usuario(db, usuario_id=datos_renovacion.referido_por_id)
+        if not referidor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Referidor con ID {datos_renovacion.referido_por_id} no encontrado"
+            )
+
+    # Crear nueva membresía (desactiva automáticamente la anterior)
+    try:
+        return crud.renovar_membresia(
+            db=db,
+            usuario_id=usuario_id,
+            nuevo_tipo_plan=datos_renovacion.tipo_plan,
+            referido_por_id=datos_renovacion.referido_por_id,
+            tipo_pago=datos_renovacion.tipo_pago
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
 @router.get("/", response_model=List[schemas.Membresia])
 def read_membresias(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Obtiene todas las membresías con paginación"""

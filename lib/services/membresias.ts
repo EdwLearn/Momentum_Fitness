@@ -50,4 +50,10 @@ export const membresiasService = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`${BASE_URL}/${id}`);
   },
+
+  // Renovar una membresía (desactiva la anterior y crea una nueva)
+  renovar: async (usuarioId: number, data: MembresiaCreateSimple): Promise<Membresia> => {
+    const response = await api.post<Membresia>(`${BASE_URL}/renovar/${usuarioId}`, data);
+    return response.data;
+  },
 };

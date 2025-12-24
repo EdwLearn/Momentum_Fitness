@@ -30,8 +30,11 @@ const protectedMenuItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard, protected: true },
   { name: "Suscripciones", href: "/suscripciones", icon: CreditCard, protected: true },
   { name: "Reportes", href: "/reportes", icon: FileBarChart, protected: true },
-  { name: "Configuración", href: "/configuracion", icon: Settings, protected: true },
-  { name: "Soporte", href: "/soporte", icon: HelpCircle, protected: true },
+]
+
+const otherMenuItems = [
+  { name: "Configuración", href: "/configuracion", icon: Settings },
+  { name: "Soporte", href: "/soporte", icon: HelpCircle },
 ]
 
 export function Sidebar() {
@@ -96,6 +99,31 @@ export function Sidebar() {
                   <item.icon className={cn("h-5 w-5", isActive && "text-primary-foreground")} />
                   {item.name}
                   <Lock className="h-3.5 w-3.5 ml-auto opacity-60" />
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Other Section */}
+          <div className="pt-6">
+            <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Otros
+            </p>
+            {otherMenuItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-primary-foreground glow-green-sm"
+                      : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+                  )}
+                >
+                  <item.icon className={cn("h-5 w-5", isActive && "text-primary-foreground")} />
+                  {item.name}
                 </Link>
               )
             })}

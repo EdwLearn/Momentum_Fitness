@@ -1,6 +1,5 @@
 "use client"
 
-import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -142,9 +141,8 @@ export default function SoportePage() {
     .filter((category) => category.questions.length > 0)
 
   return (
-    <ProtectedRoute>
-      <DashboardLayout>
-        <div className="space-y-6">
+    <DashboardLayout>
+      <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Centro de Soporte</h1>
             <p className="text-muted-foreground mt-1">Encuentra ayuda y recursos para usar Momentum Fitness</p>
@@ -472,8 +470,7 @@ export default function SoportePage() {
           onOpenChange={setShowSuccess}
           message="Ticket creado exitosamente. Te responderemos pronto."
         />
-        </div>
-      </DashboardLayout>
-    </ProtectedRoute>
+      </div>
+    </DashboardLayout>
   )
 }

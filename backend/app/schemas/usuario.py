@@ -18,6 +18,8 @@ class UsuarioBase(BaseModel):
     peso_inicial: Optional[float] = None
     peso_actual: Optional[float] = None
     altura: Optional[float] = None
+    objetivo: Optional[str] = None
+    genero: Optional[str] = None
 
 class UsuarioCreate(UsuarioBase):
     pass
@@ -38,6 +40,8 @@ class UsuarioUpdate(BaseModel):
     peso_inicial: Optional[float] = None
     peso_actual: Optional[float] = None
     altura: Optional[float] = None
+    objetivo: Optional[str] = None
+    genero: Optional[str] = None
 
 class Usuario(UsuarioBase):
     id: int

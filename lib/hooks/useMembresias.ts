@@ -102,3 +102,20 @@ export function useDeleteMembresia() {
     },
   });
 }
+
+// Hook para renovar una membresía
+export function useRenovarMembresia() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: MembresiaCreateSimple & { usuario_id: number }) =>
+      membresiasService.renovar(data.usuario_id, data),
+    onSuccess: (data) => {
+      // Invalidar cachés relevantes
+      queryClient.invalidateQueries({ queryKey: membresiasKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: membresiasKeys.byUsuario(data.usuario_id) });
+      queryClient.invalidateQueries({ queryKey: membresiasKeys.activa(data.usuario_id) });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    },
+  });
+}

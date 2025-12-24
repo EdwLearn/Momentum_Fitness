@@ -76,8 +76,13 @@ class Membresia(Base):
     fecha_fin = Column(DateTime, nullable=False, index=True)
 
     # Precio y duración
-    precio = Column(Integer, nullable=False)  # Precio en COP
+    precio = Column(Integer, nullable=False)  # Precio en COP (DEPRECATED - usar precio_final)
+    precio_original = Column(Integer, nullable=True)  # Precio base del plan
+    precio_final = Column(Integer, nullable=True)     # Precio con descuento aplicado
     duracion_dias = Column(Integer, nullable=False)  # Duración en días
+
+    # Referido (ahora por membresía, no por usuario)
+    referido_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
 
     # Tipo de pago
     tipo_pago = Column(Enum(TipoPago, values_callable=lambda x: [e.value for e in x]), nullable=True)
@@ -88,8 +93,9 @@ class Membresia(Base):
     # Control
     activo = Column(Boolean, default=True, nullable=False)
 
-    # Relación
-    usuario = relationship("Usuario", back_populates="membresias")
+    # Relaciones
+    usuario = relationship("Usuario", foreign_keys=[usuario_id], back_populates="membresias")
+    referidor = relationship("Usuario", foreign_keys=[referido_por_id])
 
     @staticmethod
     def calcular_fecha_fin(fecha_inicio: datetime, duracion_dias: int) -> datetime:

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/ui/date-picker"
 import { useCreateUsuario, useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useCreateMembresia } from "@/lib/hooks/useMembresias"
-import { TipoUsuario, TipoPlan, TipoPago } from "@/types"
+import { TipoUsuario, TipoPlan, TipoPago, OBJETIVOS_FITNESS } from "@/types"
 
 interface NewClientDrawerProps {
   isOpen: boolean
@@ -39,12 +39,19 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     email: "",
     telefono: "",
     fechaNacimiento: "",
+    genero: "",
+
+    // Información física
+    peso: "",
+    altura: "",
+    objetivos: [] as string[],
 
     // Plan
     tipoPlan: "",
     fechaInicio: "",
 
     // Referido (opcional)
+    usarPlanReferidos: false,
     referidoPorCedula: "",
   })
 
@@ -83,11 +90,11 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       if (plan) {
         let precio = plan.precio
 
-        // Aplicar 5% descuento si tiene referido y plan >= Mensual
+        // Aplicar 5% descuento si marcó checkbox referidos, tiene referido y plan >= Mensual
         const planIndex = PLANES.findIndex(p => p.id === formData.tipoPlan)
         const mensualIndex = PLANES.findIndex(p => p.id === TipoPlan.MENSUAL)
 
-        if (formData.referidoPorCedula && planIndex >= mensualIndex) {
+        if (formData.usarPlanReferidos && formData.referidoPorCedula && planIndex >= mensualIndex) {
           precio = precio * 0.95 // 5% descuento
           setDescuentoAplicado(true)
         } else {
@@ -100,7 +107,7 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       setPrecioFinal(0)
       setDescuentoAplicado(false)
     }
-  }, [formData.tipoPlan, formData.referidoPorCedula])
+  }, [formData.tipoPlan, formData.usarPlanReferidos, formData.referidoPorCedula])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -125,8 +132,17 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       return
     }
 
-    // Validar que el referido existe si se proporcionó
-    if (formData.referidoPorCedula) {
+    // Validar edad mínima 15 años
+    if (formData.fechaNacimiento) {
+      const edad = calcularEdad(formData.fechaNacimiento)
+      if (edad < 15) {
+        setError("El cliente debe tener al menos 15 años")
+        return
+      }
+    }
+
+    // Validar que el referido existe si se marcó checkbox y se proporcionó
+    if (formData.usarPlanReferidos && formData.referidoPorCedula) {
       const referidoExiste = usuarios?.some(u => u.telefono === formData.referidoPorCedula)
       if (!referidoExiste) {
         setError("El referido no existe en el sistema")
@@ -142,7 +158,11 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
         telefono: formData.cedula,
         tipo: tipoUsuarioFijo || TipoUsuario.CLIENTE,
         fecha_nacimiento: formData.fechaNacimiento || null,
-        referido_por_cedula: formData.referidoPorCedula || null,
+        genero: formData.genero || null,
+        peso_inicial: formData.peso ? parseFloat(formData.peso) : null,
+        altura: formData.altura ? parseFloat(formData.altura) : null,
+        objetivo: formData.objetivos.length > 0 ? formData.objetivos.join(", ") : null,
+        referido_por_cedula: formData.usarPlanReferidos ? formData.referidoPorCedula : null,
       }
 
       const nuevoUsuario = await createUsuario.mutateAsync(usuarioData)
@@ -168,8 +188,13 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
         email: "",
         telefono: "",
         fechaNacimiento: "",
+        genero: "",
+        peso: "",
+        altura: "",
+        objetivos: [],
         tipoPlan: "",
         fechaInicio: "",
+        usarPlanReferidos: false,
         referidoPorCedula: "",
       })
       setFechaFin("")
@@ -195,6 +220,20 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     const month = date.toLocaleDateString('es-ES', { month: 'long' })
     const year = date.getFullYear()
     return `${day} ${month} ${year}`
+  }
+
+  const calcularEdad = (fechaNacimiento: string): number => {
+    if (!fechaNacimiento) return 0
+    const hoy = new Date()
+    const nacimiento = new Date(fechaNacimiento + "T00:00:00")
+    let edad = hoy.getFullYear() - nacimiento.getFullYear()
+    const mesActual = hoy.getMonth()
+    const mesNacimiento = nacimiento.getMonth()
+
+    if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < nacimiento.getDate())) {
+      edad--
+    }
+    return edad
   }
 
   // Determinar si debe mostrar el campo de referido
@@ -316,6 +355,99 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                         yearRange={{ start: 1950, end: new Date().getFullYear() }}
                       />
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Género</Label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="genero"
+                            value="masculino"
+                            checked={formData.genero === "masculino"}
+                            onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                            className="w-4 h-4 text-primary accent-primary"
+                          />
+                          <span className="text-sm">Masculino</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="genero"
+                            value="femenino"
+                            checked={formData.genero === "femenino"}
+                            onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                            className="w-4 h-4 text-primary accent-primary"
+                          />
+                          <span className="text-sm">Femenino</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {formData.fechaNacimiento && (
+                      <div className="space-y-2">
+                        <Label>Edad</Label>
+                        <div className="px-3 py-2 bg-secondary/50 border border-border rounded-md text-sm text-muted-foreground">
+                          {calcularEdad(formData.fechaNacimiento)} años
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Información Física */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold border-b border-border pb-2 text-foreground">Información Física</h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="peso">Peso (kg)</Label>
+                        <Input
+                          id="peso"
+                          type="number"
+                          step="0.1"
+                          value={formData.peso}
+                          onChange={(e) => setFormData({ ...formData, peso: e.target.value })}
+                          placeholder="70.5"
+                          className="bg-secondary border-border"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="altura">Altura (cm)</Label>
+                        <Input
+                          id="altura"
+                          type="number"
+                          step="0.1"
+                          value={formData.altura}
+                          onChange={(e) => setFormData({ ...formData, altura: e.target.value })}
+                          placeholder="175"
+                          className="bg-secondary border-border"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Objetivo(s) Fitness</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {OBJETIVOS_FITNESS.map((objetivo) => (
+                          <label key={objetivo} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.objetivos.includes(objetivo)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({ ...formData, objetivos: [...formData.objetivos, objetivo] })
+                                } else {
+                                  setFormData({ ...formData, objetivos: formData.objetivos.filter(o => o !== objetivo) })
+                                }
+                              }}
+                              className="w-4 h-4 text-primary accent-primary rounded"
+                            />
+                            <span className="text-sm">{objetivo}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Información del Plan */}
@@ -362,20 +494,42 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                           </div>
                         )}
 
-                        {/* Campo de referido - solo si plan >= Mensual */}
+                        {/* Checkbox Plan de Referidos - solo si plan >= Mensual */}
                         {mostrarReferido && (
-                          <div className="space-y-2">
-                            <Label htmlFor="referidoPorCedula">
-                              Referido por (Cédula) - <span className="text-primary text-xs">5% descuento</span>
-                            </Label>
-                            <Input
-                              id="referidoPorCedula"
-                              value={formData.referidoPorCedula}
-                              onChange={(e) => setFormData({ ...formData, referidoPorCedula: e.target.value })}
-                              placeholder="Cédula del referidor"
-                              className="bg-secondary border-border"
-                            />
-                          </div>
+                          <>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                id="usarPlanReferidos"
+                                checked={formData.usarPlanReferidos}
+                                onChange={(e) => setFormData({
+                                  ...formData,
+                                  usarPlanReferidos: e.target.checked,
+                                  referidoPorCedula: e.target.checked ? formData.referidoPorCedula : ""
+                                })}
+                                className="w-4 h-4 text-primary accent-primary rounded"
+                              />
+                              <Label htmlFor="usarPlanReferidos" className="cursor-pointer">
+                                Usar plan de referidos (5% descuento)
+                              </Label>
+                            </div>
+
+                            {formData.usarPlanReferidos && (
+                              <div className="space-y-2">
+                                <Label htmlFor="referidoPorCedula">
+                                  Cédula del referidor <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  id="referidoPorCedula"
+                                  value={formData.referidoPorCedula}
+                                  onChange={(e) => setFormData({ ...formData, referidoPorCedula: e.target.value })}
+                                  placeholder="Cédula del referidor"
+                                  className="bg-secondary border-border"
+                                  required={formData.usarPlanReferidos}
+                                />
+                              </div>
+                            )}
+                          </>
                         )}
 
                         {/* Resumen de precio */}

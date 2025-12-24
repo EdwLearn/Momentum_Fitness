@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 const CORRECT_PASSWORD = "GetRich666"
 const SESSION_KEY = "momentum_auth"
-const SESSION_TIMEOUT = 60 * 60 * 1000 // 1 hora en milisegundos
+const SESSION_TIMEOUT = 10 * 60 * 1000 // 10 minutos en milisegundos
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -153,7 +153,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           </form>
 
           <p className="text-xs text-muted-foreground text-center mt-6">
-            La sesión expirará después de 1 hora de inactividad
+            La sesión expirará después de 10 minutos de inactividad
           </p>
         </div>
       </div>

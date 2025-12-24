@@ -14,11 +14,8 @@ def get_asistencias_by_usuario(db: Session, usuario_id: int) -> List[Asistencia]
     return db.query(Asistencia).filter(Asistencia.usuario_id == usuario_id).all()
 
 def get_asistencias_by_fecha(db: Session, fecha: date) -> List[Asistencia]:
-    start = datetime.combine(fecha, datetime.min.time())
-    end = datetime.combine(fecha, datetime.max.time())
     return db.query(Asistencia).filter(
-        Asistencia.fecha >= start,
-        Asistencia.fecha <= end
+        Asistencia.fecha == fecha
     ).all()
 
 def create_asistencia(db: Session, asistencia: AsistenciaCreate) -> Asistencia:

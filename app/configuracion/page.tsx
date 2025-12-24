@@ -1,6 +1,5 @@
 "use client"
 
-import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,8 +21,7 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <ProtectedRoute>
-      <DashboardLayout>
+    <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Configuración</h1>
@@ -593,7 +591,6 @@ export default function ConfiguracionPage() {
       </div>
 
       <SuccessToast open={showSuccess} onOpenChange={setShowSuccess} message="Configuración guardada exitosamente" />
-      </DashboardLayout>
-    </ProtectedRoute>
+    </DashboardLayout>
   )
 }
