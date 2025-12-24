@@ -20,6 +20,7 @@ class UsuarioBase(BaseModel):
     altura: Optional[float] = None
     objetivo: Optional[str] = None
     genero: Optional[str] = None
+    dias_entrenados: Optional[int] = 0
 
 class UsuarioCreate(UsuarioBase):
     pass
@@ -42,12 +43,14 @@ class UsuarioUpdate(BaseModel):
     altura: Optional[float] = None
     objetivo: Optional[str] = None
     genero: Optional[str] = None
+    dias_entrenados: Optional[int] = None
 
 class Usuario(UsuarioBase):
     id: int
     activo: bool
     fecha_registro: datetime
     ultima_asistencia: Optional[datetime] = None
+    dias_entrenados: int = 0
 
     class Config:
         from_attributes = True

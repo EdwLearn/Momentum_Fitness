@@ -23,12 +23,12 @@ interface NewClientDrawerProps {
 
 // Plan configuration with prices and durations
 const PLANES = [
-  { id: TipoPlan.PASE_DIARIO, nombre: "Pase Diario", precio: 15000, duracion: 1 },
-  { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (10 días)", precio: 120000, duracion: 30 },
-  { id: TipoPlan.MENSUAL, nombre: "Mensual", precio: 180000, duracion: 30 },
-  { id: TipoPlan.PLAN_3_MESES, nombre: "Plan 3 Meses", precio: 480000, duracion: 90 },
-  { id: TipoPlan.PLAN_6_MESES, nombre: "Plan 6 Meses", precio: 900000, duracion: 180 },
-  { id: TipoPlan.ELITE_ANUAL, nombre: "Elite Anual", precio: 1680000, duracion: 365 },
+  { id: TipoPlan.PASE_DIARIO, nombre: "Pase Diario", precio: 5000, duracion: 1 },
+  { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (14 días/mes)", precio: 39900, duracion: 30 },
+  { id: TipoPlan.MENSUAL, nombre: "Mensual", precio: 59900, duracion: 30 },
+  { id: TipoPlan.PLAN_3_MESES, nombre: "Plan 3 Meses", precio: 149900, duracion: 90 },
+  { id: TipoPlan.PLAN_6_MESES, nombre: "Plan 6 Meses", precio: 269900, duracion: 180 },
+  { id: TipoPlan.ELITE_ANUAL, nombre: "Membresía Platinum", precio: 479900, duracion: 365 },
 ]
 
 export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = TipoUsuario.CLIENTE }: NewClientDrawerProps) {
@@ -264,7 +264,7 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
         <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
-          <div className="w-screen max-w-md">
+          <div className="w-screen max-w-2xl">
             <div className="flex h-full flex-col overflow-y-scroll bg-card shadow-xl border-l border-border">
               {/* Header */}
               <div className="bg-secondary px-6 py-6">
@@ -322,92 +322,92 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                           className="bg-secondary border-border"
                         />
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="cedula">
-                        Cédula <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="cedula"
-                        value={formData.cedula}
-                        onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
-                        placeholder="1234567890"
-                        required
-                        className="bg-secondary border-border"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="correo@ejemplo.com"
-                        className="bg-secondary border-border"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="telefono">Teléfono</Label>
-                      <Input
-                        id="telefono"
-                        value={formData.telefono}
-                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                        placeholder="3001234567"
-                        className="bg-secondary border-border"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
-                      <DatePicker
-                        value={formData.fechaNacimiento}
-                        onChange={(date) => setFormData({ ...formData, fechaNacimiento: date })}
-                        placeholder="Seleccionar fecha"
-                        maxDate={new Date().toISOString().split('T')[0]}
-                        yearRange={{ start: 1950, end: new Date().getFullYear() }}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Género</Label>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="genero"
-                            value="masculino"
-                            checked={formData.genero === "masculino"}
-                            onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                            className="w-4 h-4 text-primary accent-primary"
-                          />
-                          <span className="text-sm">Masculino</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="genero"
-                            value="femenino"
-                            checked={formData.genero === "femenino"}
-                            onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                            className="w-4 h-4 text-primary accent-primary"
-                          />
-                          <span className="text-sm">Femenino</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {formData.fechaNacimiento && (
                       <div className="space-y-2">
-                        <Label>Edad</Label>
-                        <div className="px-3 py-2 bg-secondary/50 border border-border rounded-md text-sm text-muted-foreground">
-                          {calcularEdad(formData.fechaNacimiento)} años
+                        <Label htmlFor="cedula">
+                          Cédula <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="cedula"
+                          value={formData.cedula}
+                          onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
+                          placeholder="1234567890"
+                          required
+                          className="bg-secondary border-border"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          placeholder="correo@ejemplo.com"
+                          className="bg-secondary border-border"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="telefono">Teléfono</Label>
+                        <Input
+                          id="telefono"
+                          value={formData.telefono}
+                          onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                          placeholder="3001234567"
+                          className="bg-secondary border-border"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
+                        <DatePicker
+                          value={formData.fechaNacimiento}
+                          onChange={(date) => setFormData({ ...formData, fechaNacimiento: date })}
+                          placeholder="Seleccionar fecha"
+                          maxDate={new Date().toISOString().split('T')[0]}
+                          yearRange={{ start: 1950, end: new Date().getFullYear() }}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Género</Label>
+                        <div className="flex gap-4 pt-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="genero"
+                              value="masculino"
+                              checked={formData.genero === "masculino"}
+                              onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                              className="w-4 h-4 text-primary accent-primary"
+                            />
+                            <span className="text-sm">Masculino</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="genero"
+                              value="femenino"
+                              checked={formData.genero === "femenino"}
+                              onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                              className="w-4 h-4 text-primary accent-primary"
+                            />
+                            <span className="text-sm">Femenino</span>
+                          </label>
                         </div>
                       </div>
-                    )}
+
+                      {formData.fechaNacimiento && (
+                        <div className="space-y-2">
+                          <Label>Edad</Label>
+                          <div className="px-3 py-2 bg-secondary/50 border border-border rounded-md text-sm text-muted-foreground">
+                            {calcularEdad(formData.fechaNacimiento)} años
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Información Física */}

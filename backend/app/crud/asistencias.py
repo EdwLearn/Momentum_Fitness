@@ -43,10 +43,12 @@ def create_asistencia(db: Session, asistencia: AsistenciaCreate) -> Asistencia:
     db_asistencia = Asistencia(**asistencia.model_dump())
     db.add(db_asistencia)
 
-    # Actualizar ultima_asistencia del usuario (usar hora local Colombia)
+    # Actualizar ultima_asistencia del usuario y incrementar dias_entrenados (usar hora local Colombia)
     usuario = db.query(Usuario).filter(Usuario.id == asistencia.usuario_id).first()
     if usuario:
         usuario.ultima_asistencia = db_asistencia.timestamp_entrada or datetime.now(COLOMBIA_TZ)
+        # Incrementar contador de días entrenados
+        usuario.dias_entrenados = (usuario.dias_entrenados or 0) + 1
 
     db.commit()
     db.refresh(db_asistencia)

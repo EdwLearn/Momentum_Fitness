@@ -74,6 +74,7 @@ export interface UsuarioBase {
   altura?: number | null;
   objetivo?: string | null;
   genero?: string | null;
+  dias_entrenados?: number;
 }
 
 export interface UsuarioCreate extends UsuarioBase {}
@@ -94,6 +95,7 @@ export interface UsuarioUpdate {
   altura?: number | null;
   objetivo?: string | null;
   genero?: string | null;
+  dias_entrenados?: number;
 }
 
 export interface Usuario extends UsuarioBase {
@@ -101,6 +103,7 @@ export interface Usuario extends UsuarioBase {
   activo: boolean;
   fecha_registro: string;
   ultima_asistencia?: string | null;
+  dias_entrenados: number;
 }
 
 // Type para búsqueda de referido

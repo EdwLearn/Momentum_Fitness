@@ -29,6 +29,7 @@ class Usuario(Base):
     altura = Column(Float, nullable=True)
     objetivo = Column(String, nullable=True)  # Objetivos fitness del cliente
     genero = Column(String, nullable=True)    # Masculino/Femenino
+    dias_entrenados = Column(Integer, default=0, nullable=False)  # Contador de días que ha asistido al gimnasio
 
     # Fechas
     fecha_registro = Column(DateTime, default=datetime.utcnow, index=True)

@@ -57,7 +57,7 @@ function mapUsuarioToClient(usuario: Usuario, membresias: Membresia[], todosUsua
     ultimaAsistencia: usuario.ultima_asistencia
       ? usuario.ultima_asistencia.split('T')[0]
       : "N/A",
-    diasEntrenados: 0, // TODO: Calculate from asistencias
+    diasEntrenados: usuario.dias_entrenados || 0,
     referidoPor: referidoPor,
   }
 }
@@ -94,7 +94,7 @@ function mapUsuarioToEmployee(usuario: Usuario) {
     ultimaAsistencia: usuario.ultima_asistencia
       ? usuario.ultima_asistencia.split('T')[0]
       : "N/A",
-    diasEntrenados: 0,
+    diasEntrenados: usuario.dias_entrenados || 0,
     referidoPor: "N/A",
   }
 }

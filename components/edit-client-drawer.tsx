@@ -3,13 +3,13 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
+import { X, CheckCircle2, AlertCircle, Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
-import { useUpdateUsuario } from "@/lib/hooks/useUsuarios"
+import { useUpdateUsuario, useDeleteUsuario } from "@/lib/hooks/useUsuarios"
 import { usuariosService } from "@/lib/services/usuarios"
 import { TipoUsuario, Usuario } from "@/types"
 
@@ -40,8 +40,12 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
   const [referidoInfo, setReferidoInfo] = useState<{ nombre: string; apellido: string } | null>(null)
   const [referidoError, setReferidoError] = useState<string | null>(null)
   const [isSearchingReferido, setIsSearchingReferido] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirmCedula, setDeleteConfirmCedula] = useState("")
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const updateUsuario = useUpdateUsuario()
+  const deleteUsuario = useDeleteUsuario()
 
   // Load usuario data when drawer opens
   useEffect(() => {
@@ -140,6 +144,29 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
     } catch (err) {
       console.error("Error updating usuario:", err)
       setError("Error al actualizar el cliente. Por favor intenta de nuevo.")
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!usuario) return
+
+    setDeleteError(null)
+
+    // Validar que se ingresó la cédula correcta
+    if (deleteConfirmCedula !== formData.cedula) {
+      setDeleteError("El documento ingresado no coincide")
+      return
+    }
+
+    try {
+      await deleteUsuario.mutateAsync(usuario.id)
+      onSuccess()
+      onClose()
+      setShowDeleteDialog(false)
+      setDeleteConfirmCedula("")
+    } catch (err: any) {
+      console.error("Error deleting usuario:", err)
+      setDeleteError(err.response?.data?.detail || "Error al eliminar el cliente. Por favor intenta de nuevo.")
     }
   }
 
@@ -365,26 +392,116 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
           )}
 
           {/* Actions */}
-          <div className="flex flex-col-reverse md:flex-row gap-3 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 bg-transparent"
-              disabled={updateUsuario.isPending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={updateUsuario.isPending}
-            >
-              {updateUsuario.isPending ? "Guardando..." : "Guardar cambios"}
-            </Button>
+          <div className="space-y-4 pt-6">
+            <div className="flex flex-col-reverse md:flex-row gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 bg-transparent"
+                disabled={updateUsuario.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={updateUsuario.isPending}
+              >
+                {updateUsuario.isPending ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </div>
+
+            {/* Delete Button */}
+            <div className="border-t border-border pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteDialog(true)}
+                className="w-full border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                disabled={updateUsuario.isPending || deleteUsuario.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar Cliente
+              </Button>
+            </div>
           </div>
         </form>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <>
+          <div className="fixed inset-0 z-60 bg-background/80 backdrop-blur-sm" onClick={() => {
+            setShowDeleteDialog(false)
+            setDeleteConfirmCedula("")
+            setDeleteError(null)
+          }} />
+          <div className="fixed left-1/2 top-1/2 z-60 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-lg shadow-2xl p-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                  <Trash2 className="h-6 w-6 text-destructive" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground">¿Eliminar cliente?</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Esta acción no se puede deshacer. Se eliminará toda la información del cliente.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deleteConfirm" className="text-foreground">
+                  Para confirmar, ingresa el documento del cliente:{" "}
+                  <span className="font-semibold text-primary">{formData.cedula}</span>
+                </Label>
+                <Input
+                  id="deleteConfirm"
+                  value={deleteConfirmCedula}
+                  onChange={(e) => {
+                    setDeleteConfirmCedula(e.target.value)
+                    setDeleteError(null)
+                  }}
+                  placeholder="Ingresa el documento"
+                  className="bg-secondary border-border"
+                  autoFocus
+                />
+              </div>
+
+              {deleteError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-sm text-destructive">{deleteError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteDialog(false)
+                    setDeleteConfirmCedula("")
+                    setDeleteError(null)
+                  }}
+                  className="flex-1"
+                  disabled={deleteUsuario.isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleDelete}
+                  className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={deleteUsuario.isPending || !deleteConfirmCedula}
+                >
+                  {deleteUsuario.isPending ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }
