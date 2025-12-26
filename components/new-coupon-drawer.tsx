@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { DatePicker } from "@/components/ui/date-picker"
+import { useCreateCupon } from "@/lib/hooks/useCupones"
+import { NichoCupon } from "@/types"
 
 interface NewCouponDrawerProps {
   isOpen: boolean
@@ -17,37 +20,42 @@ interface NewCouponDrawerProps {
 }
 
 export function NewCouponDrawer({ isOpen, onClose, onSuccess }: NewCouponDrawerProps) {
+  const createCupon = useCreateCupon()
   const [formData, setFormData] = useState({
     codigo: "",
-    descripcion: "",
     descuento: "",
     nicho: "",
-    nombreNegocio: "",
-    fechaDesde: new Date().toISOString().split("T")[0],
-    fechaHasta: "",
-    maxUsosPorUsuario: "1",
+    fechaExpiracion: "",
     activo: true,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      await createCupon.mutateAsync({
+        codigo: formData.codigo,
+        nicho: formData.nicho,
+        descuento: parseInt(formData.descuento),
+        activo: formData.activo,
+        fecha_expiracion: formData.fechaExpiracion || null,
+      })
+
       onSuccess()
       onClose()
+
       // Reset form
       setFormData({
         codigo: "",
-        descripcion: "",
         descuento: "",
         nicho: "",
-        nombreNegocio: "",
-        fechaDesde: new Date().toISOString().split("T")[0],
-        fechaHasta: "",
-        maxUsosPorUsuario: "1",
+        fechaExpiracion: "",
         activo: true,
       })
-    }, 500)
+    } catch (error) {
+      console.error("Error creating coupon:", error)
+      // You could add toast notification here
+    }
   }
 
   if (!isOpen) return null
@@ -100,24 +108,16 @@ export function NewCouponDrawer({ isOpen, onClose, onSuccess }: NewCouponDrawerP
                   id="descuento"
                   type="number"
                   min="1"
-                  max="100"
+                  max="20"
                   value={formData.descuento}
                   onChange={(e) => setFormData({ ...formData, descuento: e.target.value })}
-                  placeholder="15"
+                  placeholder="10"
                   required
                   className="bg-secondary border-border"
                 />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="descripcion">Descripción</Label>
-                <Input
-                  id="descripcion"
-                  value={formData.descripcion}
-                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                  placeholder="Ej: Descuento para alianzas con restaurantes"
-                  className="bg-secondary border-border"
-                />
+                <p className="text-xs text-muted-foreground">
+                  Máximo 20% - No acumulable con descuento por referido
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -133,77 +133,29 @@ export function NewCouponDrawer({ isOpen, onClose, onSuccess }: NewCouponDrawerP
                     <SelectValue placeholder="Seleccionar nicho" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Alimenticio">Alimenticio (restaurantes, cafés)</SelectItem>
-                    <SelectItem value="Estético">Estético (barberías, spa, peluquerías)</SelectItem>
+                    <SelectItem value={NichoCupon.ALIMENTICIO}>Alimenticio (restaurantes, cafés)</SelectItem>
+                    <SelectItem value={NichoCupon.ESTETICO}>Estético (barberías, spa, peluquerías)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nombreNegocio">Nombre del negocio</Label>
-                <Input
-                  id="nombreNegocio"
-                  value={formData.nombreNegocio}
-                  onChange={(e) => setFormData({ ...formData, nombreNegocio: e.target.value })}
-                  placeholder="Opcional"
-                  className="bg-secondary border-border"
+                <Label htmlFor="fechaExpiracion">Fecha de expiración</Label>
+                <DatePicker
+                  value={formData.fechaExpiracion}
+                  onChange={(date) => setFormData({ ...formData, fechaExpiracion: date })}
+                  placeholder="Seleccionar fecha (opcional)"
+                  minDate={new Date().toISOString().split("T")[0]}
+                  yearRange={{ start: new Date().getFullYear(), end: new Date().getFullYear() + 10 }}
                 />
+                <p className="text-xs text-muted-foreground">Opcional - dejar vacío para sin expiración</p>
               </div>
             </div>
           </div>
 
-          {/* Validity Section */}
+          {/* Status Section */}
           <div className="space-y-4 pt-4 border-t border-border">
-            <h3 className="text-lg font-semibold text-foreground">Validez</h3>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fechaDesde">
-                  Fecha válida desde <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="fechaDesde"
-                  type="date"
-                  value={formData.fechaDesde}
-                  onChange={(e) => setFormData({ ...formData, fechaDesde: e.target.value })}
-                  required
-                  className="bg-secondary border-border"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="fechaHasta">
-                  Fecha válida hasta <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="fechaHasta"
-                  type="date"
-                  value={formData.fechaHasta}
-                  onChange={(e) => setFormData({ ...formData, fechaHasta: e.target.value })}
-                  required
-                  min={formData.fechaDesde}
-                  className="bg-secondary border-border"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Usage Configuration Section */}
-          <div className="space-y-4 pt-4 border-t border-border">
-            <h3 className="text-lg font-semibold text-foreground">Configuraciones de Uso</h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="maxUsosPorUsuario">Máximo de usos por usuario</Label>
-              <Input
-                id="maxUsosPorUsuario"
-                type="number"
-                min="1"
-                value={formData.maxUsosPorUsuario}
-                onChange={(e) => setFormData({ ...formData, maxUsosPorUsuario: e.target.value })}
-                className="bg-secondary border-border"
-              />
-              <p className="text-xs text-muted-foreground">Generalmente solo 1 vez por año</p>
-            </div>
+            <h3 className="text-lg font-semibold text-foreground">Estado</h3>
 
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border border-border">
               <div className="space-y-0.5">
@@ -222,11 +174,21 @@ export function NewCouponDrawer({ isOpen, onClose, onSuccess }: NewCouponDrawerP
 
           {/* Actions */}
           <div className="flex flex-col-reverse md:flex-row gap-3 pt-6">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 bg-transparent"
+              disabled={createCupon.isPending}
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-              Crear cupón
+            <Button
+              type="submit"
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={createCupon.isPending}
+            >
+              {createCupon.isPending ? "Creando..." : "Crear cupón"}
             </Button>
           </div>
         </form>

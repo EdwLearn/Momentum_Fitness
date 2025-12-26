@@ -16,10 +16,12 @@ from app.modules.bot.models.conversacion import Conversacion
 from app.modules.bot.models.logro import Logro
 from app.models.cupon import Cupon
 from app.models.referido import Referido
+from app.modules.empleados.models.empleado import Empleado
+from app.modules.empleados.models.asistencia_empleado import AsistenciaEmpleado
 
 # 3. ENDPOINTS (al final)
 # Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
-from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos
+from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard
 
 # Nuevos endpoints del bot
 from app.modules.bot.endpoints import bot_endpoints
@@ -106,6 +108,24 @@ app.include_router(
     referidos.router,
     prefix="/api/referidos",
     tags=["👥 Referidos"]
+)
+
+app.include_router(
+    empleados.router,
+    prefix="/api/empleados",
+    tags=["👔 Empleados"]
+)
+
+app.include_router(
+    asistencia_empleados.router,
+    prefix="/api/asistencia-empleados",
+    tags=["⏰ Asistencia Empleados"]
+)
+
+app.include_router(
+    dashboard.router,
+    prefix="/api/dashboard",
+    tags=["📊 Dashboard"]
 )
 
 # Bot de Hospitalidad

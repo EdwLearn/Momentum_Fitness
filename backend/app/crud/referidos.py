@@ -53,13 +53,46 @@ def get_referidos_detallados(db: Session, skip: int = 0, limit: int = 100) -> Li
             if membresia:
                 plan_nombre = membresia.tipo_plan.value
 
+        # Calcular beneficio real del referidor basado en sus referidos activos
+        beneficio_texto = "Pendiente"
+        if ref.cumple_condicion and referidor:
+            # Contar referidos activos del referidor
+            referidos_activos = contar_referidos_activos(db, ref.referidor_id)
+
+            # Cada 3 referidos activos = 30 días gratis
+            meses_ganados = referidos_activos // 3
+            dias_totales = meses_ganados * 30
+            referidos_para_proximo = 3 - (referidos_activos % 3)
+
+            if dias_totales > 0:
+                if dias_totales >= 365:
+                    beneficio_texto = f"{dias_totales // 365} año(s) gratis ({dias_totales} días)"
+                elif dias_totales >= 30:
+                    beneficio_texto = f"{dias_totales // 30} mes(es) gratis ({dias_totales} días)"
+                else:
+                    beneficio_texto = f"{dias_totales} días gratis"
+
+                # Agregar info de progreso
+                if referidos_para_proximo < 3:
+                    beneficio_texto += f" - Faltan {referidos_para_proximo} para el próximo mes"
+            else:
+                beneficio_texto = f"0 días (faltan {referidos_para_proximo} referidos para 1 mes gratis)"
+        elif not ref.cumple_condicion:
+            # Verificar si el referido tiene membresía activa
+            if ref.membresia_id:
+                membresia = db.query(Membresia).filter(Membresia.id == ref.membresia_id).first()
+                if membresia and not membresia.esta_activa():
+                    beneficio_texto = "Membresía inactiva"
+                else:
+                    beneficio_texto = "Pendiente de activación"
+
         result.append(ReferidoDetallado(
             id=ref.id,
             referidor=f"{referidor.nombre} {referidor.apellido}" if referidor else "Desconocido",
             referido=f"{referido.nombre} {referido.apellido}" if referido else "Desconocido",
             plan_comprado=plan_nombre,
             cumple_condicion=ref.cumple_condicion,
-            beneficio=ref.beneficio,
+            beneficio=beneficio_texto,
             fecha_referido=ref.fecha_referido,
             fecha_activacion=ref.fecha_activacion
         ))

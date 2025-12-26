@@ -8,7 +8,9 @@ export const usuariosService = {
    * Obtener todos los usuarios
    */
   getAll: async (): Promise<Usuario[]> => {
-    const response = await api.get<Usuario[]>(BASE_PATH);
+    const response = await api.get<Usuario[]>(`${BASE_PATH}/`, {
+      params: { skip: 0, limit: 10000 } // Límite alto para obtener todos los usuarios
+    });
     return response.data;
   },
 
@@ -24,7 +26,7 @@ export const usuariosService = {
    * Crear un nuevo usuario
    */
   create: async (data: UsuarioCreate): Promise<Usuario> => {
-    const response = await api.post<Usuario>(BASE_PATH, data);
+    const response = await api.post<Usuario>(`${BASE_PATH}/`, data);
     return response.data;
   },
 
@@ -47,7 +49,7 @@ export const usuariosService = {
    * Buscar usuarios por email
    */
   searchByEmail: async (email: string): Promise<Usuario[]> => {
-    const response = await api.get<Usuario[]>(`${BASE_PATH}`, {
+    const response = await api.get<Usuario[]>(`${BASE_PATH}/`, {
       params: { email },
     });
     return response.data;
@@ -57,7 +59,7 @@ export const usuariosService = {
    * Obtener usuarios activos
    */
   getActivos: async (): Promise<Usuario[]> => {
-    const response = await api.get<Usuario[]>(`${BASE_PATH}`, {
+    const response = await api.get<Usuario[]>(`${BASE_PATH}/`, {
       params: { activo: true },
     });
     return response.data;
@@ -67,7 +69,7 @@ export const usuariosService = {
    * Obtener usuarios por tipo
    */
   getByTipo: async (tipo: string): Promise<Usuario[]> => {
-    const response = await api.get<Usuario[]>(`${BASE_PATH}`, {
+    const response = await api.get<Usuario[]>(`${BASE_PATH}/`, {
       params: { tipo },
     });
     return response.data;

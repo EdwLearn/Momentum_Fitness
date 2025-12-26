@@ -19,6 +19,7 @@ class MembresiaCreateSimple(BaseModel):
     tipo_pago: Optional[TipoPago] = Field(None, description="Método de pago utilizado")
     descripcion: Optional[str] = Field(None, description="Notas adicionales opcionales")
     referido_por_id: Optional[int] = Field(None, description="ID del usuario que refirió")
+    cupon_codigo: Optional[str] = Field(None, description="Código del cupón a aplicar")
 
 # Schema completo para crear membresía (usado internamente)
 class MembresiaCreate(BaseModel):

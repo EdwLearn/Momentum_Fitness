@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Base de datos
-    DATABASE_URL: str = "sqlite:///./gimnasio.db"
+    DATABASE_URL: str = "sqlite:///backend/gimnasio.db"
 
     # Configuración del pool de conexiones (solo PostgreSQL)
     DB_POOL_SIZE: int = 20

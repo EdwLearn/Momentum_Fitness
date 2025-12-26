@@ -7,8 +7,8 @@ export const asistenciaService = {
   /**
    * Obtener todas las asistencias
    */
-  getAll: async (skip = 0, limit = 100): Promise<Asistencia[]> => {
-    const response = await api.get<Asistencia[]>(BASE_PATH, {
+  getAll: async (skip = 0, limit = 10000): Promise<Asistencia[]> => {
+    const response = await api.get<Asistencia[]>(`${BASE_PATH}/`, {
       params: { skip, limit },
     });
     return response.data;
@@ -43,9 +43,9 @@ export const asistenciaService = {
    */
   create: async (data: AsistenciaCreate): Promise<Asistencia> => {
     console.log('🚀 AsistenciaService.create - Enviando:', data);
-    console.log('🌐 URL:', `${api.defaults.baseURL}${BASE_PATH}`);
+    console.log('🌐 URL:', `${api.defaults.baseURL}${BASE_PATH}/`);
 
-    const response = await api.post<Asistencia>(BASE_PATH, data);
+    const response = await api.post<Asistencia>(`${BASE_PATH}/`, data);
 
     console.log('✅ AsistenciaService.create - Response status:', response.status);
     console.log('✅ AsistenciaService.create - Response data:', response.data);

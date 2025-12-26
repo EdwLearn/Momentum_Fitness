@@ -4,7 +4,8 @@ import { useMemo } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ChartCard } from "@/components/chart-card"
-import { DataTable, StatusBadge } from "@/components/data-table"
+import { FilterableDataTable } from "@/components/filterable-data-table"
+import { StatusBadge } from "@/components/data-table"
 import { CreditCard, Calendar, Repeat, Clock, Trophy, Gift } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
@@ -141,19 +142,95 @@ export default function SuscripcionesPage() {
   }, [membresias, usuarios, usuariosMap])
 
   const subscriptionColumns = [
-    { key: "cliente", header: "Cliente" },
-    { key: "plan", header: "Plan" },
-    { key: "fechaInicio", header: "Fecha Inicio" },
-    { key: "fechaFin", header: "Fecha Fin" },
+    {
+      key: "cliente",
+      header: "Cliente",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar cliente..."
+      }
+    },
+    {
+      key: "plan",
+      header: "Plan",
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Pase Diario", value: "Pase Diario" },
+          { label: "Pase Flex", value: "Pase Flex" },
+          { label: "Mensual", value: "Mensual" },
+          { label: "3 Meses", value: "Plan 3 Meses" },
+          { label: "6 Meses", value: "Plan 6 Meses" },
+          { label: "Elite Anual", value: "Elite Anual" },
+        ],
+        placeholder: "Filtrar por plan..."
+      }
+    },
+    {
+      key: "fechaInicio",
+      header: "Fecha Inicio",
+      sortable: true,
+      filter: {
+        type: "date" as const
+      }
+    },
+    {
+      key: "fechaFin",
+      header: "Fecha Fin",
+      sortable: true,
+      filter: {
+        type: "date" as const
+      }
+    },
     {
       key: "estado",
       header: "Estado",
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Activa", value: "Activa" },
+          { label: "Por vencer", value: "Por vencer" },
+          { label: "Vencido", value: "Vencido" },
+          { label: "Suspendida", value: "Suspendida" },
+          { label: "Cancelada", value: "Cancelada" },
+        ],
+        placeholder: "Filtrar por estado..."
+      },
       render: (item: any) => <StatusBadge status={item.estado} />,
     },
-    { key: "metodoPago", header: "Método de Pago" },
+    {
+      key: "metodoPago",
+      header: "Método de Pago",
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Efectivo", value: "Efectivo" },
+          { label: "Tarjeta", value: "Tarjeta" },
+          { label: "Transferencia", value: "Transferencia" },
+          { label: "Nequi", value: "Nequi" },
+          { label: "Daviplata", value: "Daviplata" },
+          { label: "Otro", value: "Otro" },
+          { label: "N/A", value: "N/A" },
+        ],
+        placeholder: "Filtrar por método..."
+      }
+    },
     {
       key: "origen",
       header: "Origen",
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Referido", value: "Referido" },
+          { label: "Directo", value: "Directo" },
+        ],
+        placeholder: "Filtrar por origen..."
+      },
       render: (item: any) => (
         <Badge
           variant="outline"
@@ -271,9 +348,12 @@ export default function SuscripcionesPage() {
         title="Suscripciones Actuales"
         subtitle={`${subscriptionsData.length} suscripciones activas (${totalReferidos} por referidos)`}
       >
-        <DataTable
+        <FilterableDataTable
           columns={subscriptionColumns}
           data={subscriptionsData}
+          searchPlaceholder="Buscar suscripciones por cliente, plan, método de pago..."
+          showGlobalSearch={true}
+          emptyMessage="No se encontraron suscripciones que coincidan con los filtros"
         />
       </ChartCard>
       </DashboardLayout>

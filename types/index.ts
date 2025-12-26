@@ -46,6 +46,11 @@ export enum Genero {
   FEMENINO = "femenino",
 }
 
+export enum TipoEmpleado {
+  ENTRENADOR = "entrenador",
+  RECEPCION = "recepcion",
+}
+
 export const OBJETIVOS_FITNESS = [
   "Perder peso",
   "Ganar músculo",
@@ -133,6 +138,7 @@ export interface MembresiaCreateSimple {
   tipo_pago?: TipoPago | null;
   descripcion?: string | null;
   referido_por_id?: number | null;
+  cupon_codigo?: string | null;
 }
 
 // Schema completo de membresía (respuesta del backend)
@@ -208,4 +214,209 @@ export interface PaginatedResponse<T> {
   page: number;
   size: number;
   pages: number;
+}
+
+// ==========================================
+// EMPLEADOS
+// ==========================================
+
+export interface Empleado {
+  id: number;
+  // Datos personales
+  nombre: string;
+  apellido: string | null;
+  cedula: string;
+  email: string | null;
+  telefono: string | null;
+  fecha_nacimiento: string | null;
+  genero: string | null;
+  direccion: string | null;
+
+  // Datos laborales
+  tipo_empleado: TipoEmpleado;
+  fecha_contratacion: string | null;
+  salario: number | null;
+  horario: string | null;
+  dias_laborales: string | null;
+
+  // Contacto de emergencia
+  emergencia_nombre: string | null;
+  emergencia_telefono: string | null;
+  emergencia_relacion: string | null;
+
+  // Metadata
+  fecha_registro: string;
+  activo: number;
+}
+
+export interface EmpleadoCreate {
+  // Datos personales
+  nombre: string;
+  apellido?: string;
+  cedula: string;
+  email?: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  genero?: string;
+  direccion?: string;
+
+  // Datos laborales
+  tipo_empleado: TipoEmpleado;
+  fecha_contratacion?: string;
+  salario?: number;
+  horario?: string;
+  dias_laborales?: string;
+
+  // Contacto de emergencia
+  emergencia_nombre?: string;
+  emergencia_telefono?: string;
+  emergencia_relacion?: string;
+}
+
+export interface EmpleadoUpdate {
+  nombre?: string;
+  apellido?: string;
+  cedula?: string;
+  email?: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  genero?: string;
+  direccion?: string;
+  tipo_empleado?: TipoEmpleado;
+  fecha_contratacion?: string;
+  salario?: number;
+  horario?: string;
+  dias_laborales?: string;
+  emergencia_nombre?: string;
+  emergencia_telefono?: string;
+  emergencia_relacion?: string;
+  activo?: number;
+}
+
+// ==========================================
+// ASISTENCIA EMPLEADOS
+// ==========================================
+
+export interface AsistenciaEmpleado {
+  id: number;
+  empleado_id: number;
+  fecha: string;
+  hora_entrada: string | null;
+  hora_salida: string | null;
+  horas_trabajadas: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MarcarEntrada {
+  empleado_id: number;
+  hora_entrada?: string;
+}
+
+export interface MarcarSalida {
+  empleado_id: number;
+  hora_salida?: string;
+}
+
+export interface EstadoAsistenciaEmpleado {
+  empleado_id: number;
+  fecha: string;
+  estado: "sin_marcar" | "entrada_marcada" | "salida_marcada";
+  hora_entrada: string | null;
+  hora_salida: string | null;
+  horas_trabajadas?: number | null;
+}
+
+// ==========================================
+// CUPONES
+// ==========================================
+
+export enum NichoCupon {
+  ALIMENTICIO = "Alimenticio",
+  ESTETICO = "Estético",
+}
+
+export interface CuponBase {
+  codigo: string;
+  nicho: string;
+  descuento: number;
+  activo: boolean;
+  fecha_expiracion?: string | null;
+}
+
+export interface CuponCreate extends CuponBase {}
+
+export interface CuponUpdate {
+  codigo?: string;
+  nicho?: string;
+  descuento?: number;
+  activo?: boolean;
+  fecha_expiracion?: string | null;
+}
+
+export interface Cupon extends CuponBase {
+  id: number;
+  usos_total: number;
+  usos_anio: number;
+  fecha_creacion: string;
+}
+
+export interface CuponStats {
+  total_cupones: number;
+  cupones_activos: number;
+  cupones_inactivos: number;
+  total_usos: number;
+  total_usos_anio: number;
+  cupones_por_nicho: Record<string, number>;
+}
+
+// ==========================================
+// REFERIDOS
+// ==========================================
+
+export interface ReferidoBase {
+  referidor_id: number;
+  referido_id: number;
+  membresia_id?: number | null;
+}
+
+export interface ReferidoCreate extends ReferidoBase {}
+
+export interface ReferidoUpdate {
+  cumple_condicion?: boolean;
+  beneficio?: string | null;
+  membresia_id?: number | null;
+}
+
+export interface Referido extends ReferidoBase {
+  id: number;
+  cumple_condicion: boolean;
+  beneficio: string | null;
+  fecha_referido: string;
+  fecha_activacion: string | null;
+}
+
+export interface ReferidoDetallado {
+  id: number;
+  referidor: string;
+  referido: string;
+  plan_comprado: string | null;
+  cumple_condicion: boolean;
+  beneficio: string | null;
+  fecha_referido: string;
+  fecha_activacion: string | null;
+}
+
+export interface ReferidoStats {
+  total_referidos: number;
+  referidos_activos: number;
+  referidos_pendientes: number;
+  beneficios_otorgados: number;
+  referidos_ultimo_mes: number;
+  referidos_ultimos_3_meses: number;
+  top_referidores: Array<{
+    id: number;
+    nombre: string;
+    total_referidos: number;
+  }>;
 }

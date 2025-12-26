@@ -4,13 +4,14 @@ import { useState, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
-import { DataTable, StatusBadge } from "@/components/data-table"
-import { Users, UserCheck, UserX, Search, Plus, Edit } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { FilterableDataTable } from "@/components/filterable-data-table"
+import { StatusBadge } from "@/components/data-table"
+import { Users, UserCheck, UserX, Plus, Edit, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ClientDetailModal } from "@/components/client-detail-modal"
 import { NewClientDrawer } from "@/components/new-client-drawer"
 import { EditClientDrawer } from "@/components/edit-client-drawer"
+import { RenewMembershipDrawer } from "@/components/renew-membership-drawer"
 import { SuccessToast } from "@/components/success-toast"
 import { useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useMembresias } from "@/lib/hooks/useMembresias"
@@ -18,9 +19,10 @@ import { Usuario, Membresia, TipoUsuario } from "@/types"
 
 // Mapper function to transform Usuario (backend) to Client (frontend)
 function mapUsuarioToClient(usuario: Usuario, membresias: Membresia[], todosUsuarios: Usuario[]) {
-  // Buscar membresía activa del usuario
+  // Buscar membresía activa del usuario y verificar que no esté vencida
+  const ahora = new Date()
   const membresiaActiva = membresias.find(
-    m => m.usuario_id === usuario.id && m.activo && m.estado === "activa"
+    m => m.usuario_id === usuario.id && m.activo && m.estado === "activa" && new Date(m.fecha_fin) >= ahora
   )
 
   // Mapear nombre del plan
@@ -42,6 +44,16 @@ function mapUsuarioToClient(usuario: Usuario, membresias: Membresia[], todosUsua
     }
   }
 
+  // Determinar estado basado en membresía activa y vigente
+  let estado = "Inactivo"
+  if (membresiaActiva) {
+    estado = "Activo"
+  } else if (!usuario.activo) {
+    estado = "Inactivo"
+  } else {
+    estado = "Sin membresía"
+  }
+
   return {
     id: usuario.id,
     nombre: `${usuario.nombre} ${usuario.apellido}`,
@@ -53,7 +65,7 @@ function mapUsuarioToClient(usuario: Usuario, membresias: Membresia[], todosUsua
     fechaFin: membresiaActiva
       ? membresiaActiva.fecha_fin.split('T')[0]
       : "N/A",
-    estado: membresiaActiva ? "Activo" : "Sin membresía",
+    estado: estado,
     ultimaAsistencia: usuario.ultima_asistencia
       ? usuario.ultima_asistencia.split('T')[0]
       : "N/A",
@@ -103,11 +115,12 @@ type Client = ReturnType<typeof mapUsuarioToClient>
 type Employee = ReturnType<typeof mapUsuarioToEmployee>
 
 export default function ClientesPage() {
-  const [searchTerm, setSearchTerm] = useState("")
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false)
+  const [isRenewDrawerOpen, setIsRenewDrawerOpen] = useState(false)
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null)
+  const [renewUsuario, setRenewUsuario] = useState<Usuario | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState("Cliente creado correctamente.")
 
@@ -143,32 +156,123 @@ export default function ClientesPage() {
   const isError = isErrorUsuarios || isErrorMembresias
 
   const clientColumns = [
-    { key: "nombre", header: "Nombre" },
-    { key: "cedula", header: "Documento Único" },
-    { key: "plan", header: "Tipo de Plan" },
-    { key: "fechaInicio", header: "Fecha Registro" },
-    { key: "fechaFin", header: "Fecha Fin" },
+    {
+      key: "nombre",
+      header: "Nombre",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar por nombre..."
+      }
+    },
+    {
+      key: "cedula",
+      header: "Documento Único",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar por documento..."
+      }
+    },
+    {
+      key: "plan",
+      header: "Tipo de Plan",
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Pase Diario", value: "Pase Diario" },
+          { label: "Pase Flex", value: "Pase Flex" },
+          { label: "Mensual", value: "Mensual" },
+          { label: "Plan 3 Meses", value: "Plan 3 Meses" },
+          { label: "Plan 6 Meses", value: "Plan 6 Meses" },
+          { label: "Elite Anual", value: "Elite Anual" },
+          { label: "Sin plan", value: "Sin plan" },
+        ],
+        placeholder: "Filtrar por plan..."
+      }
+    },
+    {
+      key: "fechaInicio",
+      header: "Fecha Registro",
+      sortable: true,
+      filter: {
+        type: "date" as const
+      }
+    },
+    {
+      key: "fechaFin",
+      header: "Fecha Fin",
+      sortable: true,
+      filter: {
+        type: "date" as const
+      }
+    },
     {
       key: "estado",
       header: "Estado",
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Activo", value: "Activo" },
+          { label: "Inactivo", value: "Inactivo" },
+          { label: "Sin membresía", value: "Sin membresía" },
+        ],
+        placeholder: "Filtrar por estado..."
+      },
       render: (item: Client) => <StatusBadge status={item.estado} />,
     },
-    { key: "referidoPor", header: "Referido Por" },
-    { key: "ultimaAsistencia", header: "Última Asistencia" },
-    { key: "diasEntrenados", header: "Días Entrenados" },
+    {
+      key: "referidoPor",
+      header: "Referido Por",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar referidor..."
+      }
+    },
+    {
+      key: "ultimaAsistencia",
+      header: "Última Asistencia",
+      sortable: true,
+      filter: {
+        type: "date" as const
+      }
+    },
+    {
+      key: "diasEntrenados",
+      header: "Días Entrenados",
+      sortable: true,
+      filter: {
+        type: "number" as const,
+        placeholder: "Ej: 10"
+      }
+    },
     {
       key: "acciones",
       header: "Acciones",
       render: (item: Client) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleEditClick(item.id)}
-          className="text-primary hover:text-primary hover:bg-primary/10"
-        >
-          <Edit className="h-4 w-4 mr-1" />
-          Editar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditClick(item.id)}
+            className="text-primary hover:text-primary hover:bg-primary/10"
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Editar
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleRenewClick(item.id)}
+            className="text-green-600 hover:text-green-600 hover:bg-green-600/10"
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Renovar
+          </Button>
+        </div>
       ),
     },
   ]
@@ -200,21 +304,10 @@ export default function ClientesPage() {
     },
   ]
 
-  const filteredClients = clients.filter(
-    (client) =>
-      client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.cedula.includes(searchTerm),
-  )
-
-  const filteredEmployees = employees.filter(
-    (emp) =>
-      emp.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.cedula.includes(searchTerm),
-  )
 
   const totalClientes = clients.length
   const clientesActivos = clients.filter((c) => c.estado === "Activo").length
-  const clientesInactivos = clients.filter((c) => c.estado === "Sin membresía").length
+  const clientesInactivos = clients.filter((c) => c.estado === "Inactivo" || c.estado === "Sin membresía").length
 
   const totalEmpleados = employees.length
 
@@ -228,11 +321,24 @@ export default function ClientesPage() {
     setShowToast(true)
   }
 
+  const handleMembershipRenewed = () => {
+    setToastMessage("Membresía renovada correctamente.")
+    setShowToast(true)
+  }
+
   const handleEditClick = (clientId: number) => {
     const usuario = usuarios?.find(u => u.id === clientId)
     if (usuario) {
       setSelectedUsuario(usuario)
       setIsEditDrawerOpen(true)
+    }
+  }
+
+  const handleRenewClick = (clientId: number) => {
+    const usuario = usuarios?.find(u => u.id === clientId)
+    if (usuario) {
+      setRenewUsuario(usuario)
+      setIsRenewDrawerOpen(true)
     }
   }
 
@@ -268,26 +374,6 @@ export default function ClientesPage() {
 
   return (
     <DashboardLayout title="Gestión de Clientes" subtitle="Administra y visualiza la información de tus clientes">
-      {/* Top Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nombre o teléfono"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 bg-secondary border-border focus:border-primary"
-          />
-        </div>
-        <Button
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => setIsDrawerOpen(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo cliente
-        </Button>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <MetricCard title="Total Clientes" value={totalClientes} icon={Users} />
@@ -296,10 +382,25 @@ export default function ClientesPage() {
       </div>
 
       {/* Clients Table */}
-      <ChartCard title="Lista de Clientes" subtitle={`${filteredClients.length} clientes encontrados`}>
-        <DataTable
+      <ChartCard title="Lista de Clientes" subtitle="Administra y filtra tus clientes">
+        {/* Actions Bar */}
+        <div className="flex justify-end mb-4">
+          <Button
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => setIsDrawerOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo cliente
+          </Button>
+        </div>
+
+        {/* Table with Filters */}
+        <FilterableDataTable
           columns={clientColumns}
-          data={filteredClients}
+          data={clients}
+          searchPlaceholder="Buscar clientes por nombre, cédula, plan..."
+          showGlobalSearch={true}
+          emptyMessage="No se encontraron clientes que coincidan con los filtros"
         />
       </ChartCard>
 
@@ -320,6 +421,17 @@ export default function ClientesPage() {
         }}
         onSuccess={handleClientUpdated}
         usuario={selectedUsuario}
+      />
+
+      {/* Renew Membership Drawer */}
+      <RenewMembershipDrawer
+        isOpen={isRenewDrawerOpen}
+        onClose={() => {
+          setIsRenewDrawerOpen(false)
+          setRenewUsuario(null)
+        }}
+        onSuccess={handleMembershipRenewed}
+        usuario={renewUsuario}
       />
 
       {/* Success Toast */}

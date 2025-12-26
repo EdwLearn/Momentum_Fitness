@@ -1,51 +1,78 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
-import { DataTable } from "@/components/data-table"
-import { Ticket, Users, Check, X, Plus, Search } from "lucide-react"
-import { coupons, referrals } from "@/lib/mock-data"
+import { FilterableDataTable } from "@/components/filterable-data-table"
+import { Ticket, Users, Check, X, Plus, Loader2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
 import { NewCouponDrawer } from "@/components/new-coupon-drawer"
 import { SuccessToast } from "@/components/success-toast"
-
-const nicheDistribution = [
-  { name: "Alimenticio", value: 134, color: "#A4FF1A" },
-  { name: "Estético", value: 89, color: "#22D3EE" },
-]
+import { useCupones, useCuponesStats, useToggleCuponActivo } from "@/lib/hooks/useCupones"
+import { useReferidosDetallados, useReferidosStats } from "@/lib/hooks/useReferidos"
+import { Cupon } from "@/types"
 
 export default function CuponesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [nichoFilter, setNichoFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+
+  // Fetch data from backend
+  const { data: cupones = [], isLoading: loadingCupones } = useCupones()
+  const { data: cuponesStats } = useCuponesStats()
+  const { data: referidosData = [], isLoading: loadingReferidos } = useReferidosDetallados()
+  const { data: referidosStats } = useReferidosStats()
+  const toggleCuponActivo = useToggleCuponActivo()
 
   const handleSuccess = () => {
     setShowSuccessToast(true)
     setTimeout(() => setShowSuccessToast(false), 3000)
   }
 
-  const filteredCoupons = coupons.filter((coupon) => {
-    const matchesSearch = coupon.codigo.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesNicho = nichoFilter === "all" || coupon.nicho === nichoFilter
-    const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? coupon.activo : !coupon.activo)
-    return matchesSearch && matchesNicho && matchesStatus
-  })
+  const handleToggleCupon = async (id: number) => {
+    try {
+      await toggleCuponActivo.mutateAsync(id)
+    } catch (error) {
+      console.error("Error toggling coupon:", error)
+    }
+  }
+
+
+  const nicheDistribution = useMemo(() => {
+    if (!cuponesStats?.cupones_por_nicho) return []
+    return Object.entries(cuponesStats.cupones_por_nicho).map(([name, value]) => ({
+      name,
+      value,
+      color: name === "Alimenticio" ? "#A4FF1A" : "#22D3EE",
+    }))
+  }, [cuponesStats])
 
   const couponColumns = [
-    { key: "codigo", header: "Código" },
+    {
+      key: "codigo",
+      header: "Código",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar código..."
+      }
+    },
     {
       key: "nicho",
       header: "Nicho",
-      render: (item: (typeof coupons)[0]) => (
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Alimenticio", value: "Alimenticio" },
+          { label: "Estético", value: "Estético" },
+        ],
+        placeholder: "Filtrar por nicho..."
+      },
+      render: (item: Cupon) => (
         <Badge
           variant="outline"
           className={
@@ -61,26 +88,90 @@ export default function CuponesPage() {
     {
       key: "descuento",
       header: "% Descuento",
-      render: (item: (typeof coupons)[0]) => <span className="text-primary font-semibold">{item.descuento}%</span>,
+      sortable: true,
+      filter: {
+        type: "number" as const,
+        placeholder: "Ej: 10"
+      },
+      render: (item: Cupon) => <span className="text-primary font-semibold">{item.descuento}%</span>,
     },
-    { key: "usosTotal", header: "Usos Totales" },
-    { key: "usosAnio", header: "Usos Este Año" },
+    {
+      key: "usos_total",
+      header: "Usos Totales",
+      sortable: true,
+      filter: {
+        type: "number" as const,
+        placeholder: "Ej: 5"
+      },
+      render: (item: Cupon) => <span>{item.usos_total}</span>,
+    },
+    {
+      key: "usos_anio",
+      header: "Usos Este Año",
+      sortable: true,
+      filter: {
+        type: "number" as const,
+        placeholder: "Ej: 3"
+      },
+      render: (item: Cupon) => <span>{item.usos_anio}</span>,
+    },
     {
       key: "activo",
       header: "Estado",
-      render: (item: (typeof coupons)[0]) => <Switch checked={item.activo} />,
+      sortable: true,
+      render: (item: Cupon) => (
+        <Switch
+          checked={item.activo}
+          onCheckedChange={() => handleToggleCupon(item.id)}
+          disabled={toggleCuponActivo.isPending}
+        />
+      ),
     },
   ]
 
   const referralColumns = [
-    { key: "referidor", header: "Referidor" },
-    { key: "referido", header: "Referido" },
-    { key: "planComprado", header: "Plan Comprado" },
     {
-      key: "cumpleCondicion",
+      key: "referidor",
+      header: "Referidor",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar referidor..."
+      }
+    },
+    {
+      key: "referido",
+      header: "Referido",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar referido..."
+      }
+    },
+    {
+      key: "plan_comprado",
+      header: "Plan Comprado",
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar plan..."
+      },
+      render: (item: any) => <span>{item.plan_comprado || "N/A"}</span>,
+    },
+    {
+      key: "cumple_condicion",
       header: "Cumple Condición",
-      render: (item: (typeof referrals)[0]) =>
-        item.cumpleCondicion ? (
+      sortable: true,
+      filter: {
+        type: "select" as const,
+        options: [
+          { label: "Sí", value: "true" },
+          { label: "No", value: "false" },
+        ],
+        placeholder: "Filtrar por condición..."
+      },
+      render: (item: any) =>
+        item.cumple_condicion ? (
           <div className="flex items-center gap-1 text-primary">
             <Check className="h-4 w-4" />
             <span>Sí</span>
@@ -95,16 +186,21 @@ export default function CuponesPage() {
     {
       key: "beneficio",
       header: "Beneficio Otorgado",
-      render: (item: (typeof referrals)[0]) => (
+      sortable: true,
+      filter: {
+        type: "text" as const,
+        placeholder: "Buscar beneficio..."
+      },
+      render: (item: any) => (
         <Badge
           variant="outline"
           className={
-            item.beneficio === "Pendiente"
+            !item.beneficio || item.beneficio === "Pendiente"
               ? "bg-warning/20 text-warning border-warning/30"
               : "bg-primary/20 text-primary border-primary/30"
           }
         >
-          {item.beneficio}
+          {item.beneficio || "Pendiente"}
         </Badge>
       ),
     },
@@ -136,87 +232,77 @@ export default function CuponesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Metric Card */}
           <MetricCard
-            title="Clientes por Cupones (este mes)"
-            value={23}
-            change={15}
-            changeLabel="vs mes anterior"
+            title="Total de Cupones Activos"
+            value={cuponesStats?.cupones_activos ?? 0}
+            change={0}
+            changeLabel={`${cuponesStats?.total_cupones ?? 0} cupones totales`}
             icon={Ticket}
           />
 
           {/* Donut Chart */}
           <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6">
             <h3 className="text-base font-semibold text-foreground mb-4">Distribución por Nicho</h3>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={nicheDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={70}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {nicheDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0A0B12",
-                      border: "1px solid #2A2B35",
-                      borderRadius: "8px",
-                      color: "#E5E5E5",
-                    }}
-                  />
-                  <Legend
-                    layout="vertical"
-                    align="right"
-                    verticalAlign="middle"
-                    wrapperStyle={{ color: "#9CA3AF", fontSize: "12px" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            {loadingCupones ? (
+              <div className="h-48 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : nicheDistribution.length > 0 ? (
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={nicheDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {nicheDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0A0B12",
+                        border: "1px solid #2A2B35",
+                        borderRadius: "8px",
+                        color: "#E5E5E5",
+                      }}
+                    />
+                    <Legend
+                      layout="vertical"
+                      align="right"
+                      verticalAlign="middle"
+                      wrapperStyle={{ color: "#9CA3AF", fontSize: "12px" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-muted-foreground">
+                No hay datos disponibles
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="mb-4 flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por código..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-card border-border"
-            />
-          </div>
-          <Select value={nichoFilter} onValueChange={setNichoFilter}>
-            <SelectTrigger className="w-full md:w-[200px] bg-card border-border">
-              <SelectValue placeholder="Filtrar por nicho" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los nichos</SelectItem>
-              <SelectItem value="Alimenticio">Alimenticio</SelectItem>
-              <SelectItem value="Estético">Estético</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[200px] bg-card border-border">
-              <SelectValue placeholder="Filtrar por estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="active">Activos</SelectItem>
-              <SelectItem value="inactive">Inactivos</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Coupons Table */}
         <ChartCard title="Lista de Cupones" subtitle="Administra los códigos de descuento">
-          <DataTable columns={couponColumns} data={filteredCoupons} />
+          {loadingCupones ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <FilterableDataTable
+              columns={couponColumns}
+              data={cupones}
+              searchPlaceholder="Buscar cupones por código, nicho..."
+              showGlobalSearch={true}
+              emptyMessage="No se encontraron cupones que coincidan con los filtros"
+            />
+          )}
         </ChartCard>
       </div>
 
@@ -227,16 +313,28 @@ export default function CuponesPage() {
         <div className="mb-6">
           <MetricCard
             title="Referidos Convertidos (últimos 3 meses)"
-            value={47}
-            change={22}
-            changeLabel="vs período anterior"
+            value={referidosStats?.referidos_ultimos_3_meses ?? 0}
+            change={0}
+            changeLabel={`${referidosStats?.total_referidos ?? 0} referidos totales`}
             icon={Users}
           />
         </div>
 
         {/* Referrals Table */}
         <ChartCard title="Lista de Referidos" subtitle="Seguimiento del programa de referidos">
-          <DataTable columns={referralColumns} data={referrals} />
+          {loadingReferidos ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <FilterableDataTable
+              columns={referralColumns}
+              data={referidosData}
+              searchPlaceholder="Buscar referidos por nombre, plan, beneficio..."
+              showGlobalSearch={true}
+              emptyMessage="No se encontraron referidos que coincidan con los filtros"
+            />
+          )}
         </ChartCard>
       </div>
 

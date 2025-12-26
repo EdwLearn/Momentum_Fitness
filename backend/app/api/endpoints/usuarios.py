@@ -91,3 +91,21 @@ def obtener_estadisticas_referidos(cedula: str, db: Session = Depends(get_db)):
             detail=estadisticas["error"]
         )
     return estadisticas
+
+@router.post("/actualizar-estados-membresia")
+def actualizar_estados_por_membresia(db: Session = Depends(get_db)):
+    """
+    Actualiza el estado 'activo' de todos los usuarios según su membresía.
+
+    Los usuarios sin membresía activa y vigente serán marcados como inactivos.
+    Los usuarios con membresía activa y vigente serán marcados como activos.
+
+    Returns:
+        Estadísticas de la actualización:
+        - total_usuarios: total de usuarios procesados
+        - usuarios_desactivados: cuántos se marcaron como inactivos
+        - usuarios_activados: cuántos se marcaron como activos
+        - detalles: lista de cambios realizados
+    """
+    resultado = crud.actualizar_estado_usuarios_por_membresia(db)
+    return resultado

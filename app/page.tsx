@@ -7,6 +7,7 @@ import { ChartCard } from "@/components/chart-card"
 import { DataTable, StatusBadge } from "@/components/data-table"
 import { Users, UserCheck, AlertTriangle, DollarSign } from "lucide-react"
 import { dashboardMetrics, weeklyAttendance, planDistribution, upcomingRenewals } from "@/lib/mock-data"
+import { useDashboard } from "@/lib/hooks/useDashboard"
 import {
   BarChart,
   Bar,
@@ -22,6 +23,8 @@ import {
 } from "recharts"
 
 export default function DashboardPage() {
+  const { clientesActivosStats, isLoadingClientesActivos } = useDashboard()
+
   const renewalColumns = [
     { key: "cliente", header: "Cliente" },
     { key: "plan", header: "Tipo de Plan" },
@@ -48,8 +51,8 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <MetricCard
           title="Clientes Activos"
-          value={dashboardMetrics.clientesActivos}
-          change={12}
+          value={isLoadingClientesActivos ? "..." : clientesActivosStats?.total || 0}
+          change={isLoadingClientesActivos ? undefined : clientesActivosStats?.cambio_porcentual}
           changeLabel="vs mes anterior"
           icon={Users}
         />

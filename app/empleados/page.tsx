@@ -1,221 +1,261 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
 import { DataTable, StatusBadge } from "@/components/data-table"
-import { UsersRound, UserCheck, Clock, UserX, Plus, ChevronDown } from "lucide-react"
+import { UsersRound, UserCheck, UserX, Plus, Edit, LogIn, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useUsuarios } from "@/lib/hooks/useUsuarios"
-import { useAsistenciasByFecha } from "@/lib/hooks/useAsistencia"
-import { Usuario } from "@/types"
-import { EmployeeDetailModal } from "@/components/employee-detail-modal"
-import { NewClientDrawer } from "@/components/new-client-drawer"
+import { Input } from "@/components/ui/input"
+import { Search } from "lucide-react"
+import { NewEmployeeDrawer } from "@/components/new-employee-drawer"
+import { EditEmployeeDrawer } from "@/components/edit-employee-drawer"
+import { EmployeeAttendanceDrawer } from "@/components/employee-attendance-drawer"
 import { SuccessToast } from "@/components/success-toast"
-import { TipoUsuario } from "@/types"
+import { useEmpleados } from "@/lib/hooks/useEmpleados"
+import { Empleado, TipoEmpleado } from "@/types"
 
-type Employee = {
+type EmpleadoDisplay = {
   id: number
   nombre: string
-  rol: string
+  cedula: string
+  tipo: string
+  telefono: string
+  fechaContratacion: string
   estado: string
-  ultimaEntrada: string
-  horasEstaSemana: number
 }
 
 export default function EmpleadosPage() {
-  const { data: usuarios } = useUsuarios()
-  const today = new Date().toISOString().split('T')[0]
-  const { data: asistenciasHoy } = useAsistenciasByFecha(today)
-
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
-  const [statusFilter, setStatusFilter] = useState("Todos")
-  const [roleFilter, setRoleFilter] = useState("Todos")
+  const [searchTerm, setSearchTerm] = useState("")
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false)
+  const [isAttendanceDrawerOpen, setIsAttendanceDrawerOpen] = useState(false)
+  const [attendanceType, setAttendanceType] = useState<"entrada" | "salida">("entrada")
+  const [selectedEmpleado, setSelectedEmpleado] = useState<Empleado | null>(null)
   const [showToast, setShowToast] = useState(false)
-  const [tipoEmpleadoSeleccionado, setTipoEmpleadoSeleccionado] = useState<TipoUsuario | null>(null)
+  const [toastMessage, setToastMessage] = useState("Empleado creado correctamente.")
 
-  // Filtrar solo empleados (entrenadores y admins)
-  const empleados = usuarios?.filter(u =>
-    u.tipo === TipoUsuario.ENTRENADOR || u.tipo === TipoUsuario.ADMIN
-  ) || []
+  // Fetch empleados from API
+  const { data: empleados, isLoading, isError } = useEmpleados()
 
-  // Mapear rol readable
-  const rolMap: Record<string, string> = {
-    [TipoUsuario.ENTRENADOR]: "Entrenador",
-    [TipoUsuario.ADMIN]: "Administrador",
-  }
+  // Transform empleados to display format
+  const empleadosDisplay: EmpleadoDisplay[] = useMemo(() => {
+    if (!empleados) return []
 
-  // Mapear usuarios a empleados con datos reales
-  const employees: Employee[] = empleados.map(usuario => {
-    // Determinar última entrada desde asistencias
-    const ultimaAsistencia = usuario.ultima_asistencia
-      ? new Date(usuario.ultima_asistencia).toISOString().replace('T', ' ').split('.')[0]
-      : "Nunca"
-
-    // Determinar estado basado en última asistencia
-    let estado = "Activo"
-    if (usuario.ultima_asistencia) {
-      const ultimaFecha = new Date(usuario.ultima_asistencia)
-      const hoy = new Date()
-      const diasSinMarcar = Math.floor((hoy.getTime() - ultimaFecha.getTime()) / (1000 * 60 * 60 * 24))
-      if (diasSinMarcar > 3) {
-        estado = "Inactivo"
+    return empleados.map(emp => {
+      const tipoMap: Record<string, string> = {
+        [TipoEmpleado.ENTRENADOR]: "Entrenador",
+        [TipoEmpleado.RECEPCION]: "Recepción",
       }
-    } else {
-      estado = "Inactivo"
-    }
 
-    return {
-      id: usuario.id,
-      nombre: `${usuario.nombre} ${usuario.apellido}`,
-      rol: rolMap[usuario.tipo || TipoUsuario.ENTRENADOR] || "Entrenador",
-      estado: estado,
-      ultimaEntrada: ultimaAsistencia,
-      horasEstaSemana: 0, // TODO: Calcular del backend cuando tengamos hora_salida
-    }
-  })
+      return {
+        id: emp.id,
+        nombre: `${emp.nombre} ${emp.apellido || ""}`.trim(),
+        cedula: emp.cedula,
+        tipo: tipoMap[emp.tipo_empleado] || emp.tipo_empleado,
+        telefono: emp.telefono || "N/A",
+        fechaContratacion: emp.fecha_contratacion
+          ? new Date(emp.fecha_contratacion).toLocaleDateString("es-CO")
+          : "N/A",
+        estado: emp.activo ? "Activo" : "Inactivo",
+      }
+    })
+  }, [empleados])
 
   const employeeColumns = [
     { key: "nombre", header: "Nombre" },
-    { key: "rol", header: "Rol" },
+    { key: "cedula", header: "Cédula" },
+    { key: "tipo", header: "Tipo" },
+    { key: "telefono", header: "Teléfono" },
+    { key: "fechaContratacion", header: "Fecha Contratación" },
     {
       key: "estado",
       header: "Estado",
-      render: (item: Employee) => <StatusBadge status={item.estado === "Activo" ? "Activo" : "Vencido"} />,
+      render: (item: EmpleadoDisplay) => (
+        <StatusBadge status={item.estado === "Activo" ? "Activo" : "Inactivo"} />
+      ),
     },
-    { key: "ultimaEntrada", header: "Última Entrada" },
-    { key: "horasEstaSemana", header: "Horas Esta Semana" },
+    {
+      key: "acciones",
+      header: "Acciones",
+      render: (item: EmpleadoDisplay) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleEditClick(item.id)}
+          className="text-primary hover:text-primary hover:bg-primary/10"
+        >
+          <Edit className="h-4 w-4 mr-1" />
+          Editar
+        </Button>
+      ),
+    },
   ]
 
-  const filteredEmployees = employees.filter((emp) => {
-    const matchesStatus = statusFilter === "Todos" || emp.estado === statusFilter
-    const matchesRole = roleFilter === "Todos" || emp.rol === roleFilter
-    return matchesStatus && matchesRole
-  })
+  const filteredEmployees = empleadosDisplay.filter(
+    (emp) =>
+      emp.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.cedula.includes(searchTerm)
+  )
 
-  const totalEmpleados = employees.length
-  const empleadosActivosHoy = asistenciasHoy?.filter(asistencia => {
-    const usuario = usuarios?.find(u => u.id === asistencia.usuario_id)
-    return usuario && (usuario.tipo === TipoUsuario.ENTRENADOR || usuario.tipo === TipoUsuario.ADMIN)
-  }).length || 0
+  const totalEmpleados = empleadosDisplay.length
+  const empleadosActivos = empleadosDisplay.filter((e) => e.estado === "Activo").length
+  const empleadosInactivos = empleadosDisplay.filter((e) => e.estado === "Inactivo").length
 
-  const horasPromedio = employees.length > 0
-    ? (employees.reduce((sum, e) => sum + e.horasEstaSemana, 0) / employees.length).toFixed(1)
-    : "0.0"
-
-  const empleadosAusencias = employees.filter((e) => e.estado === "Inactivo").length
-
-  const handleEmpleadoCreated = () => {
+  const handleEmployeeCreated = () => {
+    setToastMessage("Empleado creado correctamente.")
     setShowToast(true)
   }
 
-  const handleNuevoEmpleado = (tipo: TipoUsuario) => {
-    setTipoEmpleadoSeleccionado(tipo)
-    setIsDrawerOpen(true)
+  const handleEmployeeUpdated = () => {
+    setToastMessage("Empleado actualizado correctamente.")
+    setShowToast(true)
+  }
+
+  const handleAttendanceSuccess = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
+  const handleEditClick = (empleadoId: number) => {
+    const empleado = empleados?.find((emp) => emp.id === empleadoId)
+    if (empleado) {
+      setSelectedEmpleado(empleado)
+      setIsEditDrawerOpen(true)
+    }
+  }
+
+  const handleEntradaClick = () => {
+    setAttendanceType("entrada")
+    setIsAttendanceDrawerOpen(true)
+  }
+
+  const handleSalidaClick = () => {
+    setAttendanceType("salida")
+    setIsAttendanceDrawerOpen(true)
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <DashboardLayout title="Gestión de Empleados" subtitle="Administra tu equipo de trabajo">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Cargando empleados...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <DashboardLayout title="Gestión de Empleados" subtitle="Administra tu equipo de trabajo">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-destructive">Error al cargar los empleados</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Asegúrate de que el servidor backend esté ejecutándose
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
-    <DashboardLayout
-      title="Gestión de Empleados"
-      subtitle="Controla horarios, asistencia y desempeño del equipo Momentum"
-    >
+    <DashboardLayout title="Gestión de Empleados" subtitle="Administra tu equipo de trabajo">
+      {/* Top Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre o cédula"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 bg-secondary border-border focus:border-primary"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
+            onClick={handleEntradaClick}
+          >
+            <LogIn className="h-4 w-4" />
+            Marcar Entrada
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white"
+            onClick={handleSalidaClick}
+          >
+            <LogOut className="h-4 w-4" />
+            Marcar Salida
+          </Button>
+          <Button
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => setIsDrawerOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo empleado
+          </Button>
+        </div>
+      </div>
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <MetricCard title="Total Empleados" value={totalEmpleados} icon={UsersRound} />
-        <MetricCard title="Activos Hoy" value={empleadosActivosHoy} icon={UserCheck} />
-        <MetricCard title="Horas Promedio (7 días)" value={horasPromedio} icon={Clock} />
-        <MetricCard title="Con Ausencias (+3 días)" value={empleadosAusencias} variant="warning" icon={UserX} />
+        <MetricCard title="Empleados Activos" value={empleadosActivos} icon={UserCheck} />
+        <MetricCard
+          title="Empleados Inactivos"
+          value={empleadosInactivos}
+          variant="warning"
+          icon={UserX}
+        />
       </div>
 
       {/* Employees Table */}
-      <ChartCard title="Lista de Empleados" subtitle={`${filteredEmployees.length} empleados encontrados`}>
-        {/* Top Bar with Filters and Add Button */}
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <div className="flex-1 min-w-[200px]">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Filtrar por estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Todos">Todos los estados</SelectItem>
-                <SelectItem value="Activo">Activos</SelectItem>
-                <SelectItem value="Inactivo">Inactivos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex-1 min-w-[200px]">
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Filtrar por rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Todos">Todos los roles</SelectItem>
-                <SelectItem value="Entrenador">Entrenadores</SelectItem>
-                <SelectItem value="Recepción">Recepción</SelectItem>
-                <SelectItem value="Admin">Administradores</SelectItem>
-                <SelectItem value="Mantenimiento">Mantenimiento</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Dropdown Menu for New Employee */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                <Plus className="h-4 w-4" />
-                Nuevo empleado
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => handleNuevoEmpleado(TipoUsuario.ENTRENADOR)}>
-                Asesor / Entrenador
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleNuevoEmpleado(TipoUsuario.ADMIN)}>
-                Administrador
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <DataTable
-          columns={employeeColumns}
-          data={filteredEmployees}
-          onRowAction={(item) => setSelectedEmployee(item as Employee)}
-          actionLabel="Ver detalle"
-        />
+      <ChartCard
+        title="Lista de Empleados"
+        subtitle={`${filteredEmployees.length} empleados encontrados`}
+      >
+        <DataTable columns={employeeColumns} data={filteredEmployees} />
       </ChartCard>
 
-      {/* Employee Detail Modal */}
-      {selectedEmployee && (
-        <EmployeeDetailModal employee={selectedEmployee} onClose={() => setSelectedEmployee(null)} />
-      )}
-
       {/* New Employee Drawer */}
-      <NewClientDrawer
+      <NewEmployeeDrawer
         isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSuccess={handleEmployeeCreated}
+      />
+
+      {/* Edit Employee Drawer */}
+      <EditEmployeeDrawer
+        isOpen={isEditDrawerOpen}
         onClose={() => {
-          setIsDrawerOpen(false)
-          setTipoEmpleadoSeleccionado(null)
+          setIsEditDrawerOpen(false)
+          setSelectedEmpleado(null)
         }}
-        onSuccess={handleEmpleadoCreated}
-        tipoUsuarioFijo={tipoEmpleadoSeleccionado}
+        onSuccess={handleEmployeeUpdated}
+        empleado={selectedEmpleado}
+      />
+
+      {/* Employee Attendance Drawer */}
+      <EmployeeAttendanceDrawer
+        isOpen={isAttendanceDrawerOpen}
+        onClose={() => setIsAttendanceDrawerOpen(false)}
+        onSuccess={handleAttendanceSuccess}
+        type={attendanceType}
       />
 
       {/* Success Toast */}
       <SuccessToast
         isVisible={showToast}
-        message="Empleado registrado correctamente."
+        message={toastMessage}
         onClose={() => setShowToast(false)}
       />
     </DashboardLayout>

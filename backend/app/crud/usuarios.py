@@ -6,8 +6,31 @@ from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 from typing import List, Optional
 from datetime import datetime
 
+
+def _agregar_info_membresia(db: Session, usuario: Usuario) -> None:
+    """Agrega información de la membresía activa al objeto usuario"""
+    now = datetime.utcnow()
+    membresia_activa = db.query(Membresia).filter(
+        and_(
+            Membresia.usuario_id == usuario.id,
+            Membresia.activo == True,
+            Membresia.estado == EstadoMembresia.ACTIVA,
+            Membresia.fecha_fin >= now
+        )
+    ).order_by(Membresia.fecha_fin.desc()).first()
+
+    if membresia_activa:
+        usuario.plan = membresia_activa.tipo_plan.value
+        usuario.tipo_membresia = membresia_activa.tipo_plan.value
+    else:
+        usuario.plan = None
+        usuario.tipo_membresia = None
+
 def get_usuario(db: Session, usuario_id: int) -> Optional[Usuario]:
-    return db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if usuario:
+        _agregar_info_membresia(db, usuario)
+    return usuario
 
 def get_usuario_by_email(db: Session, email: str) -> Optional[Usuario]:
     return db.query(Usuario).filter(Usuario.email == email).first()
@@ -17,7 +40,40 @@ def get_usuario_by_cedula(db: Session, cedula: str) -> Optional[Usuario]:
     return db.query(Usuario).filter(Usuario.telefono == cedula).first()
 
 def get_usuarios(db: Session, skip: int = 0, limit: int = 100) -> List[Usuario]:
-    return db.query(Usuario).offset(skip).limit(limit).all()
+    usuarios = db.query(Usuario).offset(skip).limit(limit).all()
+
+    # Optimización: Obtener todas las membresías activas en una sola query
+    if usuarios:
+        usuario_ids = [u.id for u in usuarios]
+        now = datetime.utcnow()
+
+        # Query para obtener la membresía más reciente activa de cada usuario
+        membresias_activas = db.query(Membresia).filter(
+            and_(
+                Membresia.usuario_id.in_(usuario_ids),
+                Membresia.activo == True,
+                Membresia.estado == EstadoMembresia.ACTIVA,
+                Membresia.fecha_fin >= now
+            )
+        ).all()
+
+        # Crear un diccionario para acceso rápido
+        membresias_map = {}
+        for m in membresias_activas:
+            if m.usuario_id not in membresias_map or m.fecha_fin > membresias_map[m.usuario_id].fecha_fin:
+                membresias_map[m.usuario_id] = m
+
+        # Asignar plan y tipo_membresia a cada usuario
+        for usuario in usuarios:
+            if usuario.id in membresias_map:
+                membresia = membresias_map[usuario.id]
+                usuario.plan = membresia.tipo_plan.value
+                usuario.tipo_membresia = membresia.tipo_plan.value
+            else:
+                usuario.plan = None
+                usuario.tipo_membresia = None
+
+    return usuarios
 
 def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
     db_usuario = Usuario(**usuario.model_dump())

@@ -25,7 +25,16 @@ export default function AsistenciaPage() {
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
 
-  const today = new Date().toISOString().split('T')[0]
+  // Obtener fecha local en formato YYYY-MM-DD
+  const getLocalDate = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const today = getLocalDate()
   const { data: asistenciasHoy } = useAsistenciasByFecha(today)
   const { data: usuarios } = useUsuarios()
   const { data: membresias } = useMembresias()

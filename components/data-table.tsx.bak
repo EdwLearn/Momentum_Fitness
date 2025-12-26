@@ -1,0 +1,93 @@
+"use client"
+
+import type React from "react"
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+interface Column<T> {
+  key: keyof T | string
+  header: string
+  render?: (item: T) => React.ReactNode
+}
+
+interface DataTableProps<T> {
+  columns: Column<T>[]
+  data: T[]
+  onRowAction?: (item: T) => void
+  actionLabel?: string
+}
+
+export function DataTable<T extends Record<string, unknown>>({
+  columns,
+  data,
+  onRowAction,
+  actionLabel = "Ver",
+}: DataTableProps<T>) {
+  return (
+    <div className="rounded-lg border border-border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-secondary/50 hover:bg-secondary/50">
+            {columns.map((column) => (
+              <TableHead key={String(column.key)} className="text-muted-foreground font-semibold">
+                {column.header}
+              </TableHead>
+            ))}
+            {onRowAction && <TableHead className="text-muted-foreground font-semibold">Acciones</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((item, index) => (
+            <TableRow key={index} className="border-border hover:bg-secondary/30 transition-colors">
+              {columns.map((column) => (
+                <TableCell key={String(column.key)} className="text-foreground">
+                  {column.render ? column.render(item) : String(item[column.key as keyof T] ?? "")}
+                </TableCell>
+              ))}
+              {onRowAction && (
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onRowAction(item)}
+                    className="text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    {actionLabel}
+                  </Button>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
+export function StatusBadge({ status }: { status: string }) {
+  const statusStyles: Record<string, string> = {
+    activo: "bg-primary/20 text-primary border-primary/30",
+    inactivo: "bg-destructive/20 text-destructive border-destructive/30",
+    "sin membresía": "bg-muted/60 text-muted-foreground border-muted",
+    vencido: "bg-destructive/20 text-destructive border-destructive/30",
+    "por vencer": "bg-warning/20 text-warning border-warning/30",
+    pendiente: "bg-warning/20 text-warning border-warning/30",
+    enviado: "bg-primary/20 text-primary border-primary/30",
+    fallido: "bg-destructive/20 text-destructive border-destructive/30",
+  }
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "font-medium capitalize",
+        statusStyles[status.toLowerCase()] || "bg-secondary text-secondary-foreground",
+      )}
+    >
+      {status}
+    </Badge>
+  )
+}

@@ -12,7 +12,8 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useCreateUsuario, useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useCreateMembresia } from "@/lib/hooks/useMembresias"
 import { useCreateAsistencia } from "@/lib/hooks/useAsistencia"
-import { TipoUsuario, TipoPlan, TipoPago, OBJETIVOS_FITNESS } from "@/types"
+import { useCupones } from "@/lib/hooks/useCupones"
+import { TipoUsuario, TipoPlan, TipoPago, OBJETIVOS_FITNESS, Cupon } from "@/types"
 
 interface NewClientDrawerProps {
   isOpen: boolean
@@ -54,17 +55,97 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     // Referido (opcional)
     usarPlanReferidos: false,
     referidoPorCedula: "",
+
+    // Cupón (opcional)
+    codigoCupon: "",
   })
 
   const [fechaFin, setFechaFin] = useState("")
   const [precioFinal, setPrecioFinal] = useState(0)
   const [descuentoAplicado, setDescuentoAplicado] = useState(false)
+  const [descuentoPorcentaje, setDescuentoPorcentaje] = useState(0)
+  const [tipoDescuento, setTipoDescuento] = useState<"referido" | "cupon" | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [cuponValidado, setCuponValidado] = useState<Cupon | null>(null)
+  const [cuponError, setCuponError] = useState<string | null>(null)
 
   const { data: usuarios } = useUsuarios()
+  const { data: cupones } = useCupones()
   const createUsuario = useCreateUsuario()
   const createMembresia = useCreateMembresia()
   const createAsistencia = useCreateAsistencia()
+
+  // Validar cupón cuando se ingresa código
+  useEffect(() => {
+    if (!formData.codigoCupon || formData.codigoCupon.length < 3) {
+      setCuponValidado(null)
+      setCuponError(null)
+      return
+    }
+
+    const codigoUpper = formData.codigoCupon.toUpperCase().trim()
+    const cuponEncontrado = cupones?.find(c => c.codigo === codigoUpper)
+
+    if (!cuponEncontrado) {
+      setCuponValidado(null)
+      setCuponError("Cupón no encontrado")
+      return
+    }
+
+    if (!cuponEncontrado.activo) {
+      setCuponValidado(null)
+      setCuponError("Cupón no está disponible")
+      return
+    }
+
+    // Validar expiración
+    if (cuponEncontrado.fecha_expiracion) {
+      const fechaExpiracion = new Date(cuponEncontrado.fecha_expiracion)
+      const hoy = new Date()
+      if (fechaExpiracion < hoy) {
+        setCuponValidado(null)
+        setCuponError("Cupón expirado")
+        return
+      }
+    }
+
+    // Validar que el plan sea elegible (no Pase Diario ni Pase Flex)
+    if (formData.tipoPlan === TipoPlan.PASE_DIARIO || formData.tipoPlan === TipoPlan.PASE_FLEX) {
+      setCuponValidado(null)
+      setCuponError("Cupones no aplican a Pase Día o Pase Flex")
+      return
+    }
+
+    // NUEVA VALIDACIÓN: Cupones 3M y 6M solo para upgrades desde Pase Mes
+    const codigo = codigoUpper.toUpperCase()
+    if (codigo.includes("3M") || codigo.includes("UPGRADE-3M")) {
+      if (formData.tipoPlan !== TipoPlan.PLAN_3_MESES) {
+        setCuponValidado(null)
+        setCuponError("Cupón 3M solo aplica al Plan de 3 Meses")
+        return
+      }
+      // Nota: La validación de que el usuario tenga Pase Mes activo se hace en backend
+      setCuponValidado(cuponEncontrado)
+      setCuponError(null)
+      return
+    }
+
+    if (codigo.includes("6M") || codigo.includes("UPGRADE-6M")) {
+      if (formData.tipoPlan !== TipoPlan.PLAN_6_MESES) {
+        setCuponValidado(null)
+        setCuponError("Cupón 6M solo aplica al Plan de 6 Meses")
+        return
+      }
+      // Nota: La validación de que el usuario tenga Pase Mes activo se hace en backend
+      setCuponValidado(cuponEncontrado)
+      setCuponError(null)
+      return
+    }
+
+    // Cupón válido
+    setCuponValidado(cuponEncontrado)
+    setCuponError(null)
+  }, [formData.codigoCupon, formData.tipoPlan, cupones])
 
   // Auto-calcular fecha fin cuando cambia plan o fecha inicio
   useEffect(() => {
@@ -91,13 +172,59 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       const plan = PLANES.find(p => p.id === formData.tipoPlan)
       if (plan) {
         let precio = plan.precio
+        let descuento = 0
+        let tipo: "referido" | "cupon" | null = null
 
-        // Aplicar 5% descuento si marcó checkbox referidos, tiene referido y plan != PASE_DIARIO
-        if (formData.usarPlanReferidos && formData.referidoPorCedula && formData.tipoPlan !== TipoPlan.PASE_DIARIO) {
-          precio = precio * 0.95 // 5% descuento
+        // VALIDACIÓN: Pase Día y Pase Flex NO pueden recibir cupones ni referidos
+        const esPlanBasico = formData.tipoPlan === TipoPlan.PASE_DIARIO || formData.tipoPlan === TipoPlan.PASE_FLEX
+
+        if (esPlanBasico) {
+          // No aplicar descuentos
+          setDescuentoAplicado(false)
+          setDescuentoPorcentaje(0)
+          setTipoDescuento(null)
+          setPrecioFinal(precio)
+          return
+        }
+
+        // Verificar si tiene cupón válido
+        const tieneCuponValido = cuponValidado && formData.codigoCupon && !cuponError
+
+        // Verificar si tiene referido válido (ya validamos que no es plan básico)
+        const tieneReferidoValido = formData.usarPlanReferidos && formData.referidoPorCedula
+
+        // Validar que no se intenten usar ambos descuentos
+        if (tieneCuponValido && tieneReferidoValido) {
+          // Usar el descuento mayor (cupones son hasta 20%, referidos solo 5%)
+          if (cuponValidado && cuponValidado.descuento > 5) {
+            // Aplicar cupón
+            descuento = cuponValidado.descuento
+            tipo = "cupon"
+          } else {
+            // Aplicar referido
+            descuento = 5
+            tipo = "referido"
+          }
+        } else if (tieneCuponValido && cuponValidado) {
+          // Solo cupón
+          descuento = cuponValidado.descuento
+          tipo = "cupon"
+        } else if (tieneReferidoValido) {
+          // Solo referido
+          descuento = 5
+          tipo = "referido"
+        }
+
+        // Aplicar descuento
+        if (descuento > 0) {
+          precio = precio * (1 - descuento / 100)
           setDescuentoAplicado(true)
+          setDescuentoPorcentaje(descuento)
+          setTipoDescuento(tipo)
         } else {
           setDescuentoAplicado(false)
+          setDescuentoPorcentaje(0)
+          setTipoDescuento(null)
         }
 
         setPrecioFinal(Math.round(precio))
@@ -105,8 +232,10 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     } else {
       setPrecioFinal(0)
       setDescuentoAplicado(false)
+      setDescuentoPorcentaje(0)
+      setTipoDescuento(null)
     }
-  }, [formData.tipoPlan, formData.usarPlanReferidos, formData.referidoPorCedula])
+  }, [formData.tipoPlan, formData.usarPlanReferidos, formData.referidoPorCedula, cuponValidado, formData.codigoCupon, cuponError])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -140,6 +269,18 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       }
     }
 
+    // Validar que Pase Día y Pase Flex NO tengan cupones ni referidos
+    if (formData.tipoPlan === TipoPlan.PASE_DIARIO || formData.tipoPlan === TipoPlan.PASE_FLEX) {
+      if (formData.codigoCupon) {
+        setError("Pase Día y Pase Flex no pueden recibir cupones")
+        return
+      }
+      if (formData.usarPlanReferidos || formData.referidoPorCedula) {
+        setError("Pase Día y Pase Flex no pueden recibir beneficios de referidos")
+        return
+      }
+    }
+
     // Validar que el referido existe si se marcó checkbox y se proporcionó
     let referidoId: number | null = null
     if (formData.usarPlanReferidos && formData.referidoPorCedula) {
@@ -149,6 +290,12 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
         return
       }
       referidoId = referido.id
+    }
+
+    // Validar cupón si se proporcionó
+    if (formData.codigoCupon && cuponError) {
+      setError(cuponError)
+      return
     }
 
     try {
@@ -169,12 +316,17 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
 
       // Crear membresía si se seleccionó plan
       if (formData.tipoPlan && formData.fechaInicio) {
+        // Preparar datos de membresía
+        const cuponCodigo = (tipoDescuento === "cupon" && formData.codigoCupon) ? formData.codigoCupon.toUpperCase() : null
+        const referidoIdFinal = tipoDescuento === "referido" ? referidoId : null
+
         await createMembresia.mutateAsync({
           usuario_id: nuevoUsuario.id,
           tipo_plan: formData.tipoPlan as TipoPlan,
           tipo_pago: TipoPago.EFECTIVO, // Default, puede cambiarse después
-          descripcion: descuentoAplicado ? "Descuento 5% por referido aplicado" : null,
-          referido_por_id: referidoId,
+          descripcion: null, // El backend lo generará automáticamente
+          referido_por_id: referidoIdFinal,
+          cupon_codigo: cuponCodigo,
         })
 
         // Si es Pase Diario, registrar asistencia automáticamente
@@ -214,10 +366,15 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
         fechaInicio: "",
         usarPlanReferidos: false,
         referidoPorCedula: "",
+        codigoCupon: "",
       })
       setFechaFin("")
       setPrecioFinal(0)
       setDescuentoAplicado(false)
+      setDescuentoPorcentaje(0)
+      setTipoDescuento(null)
+      setCuponValidado(null)
+      setCuponError(null)
     } catch (err: any) {
       setError(err.response?.data?.detail || "Error al crear el cliente")
     }
@@ -254,8 +411,10 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     return edad
   }
 
-  // Determinar si debe mostrar el campo de referido (todos los planes excepto Pase Diario)
-  const mostrarReferido = formData.tipoPlan && formData.tipoPlan !== TipoPlan.PASE_DIARIO
+  // Determinar si debe mostrar el campo de referido (todos los planes excepto Pase Diario y Pase Flex)
+  const mostrarReferido = formData.tipoPlan &&
+    formData.tipoPlan !== TipoPlan.PASE_DIARIO &&
+    formData.tipoPlan !== TipoPlan.PASE_FLEX
 
   if (!isOpen) return null
 
@@ -513,6 +672,12 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                         {/* Checkbox Plan de Referidos - solo si plan >= Mensual */}
                         {mostrarReferido && (
                           <>
+                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+                              <p className="text-xs text-amber-800 dark:text-amber-200">
+                                ℹ️ <strong>Importante:</strong> Pase Día y Pase Flex no pueden recibir cupones ni beneficios de referidos.
+                              </p>
+                            </div>
+
                             <div className="flex items-center gap-2">
                               <input
                                 type="checkbox"
@@ -524,8 +689,9 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                                   referidoPorCedula: e.target.checked ? formData.referidoPorCedula : ""
                                 })}
                                 className="w-4 h-4 text-primary accent-primary rounded"
+                                disabled={!!cuponValidado}
                               />
-                              <Label htmlFor="usarPlanReferidos" className="cursor-pointer">
+                              <Label htmlFor="usarPlanReferidos" className={`cursor-pointer ${cuponValidado ? 'text-muted-foreground' : ''}`}>
                                 Usar plan de referidos (5% descuento)
                               </Label>
                             </div>
@@ -545,7 +711,47 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                                 />
                               </div>
                             )}
+
+                            {/* Campo de Cupón */}
+                            <div className="space-y-2 pt-2">
+                              <Label htmlFor="codigoCupon">
+                                Código de cupón (opcional)
+                              </Label>
+                              <Input
+                                id="codigoCupon"
+                                value={formData.codigoCupon}
+                                onChange={(e) => setFormData({ ...formData, codigoCupon: e.target.value.toUpperCase() })}
+                                placeholder="Ej: PRIMERA-VEZ, UPGRADE-3M"
+                                className="bg-secondary border-border font-mono"
+                                disabled={formData.usarPlanReferidos && formData.referidoPorCedula !== ""}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                ⚠️ Los cupones NO son acumulables con descuento por referido
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                📌 Cupones 3M/6M solo para usuarios con Pase Mes activo
+                              </p>
+                              {cuponValidado && (
+                                <p className="text-sm text-green-500 flex items-center gap-1">
+                                  ✓ Cupón válido: {cuponValidado.descuento}% descuento ({cuponValidado.nicho})
+                                </p>
+                              )}
+                              {cuponError && (
+                                <p className="text-sm text-destructive">
+                                  ✗ {cuponError}
+                                </p>
+                              )}
+                            </div>
                           </>
+                        )}
+
+                        {/* Mensaje informativo para Pase Día y Pase Flex */}
+                        {!mostrarReferido && formData.tipoPlan && (
+                          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                            <p className="text-xs text-blue-800 dark:text-blue-200">
+                              ℹ️ Los planes <strong>Pase Día</strong> y <strong>Pase Flex</strong> no pueden recibir cupones ni beneficios de referidos.
+                            </p>
+                          </div>
                         )}
 
                         {/* Resumen de precio */}
@@ -558,9 +764,9 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                           </div>
                           {descuentoAplicado && (
                             <div className="flex items-center justify-between text-sm text-primary">
-                              <span>Descuento (5%):</span>
+                              <span>Descuento ({descuentoPorcentaje}% {tipoDescuento === "cupon" ? "cupón" : "referido"}):</span>
                               <span className="font-medium">
-                                -{formatCurrency((PLANES.find(p => p.id === formData.tipoPlan)?.precio || 0) * 0.05)}
+                                -{formatCurrency((PLANES.find(p => p.id === formData.tipoPlan)?.precio || 0) * (descuentoPorcentaje / 100))}
                               </span>
                             </div>
                           )}

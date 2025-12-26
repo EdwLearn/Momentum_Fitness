@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { asistenciaService } from '@/lib/services/asistencia';
 import { AsistenciaCreate, AsistenciaUpdate } from '@/types';
 
+// Helper para obtener fecha local en formato YYYY-MM-DD
+const getLocalDate = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Query keys
 export const asistenciaKeys = {
   all: ['asistencia'] as const,
@@ -66,8 +75,8 @@ export function useCreateAsistencia() {
       console.log('🔄 Invalidando queryKey:', asistenciaKeys.byUsuario(data.usuario_id));
       queryClient.invalidateQueries({ queryKey: asistenciaKeys.byUsuario(data.usuario_id) });
 
-      // Invalidar asistencias de hoy
-      const today = new Date().toISOString().split('T')[0];
+      // Invalidar asistencias de hoy (usar fecha local, no UTC)
+      const today = getLocalDate();
       console.log('🔄 Invalidando queryKey:', asistenciaKeys.byFecha(today));
       queryClient.invalidateQueries({ queryKey: asistenciaKeys.byFecha(today) });
 
@@ -91,7 +100,9 @@ export function useUpdateAsistencia() {
       queryClient.invalidateQueries({ queryKey: asistenciaKeys.detail(data.id) });
       queryClient.invalidateQueries({ queryKey: asistenciaKeys.lists() });
       queryClient.invalidateQueries({ queryKey: asistenciaKeys.byUsuario(data.usuario_id) });
-      const today = new Date().toISOString().split('T')[0];
+
+      // Invalidar asistencias de hoy (usar fecha local, no UTC)
+      const today = getLocalDate();
       queryClient.invalidateQueries({ queryKey: asistenciaKeys.byFecha(today) });
     },
   });

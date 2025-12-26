@@ -12,7 +12,9 @@ export const membresiasService = {
 
   // Obtener todas las membresías
   getAll: async (): Promise<Membresia[]> => {
-    const response = await api.get<Membresia[]>(BASE_URL);
+    const response = await api.get<Membresia[]>(`${BASE_URL}/`, {
+      params: { skip: 0, limit: 10000 } // Límite alto para obtener todas las membresías
+    });
     return response.data;
   },
 
@@ -36,7 +38,7 @@ export const membresiasService = {
 
   // Crear una nueva membresía (auto-calcula precio y fechas)
   create: async (data: MembresiaCreateSimple): Promise<Membresia> => {
-    const response = await api.post<Membresia>(BASE_URL, data);
+    const response = await api.post<Membresia>(`${BASE_URL}/`, data);
     return response.data;
   },
 

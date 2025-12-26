@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, computed_field
 from datetime import datetime
 from typing import Optional
 from app.models.usuario import TipoUsuario
@@ -51,6 +51,8 @@ class Usuario(UsuarioBase):
     fecha_registro: datetime
     ultima_asistencia: Optional[datetime] = None
     dias_entrenados: int = 0
+    plan: Optional[str] = None
+    tipo_membresia: Optional[str] = None
 
     class Config:
         from_attributes = True
