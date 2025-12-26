@@ -25,7 +25,7 @@ interface NewClientDrawerProps {
 // Plan configuration with prices and durations
 const PLANES = [
   { id: TipoPlan.PASE_DIARIO, nombre: "Pase Diario", precio: 5000, duracion: 1 },
-  { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (14 días/mes)", precio: 39900, duracion: 30 },
+  { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (14 días)", precio: 39900, duracion: 14 },
   { id: TipoPlan.MENSUAL, nombre: "Mensual", precio: 59900, duracion: 30 },
   { id: TipoPlan.PLAN_3_MESES, nombre: "Plan 3 Meses", precio: 149900, duracion: 90 },
   { id: TipoPlan.PLAN_6_MESES, nombre: "Plan 6 Meses", precio: 269900, duracion: 180 },
@@ -747,8 +747,8 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
 
                         {/* Mensaje informativo para Pase Día y Pase Flex */}
                         {!mostrarReferido && formData.tipoPlan && (
-                          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                            <p className="text-xs text-blue-800 dark:text-blue-200">
+                          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                            <p className="text-xs text-muted-foreground">
                               ℹ️ Los planes <strong>Pase Día</strong> y <strong>Pase Flex</strong> no pueden recibir cupones ni beneficios de referidos.
                             </p>
                           </div>

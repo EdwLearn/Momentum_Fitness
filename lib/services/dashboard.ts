@@ -30,6 +30,28 @@ export interface PlanDistributionItem {
   color: string
 }
 
+export interface ProximaRenovacionItem {
+  id: number
+  cliente: string
+  plan: string
+  fecha_fin: string
+  estado: string
+}
+
+export interface HistorialClienteStats {
+  total_dias_activo: number
+  fecha_primera_inscripcion: string
+  membresias: Array<{
+    id: number
+    tipo_plan: string
+    estado: string
+    fecha_inicio: string
+    fecha_fin: string
+    duracion_dias: number
+    precio: number
+  }>
+}
+
 const BASE_PATH = '/api/dashboard'
 
 export const dashboardService = {
@@ -60,6 +82,16 @@ export const dashboardService = {
 
   getDistribucionPlanes: async (): Promise<PlanDistributionItem[]> => {
     const response = await api.get<PlanDistributionItem[]>(`${BASE_PATH}/distribucion-planes`)
+    return response.data
+  },
+
+  getProximasRenovaciones: async (): Promise<ProximaRenovacionItem[]> => {
+    const response = await api.get<ProximaRenovacionItem[]>(`${BASE_PATH}/proximas-renovaciones`)
+    return response.data
+  },
+
+  getHistorialCliente: async (clienteId: number): Promise<HistorialClienteStats> => {
+    const response = await api.get<HistorialClienteStats>(`${BASE_PATH}/clientes/${clienteId}/historial`)
     return response.data
   }
 }

@@ -296,7 +296,7 @@ export default function SuscripcionesPage() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2B35" horizontal={true} vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis type="number" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis
                 dataKey="plan"
@@ -308,6 +308,7 @@ export default function SuscripcionesPage() {
                 width={100}
               />
               <Tooltip
+                cursor={{ fill: 'transparent' }}
                 contentStyle={{
                   backgroundColor: "#0A0B12",
                   border: "1px solid #2A2B35",
@@ -315,7 +316,21 @@ export default function SuscripcionesPage() {
                   color: "#E5E5E5",
                 }}
               />
-              <Bar dataKey="cantidad" fill="#A4FF1A" radius={[0, 4, 4, 0]} />
+              <Bar
+                dataKey="cantidad"
+                fill="#A4FF1A"
+                radius={[0, 4, 4, 0]}
+                onMouseEnter={(data, index, e) => {
+                  const target = e.target as SVGElement;
+                  target.style.transform = 'scaleX(1.05)';
+                  target.style.transformOrigin = 'left';
+                  target.style.transition = 'transform 0.2s ease';
+                }}
+                onMouseLeave={(data, index, e) => {
+                  const target = e.target as SVGElement;
+                  target.style.transform = 'scaleX(1)';
+                }}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 
 const mainMenuItems = [
-  { name: "Asistencia", href: "/asistencia", icon: UserCheck },
+  { name: "Asistencia", href: "/", icon: UserCheck },
   { name: "Clientes", href: "/clientes", icon: Users },
   { name: "Empleados", href: "/empleados", icon: UsersRound },
   { name: "Cupones & Referidos", href: "/cupones", icon: Ticket },
@@ -27,7 +27,7 @@ const mainMenuItems = [
 ]
 
 const protectedMenuItems = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, protected: true },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, protected: true },
   { name: "Suscripciones", href: "/suscripciones", icon: CreditCard, protected: true },
   { name: "Reportes", href: "/reportes", icon: FileBarChart, protected: true },
 ]

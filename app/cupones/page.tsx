@@ -140,6 +140,18 @@ export default function CuponesPage() {
       }
     },
     {
+      key: "referidos_totales",
+      header: "Referidos Totales",
+      sortable: true,
+      filter: {
+        type: "number" as const,
+        placeholder: "Ej: 3"
+      },
+      render: (item: any) => (
+        <span className="font-semibold text-chart-2">{item.referidos_totales || 0}</span>
+      ),
+    },
+    {
       key: "referido",
       header: "Referido",
       sortable: true,

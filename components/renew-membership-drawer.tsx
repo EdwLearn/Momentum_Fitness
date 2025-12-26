@@ -24,7 +24,7 @@ interface RenewMembershipDrawerProps {
 // Plan configuration with prices and durations
 const PLANES = [
   { id: TipoPlan.PASE_DIARIO, nombre: "Pase Diario", precio: 5000, duracion: 1 },
-  { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (14 días/mes)", precio: 39900, duracion: 30 },
+  { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (14 días)", precio: 39900, duracion: 14 },
   { id: TipoPlan.MENSUAL, nombre: "Mensual", precio: 59900, duracion: 30 },
   { id: TipoPlan.PLAN_3_MESES, nombre: "Plan 3 Meses", precio: 149900, duracion: 90 },
   { id: TipoPlan.PLAN_6_MESES, nombre: "Plan 6 Meses", precio: 269900, duracion: 180 },

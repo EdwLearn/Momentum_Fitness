@@ -399,6 +399,8 @@ export interface Referido extends ReferidoBase {
 export interface ReferidoDetallado {
   id: number;
   referidor: string;
+  referidor_id: number;
+  referidos_totales: number;
   referido: string;
   plan_comprado: string | null;
   cumple_condicion: boolean;

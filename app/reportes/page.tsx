@@ -21,6 +21,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts"
 import {
   useAsistenciasPorDia,
@@ -192,19 +193,23 @@ export default function ReportesPage() {
   const exportToPDF = async () => {
     setIsExporting(true)
     try {
-      // Importar jsPDF y autotable dinámicamente
-      const jsPDFModule = await import('jspdf')
-      const jsPDF = jsPDFModule.default
-      // Importar autotable para extender jsPDF
-      await import('jspdf-autotable')
+      // Importar jsPDF y autoTable con sintaxis correcta para v5
+      const [jsPDFModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable') // Esto extiende el prototipo de jsPDF
+      ])
 
-      const doc: any = new jsPDF()
+      const jsPDF = jsPDFModule.default
+
+      // Crear documento
+      const doc = new jsPDF() as any
+
       let yPos = 20
 
       // Obtener el nombre del período
       const getPeriodName = () => {
-        if (dateRange === "7-dias") return "Últimos 7 días"
-        if (dateRange === "30-dias") return "Últimos 30 días"
+        if (dateRange === "7-dias") return "Ultimos 7 dias"
+        if (dateRange === "30-dias") return "Ultimos 30 dias"
         if (dateRange === "este-mes") return "Este mes"
         if (dateRange === "personalizado" && customDateFrom && customDateTo) {
           return `${customDateFrom} a ${customDateTo}`
@@ -218,23 +223,23 @@ export default function ReportesPage() {
       yPos += 10
 
       doc.setFontSize(12)
-      doc.text(`Período: ${getPeriodName()}`, 105, yPos, { align: "center" })
+      doc.text(`Periodo: ${getPeriodName()}`, 105, yPos, { align: "center" })
       yPos += 7
 
       doc.setFontSize(10)
-      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 105, yPos, { align: "center" })
+      doc.text(`Fecha de generacion: ${new Date().toLocaleDateString('es-ES')}`, 105, yPos, { align: "center" })
       yPos += 15
 
-      // Tabla: Asistencias por día
+      // Tabla: Asistencias por dia
       if (asistenciasPorDia && asistenciasPorDia.length > 0) {
         doc.setFontSize(14)
-        doc.text("Asistencias por día", 14, yPos)
+        doc.text("Asistencias por dia", 14, yPos)
         yPos += 7
 
         doc.autoTable({
           startY: yPos,
           head: [['Fecha', 'Asistencias']],
-          body: asistenciasPorDia.map(item => [item.fecha, item.asistencias]),
+          body: asistenciasPorDia.map((item: any) => [item.fecha || '', item.asistencias || 0]),
           theme: 'grid',
           headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
         })
@@ -255,7 +260,7 @@ export default function ReportesPage() {
         doc.autoTable({
           startY: yPos,
           head: [['Plan', 'Asistencias']],
-          body: asistenciasPorPlan.map(item => [item.plan, item.asistencias]),
+          body: asistenciasPorPlan.map((item: any) => [item.plan || '', item.asistencias || 0]),
           theme: 'grid',
           headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
         })
@@ -276,14 +281,14 @@ export default function ReportesPage() {
         doc.autoTable({
           startY: yPos,
           head: [['Mes', 'Nuevas', 'Renovaciones']],
-          body: nuevasVsRenovaciones.map(item => [item.mes, item.nuevas, item.renovaciones]),
+          body: nuevasVsRenovaciones.map((item: any) => [item.mes || '', item.nuevas || 0, item.renovaciones || 0]),
           theme: 'grid',
           headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
         })
         yPos = doc.lastAutoTable.finalY + 10
       }
 
-      // Tabla: Planes más vendidos
+      // Tabla: Planes mas vendidos
       if (planesTop && planesTop.length > 0) {
         if (yPos > 250) {
           doc.addPage()
@@ -291,13 +296,13 @@ export default function ReportesPage() {
         }
 
         doc.setFontSize(14)
-        doc.text("Planes más vendidos", 14, yPos)
+        doc.text("Planes mas vendidos", 14, yPos)
         yPos += 7
 
         doc.autoTable({
           startY: yPos,
           head: [['Plan', 'Ventas']],
-          body: planesTop.map(item => [item.plan, item.ventas]),
+          body: planesTop.map((item: any) => [item.plan || '', item.ventas || 0]),
           theme: 'grid',
           headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
         })
@@ -318,7 +323,7 @@ export default function ReportesPage() {
         doc.autoTable({
           startY: yPos,
           head: [['Mes', 'Ingresos (Millones)']],
-          body: ingresosPorMes.map(item => [item.mes, `$${item.ingresos}M`]),
+          body: ingresosPorMes.map((item: any) => [item.mes || '', `$${item.ingresos || 0}M`]),
           theme: 'grid',
           headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
         })
@@ -338,7 +343,7 @@ export default function ReportesPage() {
 
         doc.autoTable({
           startY: yPos,
-          head: [['Métrica', 'Valor']],
+          head: [['Metrica', 'Valor']],
           body: [
             ['Ingresos Totales', `$${resumenIngresos.ingresos_totales?.toFixed(1) || 0}M`],
             ['Ticket Promedio', `$${resumenIngresos.ticket_promedio?.toFixed(1) || 0}K`],
@@ -363,12 +368,12 @@ export default function ReportesPage() {
 
         doc.autoTable({
           startY: yPos,
-          head: [['Métrica', 'Valor']],
+          head: [['Metrica', 'Valor']],
           body: [
             ['Clientes Referidos', referidosImpacto.clientes_referidos || 0],
             ['Porcentaje del total', `${referidosImpacto.porcentaje?.toFixed(1) || 0}%`],
             ['Meses Gratis Entregados', referidosImpacto.meses_gratis || 0],
-            ['Ratio de Conversión', `${referidosImpacto.ratio_conversion?.toFixed(1) || 0}%`],
+            ['Ratio de Conversion', `${referidosImpacto.ratio_conversion?.toFixed(1) || 0}%`],
           ],
           theme: 'grid',
           headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
@@ -389,7 +394,8 @@ export default function ReportesPage() {
       doc.save(`Reporte_Gimnasio_${getPeriodFileName()}_${new Date().toISOString().split('T')[0]}.pdf`)
     } catch (error) {
       console.error("Error exportando PDF:", error)
-      alert("Error al exportar el archivo PDF")
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido"
+      alert(`Error al exportar el archivo PDF: ${errorMessage}`)
     } finally {
       setIsExporting(false)
     }
@@ -464,14 +470,26 @@ export default function ReportesPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={asistenciasPorDia || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="fecha" stroke="#FFFFFF" />
-                  <YAxis stroke="#FFFFFF" />
+                  <XAxis
+                    dataKey="fecha"
+                    stroke="#9CA3AF"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                    interval="preserveStartEnd"
+                    tickCount={7}
+                  />
+                  <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
-                    cursor={false}
+                    cursor={{ fill: 'transparent' }}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
+                      backgroundColor: "#0A0B12",
+                      border: "1px solid #2A2B35",
+                      borderRadius: "8px",
+                      color: "#E5E5E5",
                     }}
                   />
                   <Line
@@ -491,14 +509,15 @@ export default function ReportesPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={asistenciasPorPlan || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="plan" stroke="#FFFFFF" />
-                  <YAxis stroke="#FFFFFF" />
+                  <XAxis dataKey="plan" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
-                    cursor={false}
+                    cursor={{ fill: 'transparent' }}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
+                      backgroundColor: "#0A0B12",
+                      border: "1px solid #2A2B35",
+                      borderRadius: "8px",
+                      color: "#E5E5E5",
                     }}
                   />
                   <Bar
@@ -532,14 +551,15 @@ export default function ReportesPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={nuevasVsRenovaciones || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="mes" stroke="#FFFFFF" />
-                  <YAxis stroke="#FFFFFF" />
+                  <XAxis dataKey="mes" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
-                    cursor={false}
+                    cursor={{ fill: 'transparent' }}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
+                      backgroundColor: "#0A0B12",
+                      border: "1px solid #2A2B35",
+                      borderRadius: "8px",
+                      color: "#E5E5E5",
                     }}
                   />
                   <Bar
@@ -582,14 +602,15 @@ export default function ReportesPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={planesTop || []} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" stroke="#FFFFFF" />
-                  <YAxis dataKey="plan" type="category" stroke="#FFFFFF" />
+                  <XAxis type="number" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis dataKey="plan" type="category" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
-                    cursor={false}
+                    cursor={{ fill: 'transparent' }}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
+                      backgroundColor: "#0A0B12",
+                      border: "1px solid #2A2B35",
+                      borderRadius: "8px",
+                      color: "#E5E5E5",
                     }}
                   />
                   <Bar
@@ -623,14 +644,15 @@ export default function ReportesPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={ingresosPorMes || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="mes" stroke="#FFFFFF" />
-                  <YAxis stroke="#FFFFFF" />
+                  <XAxis dataKey="mes" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
-                    cursor={false}
+                    cursor={{ fill: 'transparent' }}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
+                      backgroundColor: "#0A0B12",
+                      border: "1px solid #2A2B35",
+                      borderRadius: "8px",
+                      color: "#E5E5E5",
                     }}
                   />
                   <Bar
@@ -694,12 +716,32 @@ export default function ReportesPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    cursor={false}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
+                      backgroundColor: "#0A0B12",
+                      border: "1px solid #2A2B35",
+                      borderRadius: "8px",
+                      color: "#E5E5E5",
                     }}
+                    labelStyle={{ color: "#A4FF1A", fontWeight: "bold" }}
+                    itemStyle={{ color: "#E5E5E5" }}
+                    formatter={(value: any) => [`$${value}M`, 'Ingresos']}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value, entry: any) => {
+                      const nicho = entry.payload?.nicho || value
+                      const ingresos = entry.payload?.ingresos || 0
+                      return `${nicho}: $${ingresos}M`
+                    }}
+                    wrapperStyle={{
+                      paddingTop: '20px',
+                      color: '#E5E5E5',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                    iconType="circle"
+                    iconSize={10}
                   />
                 </PieChart>
               </ResponsiveContainer>

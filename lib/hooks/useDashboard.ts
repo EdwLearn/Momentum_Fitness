@@ -68,6 +68,17 @@ export const useDashboard = () => {
     refetchInterval: 30000, // Actualizar cada 30 segundos
   })
 
+  const {
+    data: proximasRenovaciones,
+    isLoading: isLoadingProximasRenovaciones,
+    error: errorProximasRenovaciones,
+    refetch: refetchProximasRenovaciones
+  } = useQuery({
+    queryKey: ['dashboard', 'proximas-renovaciones'],
+    queryFn: dashboardService.getProximasRenovaciones,
+    refetchInterval: 30000, // Actualizar cada 30 segundos
+  })
+
   return {
     clientesActivosStats,
     isLoadingClientesActivos,
@@ -92,6 +103,10 @@ export const useDashboard = () => {
     distribucionPlanes,
     isLoadingDistribucionPlanes,
     errorDistribucionPlanes,
-    refetchDistribucionPlanes
+    refetchDistribucionPlanes,
+    proximasRenovaciones,
+    isLoadingProximasRenovaciones,
+    errorProximasRenovaciones,
+    refetchProximasRenovaciones
   }
 }

@@ -203,14 +203,6 @@ export default function AsistenciaPage() {
   const attendanceColumns = [
     { key: "fecha", header: "Fecha & Hora" },
     { key: "cliente", header: "Cliente" },
-    {
-      key: "evento",
-      header: "Tipo de Evento",
-      render: (item: any) => (
-        <span className={item.evento === "Entrada" ? "text-primary" : "text-muted-foreground"}>{item.evento}</span>
-      ),
-    },
-    { key: "tipoUsuario", header: "Tipo de Usuario" },
     { key: "plan", header: "Plan Vigente" },
   ]
 

@@ -8,16 +8,141 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Building2, Bell, Shield, Palette, CreditCard, Mail, Save } from "lucide-react"
-import { useState } from "react"
+import { Building2, Bell, Shield, Save, Lock } from "lucide-react"
+import { useState, useEffect } from "react"
 import { SuccessToast } from "@/components/success-toast"
+import { useConfiguracion, useUpdateConfiguracion } from "@/lib/hooks/useConfiguracion"
 
 export default function ConfiguracionPage() {
+  const { data: configuracion, isLoading } = useConfiguracion()
+  const updateConfiguracion = useUpdateConfiguracion()
+
   const [showSuccess, setShowSuccess] = useState(false)
-  const [activeTab, setActiveTab] = useState("perfil")
+  const [activeTab, setActiveTab] = useState("gimnasio")
+  const [isSecurityUnlocked, setIsSecurityUnlocked] = useState(false)
+  const [securityPassword, setSecurityPassword] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+
+  // Estados para cambiar contraseña
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [changePasswordError, setChangePasswordError] = useState("")
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  // Estados para configuración del gimnasio
+  const [gymName, setGymName] = useState("")
+  const [gymNit, setGymNit] = useState("")
+  const [gymAddress, setGymAddress] = useState("")
+  const [gymPhone, setGymPhone] = useState("")
+  const [gymEmail, setGymEmail] = useState("")
+  const [horarioSemana, setHorarioSemana] = useState("")
+  const [horarioFinde, setHorarioFinde] = useState("")
+  const [instagram, setInstagram] = useState("")
+  const [facebook, setFacebook] = useState("")
+  const [tiktok, setTiktok] = useState("")
+  const [website, setWebsite] = useState("")
+
+  // Cargar datos cuando llegue la configuración
+  useEffect(() => {
+    if (configuracion) {
+      setGymName(configuracion.nombre_gimnasio || "")
+      setGymNit(configuracion.nit || "")
+      setGymAddress(configuracion.direccion || "")
+      setGymPhone(configuracion.telefono || "")
+      setGymEmail(configuracion.email || "")
+      setHorarioSemana(configuracion.horario_semana || "")
+      setHorarioFinde(configuracion.horario_finde || "")
+      setInstagram(configuracion.instagram || "")
+      setFacebook(configuracion.facebook || "")
+      setTiktok(configuracion.tiktok || "")
+      setWebsite(configuracion.website || "")
+    }
+  }, [configuracion])
 
   const handleSave = () => {
     setShowSuccess(true)
+  }
+
+  const handleSaveGym = async () => {
+    try {
+      await updateConfiguracion.mutateAsync({
+        nombre_gimnasio: gymName,
+        nit: gymNit,
+        direccion: gymAddress,
+        telefono: gymPhone,
+        email: gymEmail,
+        horario_semana: horarioSemana,
+        horario_finde: horarioFinde,
+        instagram,
+        facebook,
+        tiktok,
+        website,
+      })
+      setShowSuccess(true)
+    } catch (error) {
+      console.error("Error al guardar configuración:", error)
+    }
+  }
+
+  const handleSecurityUnlock = () => {
+    if (securityPassword === "GetRich666") {
+      setIsSecurityUnlocked(true)
+      setPasswordError("")
+    } else {
+      setPasswordError("Contraseña incorrecta")
+    }
+  }
+
+  const handleChangePassword = async () => {
+    setChangePasswordError("")
+
+    // Validaciones
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setChangePasswordError("Todos los campos son obligatorios")
+      return
+    }
+
+    if (currentPassword !== "GetRich666") {
+      setChangePasswordError("La contraseña actual es incorrecta")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setChangePasswordError("La nueva contraseña debe tener al menos 6 caracteres")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError("Las contraseñas no coinciden")
+      return
+    }
+
+    if (currentPassword === newPassword) {
+      setChangePasswordError("La nueva contraseña debe ser diferente a la actual")
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      // Aquí iría la llamada al backend
+      // await cambiarContrasena({ currentPassword, newPassword })
+
+      // Simulamos una llamada al servidor
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Limpiar campos
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+
+      setShowSuccess(true)
+    } catch (error) {
+      setChangePasswordError("Error al cambiar la contraseña. Intenta nuevamente.")
+    } finally {
+      setIsChangingPassword(false)
+    }
   }
 
   return (
@@ -29,14 +154,7 @@ export default function ConfiguracionPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-6 w-full bg-sidebar-accent">
-            <TabsTrigger
-              value="perfil"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <User className="h-4 w-4 mr-2" />
-              Perfil
-            </TabsTrigger>
+          <TabsList className="grid grid-cols-3 w-full bg-sidebar-accent">
             <TabsTrigger
               value="gimnasio"
               className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -58,87 +176,7 @@ export default function ConfiguracionPage() {
               <Shield className="h-4 w-4 mr-2" />
               Seguridad
             </TabsTrigger>
-            <TabsTrigger
-              value="apariencia"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <Palette className="h-4 w-4 mr-2" />
-              Apariencia
-            </TabsTrigger>
-            <TabsTrigger
-              value="facturacion"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Facturación
-            </TabsTrigger>
           </TabsList>
-
-          {/* Perfil Tab */}
-          <TabsContent value="perfil" className="space-y-6">
-            <Card className="p-6 bg-card border-sidebar-border">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Información Personal</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="nombre">Nombre completo</Label>
-                      <Input id="nombre" defaultValue="Admin User" className="bg-sidebar" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" defaultValue="admin@momentum.com" className="bg-sidebar" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="telefono">Teléfono</Label>
-                      <Input id="telefono" defaultValue="+57 300 123 4567" className="bg-sidebar" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cargo">Cargo</Label>
-                      <Select defaultValue="admin">
-                        <SelectTrigger className="bg-sidebar">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="staff">Staff</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Foto de Perfil</h3>
-                  <div className="flex items-center gap-4">
-                    <div className="h-20 w-20 rounded-full bg-primary flex items-center justify-center">
-                      <User className="h-10 w-10 text-primary-foreground" />
-                    </div>
-                    <div className="space-y-2">
-                      <Button
-                        variant="outline"
-                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground bg-transparent"
-                      >
-                        Cambiar foto
-                      </Button>
-                      <p className="text-xs text-muted-foreground">JPG, PNG. Máximo 2MB.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSave}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar cambios
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
 
           {/* Gimnasio Tab */}
           <TabsContent value="gimnasio" className="space-y-6">
@@ -149,23 +187,49 @@ export default function ConfiguracionPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="gym-name">Nombre del gimnasio</Label>
-                      <Input id="gym-name" defaultValue="Momentum Fitness" className="bg-sidebar" />
+                      <Input
+                        id="gym-name"
+                        value={gymName}
+                        onChange={(e) => setGymName(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="gym-nit">NIT</Label>
-                      <Input id="gym-nit" defaultValue="900.123.456-7" className="bg-sidebar" />
+                      <Input
+                        id="gym-nit"
+                        value={gymNit}
+                        onChange={(e) => setGymNit(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2 col-span-2">
                       <Label htmlFor="gym-address">Dirección</Label>
-                      <Input id="gym-address" defaultValue="Calle 123 #45-67, Bogotá" className="bg-sidebar" />
+                      <Input
+                        id="gym-address"
+                        value={gymAddress}
+                        onChange={(e) => setGymAddress(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="gym-phone">Teléfono</Label>
-                      <Input id="gym-phone" defaultValue="+57 1 234 5678" className="bg-sidebar" />
+                      <Input
+                        id="gym-phone"
+                        value={gymPhone}
+                        onChange={(e) => setGymPhone(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="gym-email">Email</Label>
-                      <Input id="gym-email" type="email" defaultValue="info@momentum.com" className="bg-sidebar" />
+                      <Input
+                        id="gym-email"
+                        type="email"
+                        value={gymEmail}
+                        onChange={(e) => setGymEmail(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                   </div>
                 </div>
@@ -175,11 +239,21 @@ export default function ConfiguracionPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="horario-semana">Lunes a Viernes</Label>
-                      <Input id="horario-semana" defaultValue="6:00 AM - 10:00 PM" className="bg-sidebar" />
+                      <Input
+                        id="horario-semana"
+                        value={horarioSemana}
+                        onChange={(e) => setHorarioSemana(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="horario-finde">Sábados y Domingos</Label>
-                      <Input id="horario-finde" defaultValue="7:00 AM - 8:00 PM" className="bg-sidebar" />
+                      <Input
+                        id="horario-finde"
+                        value={horarioFinde}
+                        onChange={(e) => setHorarioFinde(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                   </div>
                 </div>
@@ -189,26 +263,50 @@ export default function ConfiguracionPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="instagram">Instagram</Label>
-                      <Input id="instagram" placeholder="@momentumfitness" className="bg-sidebar" />
+                      <Input
+                        id="instagram"
+                        placeholder="@momentumfitness"
+                        value={instagram}
+                        onChange={(e) => setInstagram(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="facebook">Facebook</Label>
-                      <Input id="facebook" placeholder="/momentumfitness" className="bg-sidebar" />
+                      <Input
+                        id="facebook"
+                        placeholder="/momentumfitness"
+                        value={facebook}
+                        onChange={(e) => setFacebook(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="tiktok">TikTok</Label>
-                      <Input id="tiktok" placeholder="@momentumfitness" className="bg-sidebar" />
+                      <Input
+                        id="tiktok"
+                        placeholder="@momentumfitness"
+                        value={tiktok}
+                        onChange={(e) => setTiktok(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="website">Sitio Web</Label>
-                      <Input id="website" placeholder="www.momentum.com" className="bg-sidebar" />
+                      <Input
+                        id="website"
+                        placeholder="www.momentum.com"
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                        className="bg-sidebar"
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="flex justify-end">
                   <Button
-                    onClick={handleSave}
+                    onClick={handleSaveGym}
                     className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
                   >
                     <Save className="h-4 w-4 mr-2" />
@@ -309,282 +407,129 @@ export default function ConfiguracionPage() {
           {/* Seguridad Tab */}
           <TabsContent value="seguridad" className="space-y-6">
             <Card className="p-6 bg-card border-sidebar-border">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Cambiar Contraseña</h3>
-                  <div className="grid gap-4 max-w-md">
+              {!isSecurityUnlocked ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                  <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Lock className="h-10 w-10 text-primary" />
+                  </div>
+                  <div className="text-center space-y-2">
+                    <h3 className="text-xl font-semibold text-foreground">Sección Protegida</h3>
+                    <p className="text-muted-foreground">Ingresa tu contraseña para acceder a la configuración de seguridad</p>
+                  </div>
+                  <div className="w-full max-w-md space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="current-pass">Contraseña Actual</Label>
-                      <Input id="current-pass" type="password" className="bg-sidebar" />
+                      <Label htmlFor="security-password">Contraseña</Label>
+                      <Input
+                        id="security-password"
+                        type="password"
+                        placeholder="Ingresa tu contraseña"
+                        className="bg-sidebar"
+                        value={securityPassword}
+                        onChange={(e) => {
+                          setSecurityPassword(e.target.value)
+                          setPasswordError("")
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleSecurityUnlock()
+                          }
+                        }}
+                      />
+                      {passwordError && (
+                        <p className="text-sm text-red-500">{passwordError}</p>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-pass">Nueva Contraseña</Label>
-                      <Input id="new-pass" type="password" className="bg-sidebar" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-pass">Confirmar Contraseña</Label>
-                      <Input id="confirm-pass" type="password" className="bg-sidebar" />
-                    </div>
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                      Actualizar contraseña
+                    <Button
+                      onClick={handleSecurityUnlock}
+                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Desbloquear
                     </Button>
                   </div>
                 </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Autenticación de Dos Factores</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Activar 2FA</Label>
-                        <p className="text-sm text-muted-foreground">Agrega una capa extra de seguridad</p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Sesiones Activas</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-sidebar-accent">
-                      <div>
-                        <p className="font-medium text-foreground">Windows - Chrome</p>
-                        <p className="text-sm text-muted-foreground">Bogotá, Colombia · Activo ahora</p>
-                      </div>
-                      <p className="text-xs text-primary font-medium">Este dispositivo</p>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-sidebar-accent">
-                      <div>
-                        <p className="font-medium text-foreground">iPhone - Safari</p>
-                        <p className="text-sm text-muted-foreground">Bogotá, Colombia · Hace 2 horas</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 border-red-500 hover:bg-red-500 hover:text-white bg-transparent"
-                      >
-                        Cerrar
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSave}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar cambios
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Apariencia Tab */}
-          <TabsContent value="apariencia" className="space-y-6">
-            <Card className="p-6 bg-card border-sidebar-border">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Tema del Dashboard</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="relative cursor-pointer group">
-                      <div className="p-4 rounded-lg bg-gradient-to-br from-gray-900 to-black border-2 border-primary">
-                        <div className="space-y-2">
-                          <div className="h-3 w-full bg-primary/20 rounded"></div>
-                          <div className="h-2 w-3/4 bg-gray-700 rounded"></div>
-                          <div className="h-2 w-1/2 bg-gray-700 rounded"></div>
-                        </div>
-                      </div>
-                      <p className="text-sm font-medium text-center mt-2 text-primary">Oscuro (Actual)</p>
-                    </div>
-                    <div className="relative cursor-pointer group opacity-50">
-                      <div className="p-4 rounded-lg bg-white border-2 border-gray-300">
-                        <div className="space-y-2">
-                          <div className="h-3 w-full bg-gray-200 rounded"></div>
-                          <div className="h-2 w-3/4 bg-gray-300 rounded"></div>
-                          <div className="h-2 w-1/2 bg-gray-300 rounded"></div>
-                        </div>
-                      </div>
-                      <p className="text-sm font-medium text-center mt-2 text-muted-foreground">Claro</p>
-                    </div>
-                    <div className="relative cursor-pointer group opacity-50">
-                      <div className="p-4 rounded-lg bg-gradient-to-br from-blue-900 to-purple-900 border-2 border-gray-300">
-                        <div className="space-y-2">
-                          <div className="h-3 w-full bg-blue-400/30 rounded"></div>
-                          <div className="h-2 w-3/4 bg-blue-200/30 rounded"></div>
-                          <div className="h-2 w-1/2 bg-blue-200/30 rounded"></div>
-                        </div>
-                      </div>
-                      <p className="text-sm font-medium text-center mt-2 text-muted-foreground">Azul Profundo</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Color de Acento</h3>
-                  <div className="grid grid-cols-6 gap-3">
-                    {[
-                      { name: "Verde Neón", color: "#A4FF1A", active: true },
-                      { name: "Azul", color: "#22D3EE", active: false },
-                      { name: "Púrpura", color: "#8B5CF6", active: false },
-                      { name: "Naranja", color: "#F97316", active: false },
-                      { name: "Rosa", color: "#EC4899", active: false },
-                      { name: "Amarillo", color: "#FBBF24", active: false },
-                    ].map((item) => (
-                      <div key={item.name} className="text-center cursor-pointer group">
-                        <div
-                          className={`h-12 w-12 rounded-full mx-auto ${item.active ? "ring-2 ring-offset-2 ring-offset-background ring-primary" : ""}`}
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <p className="text-xs mt-2 text-muted-foreground group-hover:text-foreground">{item.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Preferencias de Visualización</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Modo Compacto</Label>
-                        <p className="text-sm text-muted-foreground">Reduce el espaciado entre elementos</p>
-                      </div>
-                      <Switch />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Animaciones</Label>
-                        <p className="text-sm text-muted-foreground">Habilitar animaciones y transiciones</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Sidebar Expandido</Label>
-                        <p className="text-sm text-muted-foreground">Mantener el sidebar siempre visible</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSave}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar cambios
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Facturación Tab */}
-          <TabsContent value="facturacion" className="space-y-6">
-            <Card className="p-6 bg-card border-sidebar-border">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Plan Actual</h3>
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/30">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-2xl font-bold text-foreground">Plan Pro</p>
-                        <p className="text-muted-foreground">Hasta 2,000 clientes activos</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-3xl font-bold text-primary">$89.99</p>
-                        <p className="text-muted-foreground">por mes</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex gap-2">
-                      <Button
-                        variant="outline"
-                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground bg-transparent"
-                      >
-                        Cambiar plan
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="text-red-500 border-red-500 hover:bg-red-500 hover:text-white bg-transparent"
-                      >
-                        Cancelar suscripción
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Método de Pago</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-sidebar-accent border border-primary">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-16 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                          <CreditCard className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">Visa •••• 4242</p>
-                          <p className="text-sm text-muted-foreground">Vence 12/2025</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          Editar
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-red-500 border-red-500 bg-transparent">
-                          Eliminar
-                        </Button>
-                      </div>
-                    </div>
-                    <Button variant="outline" className="w-full border-dashed bg-transparent">
-                      + Agregar método de pago
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-foreground">Configuración de Seguridad</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsSecurityUnlocked(false)
+                        setSecurityPassword("")
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      Bloquear
                     </Button>
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Historial de Facturas</h3>
-                  <div className="space-y-2">
-                    {[
-                      { fecha: "Dic 2024", monto: "$89.99", estado: "Pagado" },
-                      { fecha: "Nov 2024", monto: "$89.99", estado: "Pagado" },
-                      { fecha: "Oct 2024", monto: "$89.99", estado: "Pagado" },
-                    ].map((factura, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-sidebar-accent">
-                        <div className="flex items-center gap-4">
-                          <Mail className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-foreground">{factura.fecha}</p>
-                            <p className="text-sm text-muted-foreground">Factura #{1000 + i}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm font-medium text-primary">{factura.estado}</span>
-                          <span className="font-semibold text-foreground">{factura.monto}</span>
-                          <Button variant="outline" size="sm">
-                            Descargar
-                          </Button>
-                        </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Cambiar Contraseña</h3>
+                    <div className="grid gap-4 max-w-md">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-pass">Contraseña Actual</Label>
+                        <Input
+                          id="current-pass"
+                          type="password"
+                          className="bg-sidebar"
+                          value={currentPassword}
+                          onChange={(e) => {
+                            setCurrentPassword(e.target.value)
+                            setChangePasswordError("")
+                          }}
+                          disabled={isChangingPassword}
+                        />
                       </div>
-                    ))}
+                      <div className="space-y-2">
+                        <Label htmlFor="new-pass">Nueva Contraseña</Label>
+                        <Input
+                          id="new-pass"
+                          type="password"
+                          className="bg-sidebar"
+                          value={newPassword}
+                          onChange={(e) => {
+                            setNewPassword(e.target.value)
+                            setChangePasswordError("")
+                          }}
+                          disabled={isChangingPassword}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-pass">Confirmar Contraseña</Label>
+                        <Input
+                          id="confirm-pass"
+                          type="password"
+                          className="bg-sidebar"
+                          value={confirmPassword}
+                          onChange={(e) => {
+                            setConfirmPassword(e.target.value)
+                            setChangePasswordError("")
+                          }}
+                          disabled={isChangingPassword}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !isChangingPassword) {
+                              handleChangePassword()
+                            }
+                          }}
+                        />
+                      </div>
+                      {changePasswordError && (
+                        <p className="text-sm text-red-500">{changePasswordError}</p>
+                      )}
+                      <Button
+                        onClick={handleChangePassword}
+                        disabled={isChangingPassword}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
+                      >
+                        {isChangingPassword ? "Actualizando..." : "Actualizar contraseña"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSave}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar cambios
-                  </Button>
-                </div>
-              </div>
+              )}
             </Card>
           </TabsContent>
         </Tabs>
