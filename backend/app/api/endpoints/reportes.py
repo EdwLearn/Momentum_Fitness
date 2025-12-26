@@ -70,8 +70,13 @@ def get_asistencias_por_dia(dias: int = 7, db: Session = Depends(get_db)):
             Asistencia.fecha == fecha
         ).count()
 
-        # Formatear fecha como DD/MM
-        fecha_str = fecha.strftime("%d/%m")
+        # Formatear fecha como "Dic20", "Dic21", etc.
+        meses_abrev = {
+            1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+            7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"
+        }
+        mes_nombre = meses_abrev[fecha.month]
+        fecha_str = f"{mes_nombre}{fecha.day}"
 
         resultado.append(AsistenciasPorDiaItem(
             fecha=fecha_str,
@@ -264,19 +269,51 @@ def get_ingresos_por_mes(meses: int = 6, db: Session = Depends(get_db)):
 def get_ingresos_por_cupon(db: Session = Depends(get_db)):
     """
     Retorna los ingresos generados por cupones agrupados por nicho
-    Por ahora retorna datos de ejemplo ya que no tenemos sistema de cupones completo
     """
-    # TODO: Implementar cuando tengamos sistema de cupones con nichos
-    return [
-        IngresosPorCuponItem(nicho="Alimenticio", ingresos=5.2),
-        IngresosPorCuponItem(nicho="Estético", ingresos=3.8),
-    ]
+    from app.models.cupon import Cupon
+
+    # Obtener ingresos por nicho desde los cupones usados en membresías
+    ingresos_por_nicho = db.query(
+        Cupon.nicho,
+        func.coalesce(func.sum(Membresia.precio - func.coalesce(Membresia.precio_final, Membresia.precio)), 0).label('descuento_total')
+    ).join(
+        Membresia, Membresia.id.in_(
+            db.query(Membresia.id).filter(
+                Membresia.precio_final.isnot(None),
+                Membresia.precio_final < Membresia.precio
+            )
+        )
+    ).group_by(Cupon.nicho).all()
+
+    resultado = []
+    for nicho, descuento_total in ingresos_por_nicho:
+        # Convertir a millones
+        ingresos_millones = float(descuento_total) / 1000000
+        resultado.append(IngresosPorCuponItem(
+            nicho=nicho,
+            ingresos=round(ingresos_millones, 1)
+        ))
+
+    # Si no hay datos, retornar lista vacía en lugar de datos de ejemplo
+    if not resultado:
+        # Contar cupones por nicho aunque no se hayan usado
+        cupones_por_nicho = db.query(
+            Cupon.nicho,
+            func.count(Cupon.id).label('count')
+        ).filter(Cupon.activo == True).group_by(Cupon.nicho).all()
+
+        for nicho, count in cupones_por_nicho:
+            resultado.append(IngresosPorCuponItem(nicho=nicho, ingresos=0.0))
+
+    return resultado
 
 @router.get("/referidos-impacto", response_model=ReferidosImpacto)
 def get_referidos_impacto(db: Session = Depends(get_db)):
     """
     Retorna métricas del programa de referidos
     """
+    from app.models.referido import Referido
+
     # Total de clientes activos
     total_clientes = db.query(Usuario).filter(
         Usuario.activo == True
@@ -293,18 +330,36 @@ def get_referidos_impacto(db: Session = Depends(get_db)):
     # Calcular porcentaje
     porcentaje = (clientes_referidos / total_clientes * 100) if total_clientes > 0 else 0
 
-    # Meses gratis entregados (aproximación: número de referidos exitosos)
-    # Cada referido exitoso da 1 mes gratis al referidor
-    meses_gratis = clientes_referidos
+    # Total de referidos registrados en el sistema
+    total_referidos = db.query(Referido).count()
 
-    # Ratio de conversión (estimado en 68% - podría calcularse si tenemos datos de referidos pendientes)
-    ratio_conversion = 68.0
+    # Referidos que cumplen condición (tienen membresía activa)
+    referidos_activos = db.query(Referido).filter(
+        Referido.cumple_condicion == True
+    ).count()
+
+    # Ratio de conversión: porcentaje de referidos que se convierten en clientes activos
+    ratio_conversion = (referidos_activos / total_referidos * 100) if total_referidos > 0 else 0
+
+    # Meses gratis entregados: calcular basado en el sistema de 3 referidos = 1 mes
+    # Contar referidos activos por referidor y calcular meses ganados
+    from app.crud.referidos import contar_referidos_activos
+
+    # Obtener todos los referidores únicos
+    referidores = db.query(func.distinct(Referido.referidor_id)).all()
+
+    meses_gratis_total = 0
+    for (referidor_id,) in referidores:
+        referidos_count = contar_referidos_activos(db, referidor_id)
+        # Cada 3 referidos activos = 1 mes gratis
+        meses_ganados = referidos_count // 3
+        meses_gratis_total += meses_ganados
 
     return ReferidosImpacto(
         clientes_referidos=clientes_referidos,
         porcentaje=round(porcentaje, 1),
-        meses_gratis=meses_gratis,
-        ratio_conversion=ratio_conversion
+        meses_gratis=meses_gratis_total,
+        ratio_conversion=round(ratio_conversion, 1)
     )
 
 @router.get("/resumen-ingresos", response_model=ResumenIngresos)

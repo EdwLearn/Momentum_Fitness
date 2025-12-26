@@ -40,7 +40,8 @@ class Empleado(Base):
 
     # Metadata
     fecha_registro = Column(DateTime, default=datetime.utcnow)
-    activo = Column(Integer, default=0)  # Inactivo por defecto, se activa al marcar entrada
+    # Estados: -1 = sin entrada (inicio del día), 0 = inactivo (después de marcar salida), 1 = activo (después de marcar entrada)
+    activo = Column(Integer, default=-1)
 
     # Relaciones
     asistencias = relationship("AsistenciaEmpleado", back_populates="empleado", cascade="all, delete-orphan")

@@ -53,12 +53,12 @@ def get_referidos_detallados(db: Session, skip: int = 0, limit: int = 100) -> Li
             if membresia:
                 plan_nombre = membresia.tipo_plan.value
 
+        # Contar referidos activos del referidor
+        referidos_activos = contar_referidos_activos(db, ref.referidor_id)
+
         # Calcular beneficio real del referidor basado en sus referidos activos
         beneficio_texto = "Pendiente"
         if ref.cumple_condicion and referidor:
-            # Contar referidos activos del referidor
-            referidos_activos = contar_referidos_activos(db, ref.referidor_id)
-
             # Cada 3 referidos activos = 30 días gratis
             meses_ganados = referidos_activos // 3
             dias_totales = meses_ganados * 30
@@ -89,6 +89,8 @@ def get_referidos_detallados(db: Session, skip: int = 0, limit: int = 100) -> Li
         result.append(ReferidoDetallado(
             id=ref.id,
             referidor=f"{referidor.nombre} {referidor.apellido}" if referidor else "Desconocido",
+            referidor_id=ref.referidor_id,
+            referidos_totales=referidos_activos,
             referido=f"{referido.nombre} {referido.apellido}" if referido else "Desconocido",
             plan_comprado=plan_nombre,
             cumple_condicion=ref.cumple_condicion,

@@ -38,6 +38,8 @@ class ReferidoDetallado(BaseModel):
     """Schema de referido con información detallada de usuarios"""
     id: int
     referidor: str = Field(..., description="Nombre completo del referidor")
+    referidor_id: int = Field(..., description="ID del referidor")
+    referidos_totales: int = Field(..., description="Total de referidos activos del referidor")
     referido: str = Field(..., description="Nombre completo del referido")
     plan_comprado: Optional[str] = Field(None, description="Tipo de plan comprado")
     cumple_condicion: bool

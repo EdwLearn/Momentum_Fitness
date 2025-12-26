@@ -166,3 +166,18 @@ def get_empleados_trabajando_hoy(db: Session) -> List[dict]:
         })
 
     return resultado
+
+
+def resetear_estados_empleados(db: Session) -> int:
+    """Resetear el estado de todos los empleados a 'sin entrada' (-1) al inicio del día"""
+    try:
+        # Actualizar todos los empleados a estado -1 (sin entrada)
+        empleados_actualizados = db.query(Empleado).update(
+            {"activo": -1},
+            synchronize_session=False
+        )
+        db.commit()
+        return empleados_actualizados
+    except Exception as e:
+        db.rollback()
+        raise e

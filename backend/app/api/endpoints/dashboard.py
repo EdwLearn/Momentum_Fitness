@@ -35,6 +35,18 @@ class PlanDistributionItem(BaseModel):
     value: int
     color: str
 
+class ProximaRenovacionItem(BaseModel):
+    id: int
+    cliente: str
+    plan: str
+    fecha_fin: str
+    estado: str
+
+class HistorialClienteStats(BaseModel):
+    total_dias_activo: int
+    fecha_primera_inscripcion: str
+    membresias: list[dict]
+
 @router.get("/clientes-activos", response_model=ClientesActivosStats)
 def get_clientes_activos_stats(db: Session = Depends(get_db)):
     """
@@ -283,3 +295,117 @@ def get_distribucion_planes(db: Session = Depends(get_db)):
     resultado.sort(key=lambda x: x.value, reverse=True)
 
     return resultado
+
+@router.get("/proximas-renovaciones", response_model=list[ProximaRenovacionItem])
+def get_proximas_renovaciones(db: Session = Depends(get_db)):
+    """
+    Retorna los clientes con planes que vencen en los próximos 7 días
+    """
+    now = datetime.utcnow()
+    fecha_limite = now + timedelta(days=7)
+
+    # Nombres amigables para los planes
+    nombres_planes = {
+        TipoPlan.PASE_DIARIO: "Pase Diario",
+        TipoPlan.PASE_FLEX: "Pase Flex",
+        TipoPlan.MENSUAL: "Mensual",
+        TipoPlan.PLAN_3_MESES: "3 Meses",
+        TipoPlan.PLAN_6_MESES: "6 Meses",
+        TipoPlan.ELITE_ANUAL: "Elite Anual",
+    }
+
+    # Obtener membresías que vencen en los próximos 7 días
+    membresias_por_vencer = db.query(Membresia).filter(
+        and_(
+            Membresia.activo == True,
+            Membresia.estado == EstadoMembresia.ACTIVA,
+            Membresia.fecha_fin >= now,
+            Membresia.fecha_fin <= fecha_limite
+        )
+    ).all()
+
+    # Construir resultado
+    resultado = []
+    for membresia in membresias_por_vencer:
+        usuario = membresia.usuario
+
+        # Calcular estado basado en días restantes
+        dias_restantes = (membresia.fecha_fin - now).days
+        if dias_restantes < 7:
+            estado = "Por vencer"
+        else:
+            estado = "Activo"
+
+        resultado.append(ProximaRenovacionItem(
+            id=usuario.id,
+            cliente=f"{usuario.nombre} {usuario.apellido}",
+            plan=nombres_planes.get(membresia.tipo_plan, membresia.tipo_plan.value),
+            fecha_fin=membresia.fecha_fin.strftime("%Y-%m-%d"),
+            estado=estado
+        ))
+
+    # Ordenar por fecha de fin (más cercano primero)
+    resultado.sort(key=lambda x: x.fecha_fin)
+
+    return resultado
+
+@router.get("/clientes/{cliente_id}/historial", response_model=HistorialClienteStats)
+def get_historial_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    """
+    Retorna el historial completo de un cliente: tiempo total con suscripción y todas sus membresías
+    """
+    # Obtener todas las membresías del usuario (ordenadas por fecha de inicio)
+    membresias = db.query(Membresia).filter(
+        Membresia.usuario_id == cliente_id
+    ).order_by(Membresia.fecha_inicio.asc()).all()
+
+    if not membresias:
+        # Si no hay membresías, retornar datos vacíos
+        return HistorialClienteStats(
+            total_dias_activo=0,
+            fecha_primera_inscripcion="N/A",
+            membresias=[]
+        )
+
+    # Nombres amigables para los planes
+    nombres_planes = {
+        TipoPlan.PASE_DIARIO: "Pase Diario",
+        TipoPlan.PASE_FLEX: "Pase Flex",
+        TipoPlan.MENSUAL: "Mensual",
+        TipoPlan.PLAN_3_MESES: "3 Meses",
+        TipoPlan.PLAN_6_MESES: "6 Meses",
+        TipoPlan.ELITE_ANUAL: "Elite Anual",
+    }
+
+    # Nombres amigables para estados
+    nombres_estados = {
+        EstadoMembresia.ACTIVA: "Activa",
+        EstadoMembresia.VENCIDA: "Vencida",
+        EstadoMembresia.SUSPENDIDA: "Suspendida",
+        EstadoMembresia.CANCELADA: "Cancelada",
+    }
+
+    # Calcular total de días activo (sumando duraciones de todas las membresías)
+    total_dias_activo = sum(m.duracion_dias for m in membresias)
+
+    # Fecha de primera inscripción
+    fecha_primera_inscripcion = membresias[0].fecha_inicio.strftime("%Y-%m-%d")
+
+    # Construir lista de membresías con detalles
+    membresias_detalle = []
+    for m in membresias:
+        membresias_detalle.append({
+            "id": m.id,
+            "tipo_plan": nombres_planes.get(m.tipo_plan, m.tipo_plan.value),
+            "estado": nombres_estados.get(m.estado, m.estado.value),
+            "fecha_inicio": m.fecha_inicio.strftime("%Y-%m-%d"),
+            "fecha_fin": m.fecha_fin.strftime("%Y-%m-%d"),
+            "duracion_dias": m.duracion_dias,
+            "precio": m.precio_final if m.precio_final else m.precio,
+        })
+
+    return HistorialClienteStats(
+        total_dias_activo=total_dias_activo,
+        fecha_primera_inscripcion=fecha_primera_inscripcion,
+        membresias=membresias_detalle
+    )

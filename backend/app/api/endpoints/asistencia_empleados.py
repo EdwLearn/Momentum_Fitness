@@ -144,3 +144,19 @@ def get_estado_empleado_hoy(empleado_id: int, db: Session = Depends(get_db)):
         "hora_salida": asistencia.hora_salida,
         "horas_trabajadas": asistencia.horas_trabajadas
     }
+
+
+@router.post("/resetear-estados", status_code=status.HTTP_200_OK)
+def resetear_estados_empleados(db: Session = Depends(get_db)):
+    """Resetear el estado de todos los empleados a 'sin entrada' (-1) al inicio del día"""
+    try:
+        empleados_actualizados = crud.asistencia_empleados.resetear_estados_empleados(db)
+        return {
+            "message": "Estados de empleados reseteados exitosamente",
+            "empleados_actualizados": empleados_actualizados
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al resetear estados: {str(e)}"
+        )

@@ -95,6 +95,34 @@ def update_usuario(db: Session, usuario_id: int, usuario: UsuarioUpdate) -> Opti
 def delete_usuario(db: Session, usuario_id: int) -> bool:
     db_usuario = get_usuario(db, usuario_id)
     if db_usuario:
+        # Eliminar manualmente todos los registros relacionados
+        # Esto evita problemas de integridad referencial
+
+        # 1. Eliminar membresías
+        db.query(Membresia).filter(Membresia.usuario_id == usuario_id).delete()
+
+        # 2. Eliminar asistencias
+        from app.modules.asistencia.models.asistencia import Asistencia
+        db.query(Asistencia).filter(Asistencia.usuario_id == usuario_id).delete()
+
+        # 3. Eliminar métricas
+        from app.modules.metricas.models.metrica import Metrica
+        db.query(Metrica).filter(Metrica.usuario_id == usuario_id).delete()
+
+        # 4. Eliminar conversaciones
+        from app.modules.bot.models.conversacion import Conversacion
+        db.query(Conversacion).filter(Conversacion.usuario_id == usuario_id).delete()
+
+        # 5. Eliminar logros
+        from app.modules.bot.models.logro import Logro
+        db.query(Logro).filter(Logro.usuario_id == usuario_id).delete()
+
+        # 6. Actualizar referencias de referidos (SET NULL)
+        db.query(Membresia).filter(Membresia.referido_por_id == usuario_id).update(
+            {Membresia.referido_por_id: None}
+        )
+
+        # Finalmente, eliminar el usuario
         db.delete(db_usuario)
         db.commit()
         return True
