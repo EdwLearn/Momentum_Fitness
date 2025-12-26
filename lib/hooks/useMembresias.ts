@@ -6,6 +6,7 @@ import { MembresiaCreateSimple, MembresiaUpdate } from '@/types';
 export const membresiasKeys = {
   all: ['membresias'] as const,
   planes: () => [...membresiasKeys.all, 'planes'] as const,
+  stats: () => [...membresiasKeys.all, 'stats'] as const,
   lists: () => [...membresiasKeys.all, 'list'] as const,
   list: (filters?: string) => [...membresiasKeys.lists(), { filters }] as const,
   details: () => [...membresiasKeys.all, 'detail'] as const,
@@ -19,6 +20,14 @@ export function usePlanes() {
   return useQuery({
     queryKey: membresiasKeys.planes(),
     queryFn: () => membresiasService.getPlanes(),
+  });
+}
+
+// Hook para obtener estadísticas de suscripciones
+export function useSuscripcionesStats() {
+  return useQuery({
+    queryKey: membresiasKeys.stats(),
+    queryFn: () => membresiasService.getStats(),
   });
 }
 

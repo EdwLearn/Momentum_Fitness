@@ -21,7 +21,7 @@ from app.modules.empleados.models.asistencia_empleado import AsistenciaEmpleado
 
 # 3. ENDPOINTS (al final)
 # Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
-from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard
+from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard, reportes
 
 # Nuevos endpoints del bot
 from app.modules.bot.endpoints import bot_endpoints
@@ -126,6 +126,12 @@ app.include_router(
     dashboard.router,
     prefix="/api/dashboard",
     tags=["📊 Dashboard"]
+)
+
+app.include_router(
+    reportes.router,
+    prefix="/api/reportes",
+    tags=["📈 Reportes"]
 )
 
 # Bot de Hospitalidad

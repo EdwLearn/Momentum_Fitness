@@ -1,13 +1,87 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, func
 from typing import List
+from datetime import datetime
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.schemas import membresia as schemas
 from app.crud import membresias as crud
 from app.crud import usuarios as usuarios_crud
-from app.modules.usuarios.models.membresia import PLANES_CONFIG, TipoPlan
+from app.modules.usuarios.models.membresia import PLANES_CONFIG, TipoPlan, Membresia, EstadoMembresia
+from app.models.usuario import Usuario
 
 router = APIRouter()
+
+class SuscripcionesStats(BaseModel):
+    total_activas: int
+    por_referidos: int
+    tipos_planes: int
+    pase_diario: int
+    pase_flex: int
+    mensual: int
+    plan_3_meses: int
+    plan_6_meses: int
+    elite_anual: int
+
+@router.get("/stats", response_model=SuscripcionesStats)
+def get_suscripciones_stats(db: Session = Depends(get_db)):
+    """
+    Obtiene estadísticas de suscripciones para las tarjetas de la página de suscripciones.
+    Retorna total activas, por referidos, tipos de planes, y conteo por cada tipo de plan.
+    """
+    now = datetime.utcnow()
+
+    # Total de membresías activas
+    total_activas = db.query(Membresia).filter(
+        and_(
+            Membresia.activo == True,
+            Membresia.estado == EstadoMembresia.ACTIVA,
+            Membresia.fecha_fin >= now
+        )
+    ).count()
+
+    # Membresías activas por referidos
+    # Necesitamos hacer join con usuarios para saber si fueron referidos
+    por_referidos = db.query(Membresia).join(
+        Usuario, Usuario.id == Membresia.usuario_id
+    ).filter(
+        and_(
+            Membresia.activo == True,
+            Membresia.estado == EstadoMembresia.ACTIVA,
+            Membresia.fecha_fin >= now,
+            Usuario.referido_por_cedula.isnot(None)
+        )
+    ).count()
+
+    # Contar por tipo de plan (solo activas)
+    conteo_planes = db.query(
+        Membresia.tipo_plan,
+        func.count(Membresia.id).label('count')
+    ).filter(
+        and_(
+            Membresia.activo == True,
+            Membresia.estado == EstadoMembresia.ACTIVA,
+            Membresia.fecha_fin >= now
+        )
+    ).group_by(Membresia.tipo_plan).all()
+
+    # Crear diccionario con los conteos
+    planes_dict = {plan: 0 for plan in TipoPlan}
+    for tipo_plan, count in conteo_planes:
+        planes_dict[tipo_plan] = count
+
+    return SuscripcionesStats(
+        total_activas=total_activas,
+        por_referidos=por_referidos,
+        tipos_planes=6,  # Número fijo de tipos de planes disponibles
+        pase_diario=planes_dict[TipoPlan.PASE_DIARIO],
+        pase_flex=planes_dict[TipoPlan.PASE_FLEX],
+        mensual=planes_dict[TipoPlan.MENSUAL],
+        plan_3_meses=planes_dict[TipoPlan.PLAN_3_MESES],
+        plan_6_meses=planes_dict[TipoPlan.PLAN_6_MESES],
+        elite_anual=planes_dict[TipoPlan.ELITE_ANUAL]
+    )
 
 @router.get("/planes", response_model=List[schemas.PlanDisponible])
 def get_planes_disponibles():

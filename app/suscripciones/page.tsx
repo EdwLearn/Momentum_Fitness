@@ -9,13 +9,14 @@ import { StatusBadge } from "@/components/data-table"
 import { CreditCard, Calendar, Repeat, Clock, Trophy, Gift } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
-import { useMembresias } from "@/lib/hooks/useMembresias"
+import { useMembresias, useSuscripcionesStats } from "@/lib/hooks/useMembresias"
 import { useUsuarios } from "@/lib/hooks/useUsuarios"
 import { Membresia, Usuario, TipoPlan, TipoPago } from "@/types"
 
 export default function SuscripcionesPage() {
   const { data: membresias, isLoading: isLoadingMembresias } = useMembresias()
   const { data: usuarios, isLoading: isLoadingUsuarios } = useUsuarios()
+  const { data: stats, isLoading: isLoadingStats } = useSuscripcionesStats()
 
   // Crear lookup map de usuarios
   const usuariosMap = useMemo(() => {
@@ -43,34 +44,19 @@ export default function SuscripcionesPage() {
     "otro": "Otro",
   }
 
-  // Calcular conteos por tipo de plan (solo activas)
+  // Calcular conteos por tipo de plan usando datos del backend
   const planCounts = useMemo(() => {
-    if (!membresias) return []
-
-    const counts: Record<string, number> = {
-      "pase_diario": 0,
-      "pase_flex": 0,
-      "mensual": 0,
-      "plan_3_meses": 0,
-      "plan_6_meses": 0,
-      "elite_anual": 0,
-    }
-
-    membresias.forEach(m => {
-      if (m.activo && m.estado === "activa") {
-        counts[m.tipo_plan] = (counts[m.tipo_plan] || 0) + 1
-      }
-    })
+    if (!stats) return []
 
     return [
-      { name: "Pase Diario", count: counts["pase_diario"], icon: Clock, color: "text-chart-4", key: "pase_diario" },
-      { name: "Pase Flex", count: counts["pase_flex"], icon: CreditCard, color: "text-chart-5", key: "pase_flex" },
-      { name: "Mensual", count: counts["mensual"], icon: Calendar, color: "text-primary", key: "mensual" },
-      { name: "3 Meses", count: counts["plan_3_meses"], icon: Repeat, color: "text-chart-2", key: "plan_3_meses" },
-      { name: "6 Meses", count: counts["plan_6_meses"], icon: Trophy, color: "text-chart-3", key: "plan_6_meses" },
-      { name: "Elite Anual", count: counts["elite_anual"], icon: Gift, color: "text-chart-1", key: "elite_anual" },
+      { name: "Pase Diario", count: stats.pase_diario, icon: Clock, color: "text-chart-4", key: "pase_diario" },
+      { name: "Pase Flex", count: stats.pase_flex, icon: CreditCard, color: "text-chart-5", key: "pase_flex" },
+      { name: "Mensual", count: stats.mensual, icon: Calendar, color: "text-primary", key: "mensual" },
+      { name: "3 Meses", count: stats.plan_3_meses, icon: Repeat, color: "text-chart-2", key: "plan_3_meses" },
+      { name: "6 Meses", count: stats.plan_6_meses, icon: Trophy, color: "text-chart-3", key: "plan_6_meses" },
+      { name: "Elite Anual", count: stats.elite_anual, icon: Gift, color: "text-chart-1", key: "elite_anual" },
     ]
-  }, [membresias])
+  }, [stats])
 
   // Datos para la gráfica de barras
   const chartData = useMemo(() => {
@@ -128,18 +114,10 @@ export default function SuscripcionesPage() {
       })
   }, [membresias, usuarios, usuariosMap])
 
-  // Calcular totales
-  const totalActivas = useMemo(() => {
-    return membresias?.filter(m => m.activo && m.estado === "activa").length || 0
-  }, [membresias])
-
-  const totalReferidos = useMemo(() => {
-    if (!membresias || !usuarios) return 0
-    return membresias.filter(m => {
-      const usuario = usuariosMap.get(m.usuario_id)
-      return m.activo && m.estado === "activa" && usuario?.referido_por_cedula
-    }).length
-  }, [membresias, usuarios, usuariosMap])
+  // Obtener totales del backend
+  const totalActivas = stats?.total_activas || 0
+  const totalReferidos = stats?.por_referidos || 0
+  const tiposPlanesCount = stats?.tipos_planes || 6
 
   const subscriptionColumns = [
     {
@@ -247,7 +225,7 @@ export default function SuscripcionesPage() {
   ]
 
   // Loading state
-  if (isLoadingMembresias || isLoadingUsuarios) {
+  if (isLoadingMembresias || isLoadingUsuarios || isLoadingStats) {
     return (
       <ProtectedRoute>
         <DashboardLayout title="Suscripciones y Planes" subtitle="Gestiona las suscripciones activas y tipos de planes">
@@ -289,7 +267,7 @@ export default function SuscripcionesPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Tipos de Planes</p>
-              <p className="text-3xl font-bold text-chart-3 mt-1">6</p>
+              <p className="text-3xl font-bold text-chart-3 mt-1">{tiposPlanesCount}</p>
             </div>
             <Trophy className="h-10 w-10 text-chart-3/30" />
           </div>

@@ -3,7 +3,25 @@ import { PlanDisponible, Membresia, MembresiaCreateSimple, MembresiaUpdate } fro
 
 const BASE_URL = '/api/membresias';
 
+export interface SuscripcionesStats {
+  total_activas: number;
+  por_referidos: number;
+  tipos_planes: number;
+  pase_diario: number;
+  pase_flex: number;
+  mensual: number;
+  plan_3_meses: number;
+  plan_6_meses: number;
+  elite_anual: number;
+}
+
 export const membresiasService = {
+  // Obtener estadísticas de suscripciones
+  getStats: async (): Promise<SuscripcionesStats> => {
+    const response = await api.get<SuscripcionesStats>(`${BASE_URL}/stats`);
+    return response.data;
+  },
+
   // Obtener todos los planes disponibles
   getPlanes: async (): Promise<PlanDisponible[]> => {
     const response = await api.get<PlanDisponible[]>(`${BASE_URL}/planes`);
