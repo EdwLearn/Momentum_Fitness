@@ -1,9 +1,7 @@
 "use client"
 
-import { X, Calendar, Clock, TrendingUp } from "lucide-react"
+import { X, Calendar, CreditCard, DollarSign, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { StatusBadge } from "@/components/data-table"
 import { useQuery } from '@tanstack/react-query'
 import { dashboardService } from '@/lib/services/dashboard'
 
@@ -19,14 +17,6 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
     queryFn: () => dashboardService.getHistorialCliente(clienteId),
   })
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(value)
-  }
-
   const formatDate = (dateStr: string) => {
     if (dateStr === "N/A") return dateStr
     const date = new Date(dateStr)
@@ -37,13 +27,34 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
     })
   }
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+    }).format(value)
+  }
+
+  const getEstadoBadgeColor = (estado: string) => {
+    switch (estado.toLowerCase()) {
+      case 'activo':
+        return 'bg-green-500/10 text-green-500 border-green-500/20'
+      case 'vencido':
+        return 'bg-red-500/10 text-red-500 border-red-500/20'
+      case 'cancelado':
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+      default:
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-card border border-border rounded-xl shadow-xl mx-4">
+      <div className="relative z-10 w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-card border border-border rounded-xl shadow-xl mx-4">
         {/* Header */}
         <div className="sticky top-0 flex items-center justify-between p-6 border-b border-border bg-card">
           <div>
@@ -76,17 +87,50 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
                 </div>
                 <div className="bg-secondary rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">Total Días Activo</span>
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Días Activo (Total)</span>
                   </div>
                   <p className="text-lg font-semibold text-primary">{historial.total_dias_activo} días</p>
                 </div>
                 <div className="bg-secondary rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <CreditCard className="h-4 w-4 text-primary" />
                     <span className="text-sm text-muted-foreground">Total Membresías</span>
                   </div>
                   <p className="text-lg font-semibold text-foreground">{historial.membresias.length}</p>
+                </div>
+              </div>
+
+              {/* Resumen */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Invertido</p>
+                    <p className="text-xl font-bold text-primary">
+                      {formatCurrency(historial.membresias.reduce((sum, m) => sum + m.precio, 0))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Membresías Activas</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {historial.membresias.filter(m => m.estado.toLowerCase() === 'activo').length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tiempo como Cliente</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {historial.fecha_primera_inscripcion !== "N/A"
+                        ? (() => {
+                            const primeraInscripcion = new Date(historial.fecha_primera_inscripcion)
+                            const hoy = new Date()
+                            const meses = Math.round(
+                              (hoy.getTime() - primeraInscripcion.getTime()) / (1000 * 60 * 60 * 24 * 30)
+                            )
+                            return `${meses} meses`
+                          })()
+                        : "N/A"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -94,61 +138,53 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-4">Historial de Membresías</h3>
                 <div className="rounded-lg border border-border overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-secondary">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Plan</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Fecha Inicio</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Fecha Fin</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Duración</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Precio</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {historial.membresias.map((membresia, index) => (
-                        <tr key={index} className="border-t border-border hover:bg-secondary/50">
-                          <td className="px-4 py-3 text-sm text-foreground font-medium">
-                            {membresia.tipo_plan}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-foreground">
-                            {formatDate(membresia.fecha_inicio)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-foreground">
-                            {formatDate(membresia.fecha_fin)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {membresia.duracion_dias} días
-                          </td>
-                          <td className="px-4 py-3 text-sm text-primary font-medium">
-                            {formatCurrency(membresia.precio)}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <StatusBadge status={membresia.estado} />
-                          </td>
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="w-full">
+                      <thead className="bg-secondary sticky top-0">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Tipo de Plan</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Estado</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Fecha Inicio</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Fecha Fin</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Duración</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">Precio</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Resumen Total */}
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Invertido</p>
-                    <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(
-                        historial.membresias.reduce((sum, m) => sum + m.precio, 0)
-                      )}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Tiempo como Miembro</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {Math.round(historial.total_dias_activo / 30)} meses
-                    </p>
+                      </thead>
+                      <tbody>
+                        {historial.membresias.length > 0 ? (
+                          historial.membresias.map((membresia, index) => (
+                            <tr key={membresia.id} className="border-t border-border hover:bg-secondary/50">
+                              <td className="px-4 py-3 text-sm text-foreground font-medium">
+                                {membresia.tipo_plan}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getEstadoBadgeColor(membresia.estado)}`}>
+                                  {membresia.estado}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-foreground">
+                                {formatDate(membresia.fecha_inicio)}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-foreground">
+                                {formatDate(membresia.fecha_fin)}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-primary font-medium">
+                                {membresia.duracion_dias} días
+                              </td>
+                              <td className="px-4 py-3 text-sm text-foreground font-medium">
+                                {formatCurrency(membresia.precio)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                              No hay registros de membresías
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>

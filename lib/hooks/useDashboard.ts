@@ -79,6 +79,17 @@ export const useDashboard = () => {
     refetchInterval: 30000, // Actualizar cada 30 segundos
   })
 
+  const {
+    data: empleados,
+    isLoading: isLoadingEmpleados,
+    error: errorEmpleados,
+    refetch: refetchEmpleados
+  } = useQuery({
+    queryKey: ['dashboard', 'empleados'],
+    queryFn: dashboardService.getEmpleados,
+    refetchInterval: 30000, // Actualizar cada 30 segundos
+  })
+
   return {
     clientesActivosStats,
     isLoadingClientesActivos,
@@ -107,6 +118,10 @@ export const useDashboard = () => {
     proximasRenovaciones,
     isLoadingProximasRenovaciones,
     errorProximasRenovaciones,
-    refetchProximasRenovaciones
+    refetchProximasRenovaciones,
+    empleados,
+    isLoadingEmpleados,
+    errorEmpleados,
+    refetchEmpleados
   }
 }

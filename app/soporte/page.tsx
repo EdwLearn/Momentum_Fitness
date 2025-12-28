@@ -8,22 +8,19 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  MessageCircle,
   Mail,
-  Phone,
   BookOpen,
-  Video,
-  FileText,
   Send,
   ChevronRight,
   Search,
   Clock,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { SuccessToast } from "@/components/success-toast"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 const faqItems = [
   {
@@ -31,15 +28,19 @@ const faqItems = [
     questions: [
       {
         q: "¿Cómo registro un nuevo cliente?",
-        a: "Ve a la sección Clientes y haz clic en el botón 'Nuevo cliente'. Completa el formulario con la información requerida.",
+        a: "Ve a la sección 'Clientes' en el menú lateral y haz clic en el botón '+ Nuevo Cliente'. Completa el formulario con los datos personales (nombre, email, teléfono, cédula), selecciona el tipo de plan (Mensual, Trimestral, Semestral o Anual) y haz clic en 'Crear Cliente'. El sistema generará automáticamente las fechas de inicio y fin de la suscripción.",
       },
       {
-        q: "¿Cómo busco un cliente específico?",
-        a: "Usa la barra de búsqueda en la página de Clientes para buscar por nombre o cédula.",
+        q: "¿Cómo edito o elimino un cliente?",
+        a: "En la tabla de clientes, cada fila tiene botones de acción en el lado derecho. Usa el ícono de lápiz para editar los datos del cliente o el ícono de papelera para eliminarlo. Al editar, podrás modificar todos los campos excepto la cédula. La eliminación requiere confirmación.",
       },
       {
-        q: "¿Puedo exportar la lista de clientes?",
-        a: "Sí, en la página de Clientes hay un botón 'Exportar' que te permite descargar la lista en formato CSV o PDF.",
+        q: "¿Cómo puedo buscar clientes?",
+        a: "Usa la barra de búsqueda en la parte superior de la tabla de clientes. Puedes buscar por nombre, email, teléfono o cédula. La búsqueda es instantánea y filtra los resultados mientras escribes.",
+      },
+      {
+        q: "¿Qué información puedo ver de cada cliente?",
+        a: "La tabla muestra: nombre completo, email, teléfono, cédula, tipo de plan (Mensual/Trimestral/Semestral/Anual), fecha de inicio, fecha de vencimiento y estado de la suscripción (Activa/Vencida/Por vencer). Los estados tienen códigos de colores para identificación rápida.",
       },
     ],
   },
@@ -47,86 +48,152 @@ const faqItems = [
     category: "Suscripciones",
     questions: [
       {
-        q: "¿Cómo creo un nuevo plan de suscripción?",
-        a: "En la sección Suscripciones, usa el botón 'Nuevo plan' para configurar tipos de planes, precios y duración.",
+        q: "¿Qué tipos de planes están disponibles?",
+        a: "Momentum Fitness ofrece 6 tipos de planes: Pase Diario (1 día - acceso único), Pase Flex (15 días - acceso flexible sin compromiso), Mensual (30 días), Trimestral (90 días), Semestral (180 días) y Anual (365 días). Al crear o editar un cliente, selecciona el tipo de plan y el sistema calculará automáticamente la fecha de vencimiento según corresponda.",
       },
       {
-        q: "¿Cómo renuevo una suscripción?",
-        a: "Ve al perfil del cliente y selecciona 'Renovar suscripción'. El sistema calculará automáticamente la nueva fecha de vencimiento.",
+        q: "¿Cuál es la diferencia entre Pase Diario y Pase Flex?",
+        a: "El Pase Diario es válido solo por un día específico, ideal para visitantes ocasionales. El Pase Flex tiene una duración de 15 días y ofrece acceso flexible, perfecto para quienes quieren probar el gimnasio por un periodo corto sin comprometerse con planes más largos. Ambos son ideales para usuarios que no quieren suscripciones extensas.",
       },
       {
-        q: "¿Puedo configurar renovaciones automáticas?",
-        a: "Sí, en Configuración > Suscripciones puedes habilitar la renovación automática con cargo a tarjeta.",
-      },
-    ],
-  },
-  {
-    category: "Reportes",
-    questions: [
-      {
-        q: "¿Cómo genero reportes personalizados?",
-        a: "En la sección Reportes, selecciona el tipo de reporte, ajusta los filtros de fecha y haz clic en 'Generar'.",
+        q: "¿Cómo funciona el sistema de vencimiento?",
+        a: "El sistema calcula automáticamente las fechas según el tipo de plan. Una suscripción se marca como 'Por vencer' cuando faltan 7 días o menos para su vencimiento, y como 'Vencida' después de la fecha de fin. Puedes ver el estado con códigos de colores en la tabla de clientes. Los pases diarios vencen al finalizar el día.",
       },
       {
-        q: "¿Puedo programar reportes automáticos?",
-        a: "Sí, en Configuración > Reportes puedes programar envíos automáticos por email semanalmente o mensualmente.",
-      },
-      {
-        q: "¿Qué formatos de exportación están disponibles?",
-        a: "Puedes exportar reportes en formato PDF para presentaciones o CSV para análisis en Excel.",
+        q: "¿Cómo renuevo una suscripción vencida?",
+        a: "Para renovar una suscripción, edita el cliente usando el botón de lápiz, actualiza la fecha de inicio a la fecha actual o deseada, y confirma. El sistema recalculará automáticamente la fecha de vencimiento según el tipo de plan seleccionado. También puedes cambiar el tipo de plan durante la renovación.",
       },
     ],
   },
   {
-    category: "Notificaciones",
+    category: "Asistencia",
     questions: [
       {
-        q: "¿Cómo configuro notificaciones automáticas?",
-        a: "Ve a Notificaciones y activa las reglas que desees. Puedes personalizar los mensajes y los triggers.",
+        q: "¿Cómo registro la asistencia de un cliente?",
+        a: "Ve a la sección 'Asistencia' en el menú lateral. Puedes buscar al cliente por nombre o cédula, seleccionarlo de la lista y hacer clic en '+ Registrar Asistencia'. El sistema registrará automáticamente la fecha y hora actual. También puedes ver el historial completo de asistencias de cada cliente.",
       },
       {
-        q: "¿Puedo enviar mensajes masivos?",
-        a: "Sí, en la sección de Clientes puedes seleccionar múltiples usuarios y enviar un mensaje grupal por WhatsApp o Email.",
+        q: "¿Puedo ver estadísticas de asistencia?",
+        a: "Sí, en la sección de Asistencia puedes ver métricas como total de asistencias del día, asistencias del mes, comparativas con periodos anteriores, gráficos de tendencia por día/semana/mes, y horarios pico. También puedes filtrar por rangos de fechas personalizados.",
       },
       {
-        q: "¿Cómo integro WhatsApp Business?",
-        a: "En Configuración > Notificaciones, ingresa tu API Key de WhatsApp Business y el número autorizado.",
+        q: "¿Cómo registro la asistencia de empleados?",
+        a: "En la sección 'Asistencia Empleados' puedes registrar entradas y salidas del personal. El sistema lleva un control completo de horarios, horas trabajadas, y genera reportes de puntualidad y asistencia del equipo.",
+      },
+    ],
+  },
+  {
+    category: "Dashboard y Reportes",
+    questions: [
+      {
+        q: "¿Qué información muestra el Dashboard?",
+        a: "El Dashboard principal muestra métricas clave en tiempo real: total de clientes activos con tendencia porcentual, asistencias del día, ingresos del mes, gráficos de asistencia semanal, distribución de planes, clientes próximos a vencer, y actividad reciente. Todo con actualizaciones automáticas.",
+      },
+      {
+        q: "¿Cómo genero reportes?",
+        a: "En la sección 'Reportes' puedes generar reportes de ingresos, asistencia, y clientes. Selecciona el tipo de reporte, ajusta el rango de fechas usando el selector de calendario, y haz clic en 'Generar'. Los reportes incluyen gráficos visuales y tablas detalladas para análisis.",
+      },
+      {
+        q: "¿Qué tipos de reportes puedo generar?",
+        a: "Puedes generar tres tipos principales de reportes: Reportes de Ingresos (mostrando totales por periodo, desglose por tipo de plan y tendencias), Reportes de Asistencia (con estadísticas de asistencias diarias, semanales y mensuales), y Reportes de Clientes (con información sobre nuevos clientes, renovaciones y distribución de planes).",
+      },
+    ],
+  },
+  {
+    category: "Sistema de Cupones y Referidos",
+    questions: [
+      {
+        q: "¿Cómo funcionan los cupones de descuento?",
+        a: "En la sección 'Cupones' puedes crear códigos promocionales con porcentaje de descuento, fecha de vencimiento y límite de usos. Los clientes pueden usar estos códigos al momento de inscribirse o renovar para obtener descuentos en sus planes.",
+      },
+      {
+        q: "¿Qué es el sistema de referidos?",
+        a: "El sistema de referidos permite que tus clientes actuales inviten a nuevos usuarios. Cuando un cliente nuevo se registra usando el código de referido de un miembro existente, ambos pueden recibir beneficios (descuentos, extensión de suscripción, etc.).",
+      },
+      {
+        q: "¿Cómo puedo rastrear el uso de cupones y referidos?",
+        a: "En las secciones de Cupones y Referidos encontrarás dashboards con estadísticas de uso, cupones más populares, clientes que más refieren, total de descuentos otorgados, y tasas de conversión. Esto te ayuda a medir el éxito de tus campañas promocionales.",
       },
     ],
   },
 ]
 
-const supportTickets = [
-  {
-    id: "#TKT-001",
-    asunto: "Error al exportar reporte de ingresos",
-    estado: "Resuelto",
-    prioridad: "Media",
-    fecha: "2024-12-08",
-  },
-  {
-    id: "#TKT-002",
-    asunto: "Consulta sobre integración con pasarela de pago",
-    estado: "En progreso",
-    prioridad: "Alta",
-    fecha: "2024-12-09",
-  },
-  {
-    id: "#TKT-003",
-    asunto: "Solicitud de nueva funcionalidad",
-    estado: "Abierto",
-    prioridad: "Baja",
-    fecha: "2024-12-10",
-  },
-]
+interface Ticket {
+  id: number
+  nombre: string
+  categoria: string
+  prioridad: string
+  asunto: string
+  mensaje: string
+  estado: string
+  created_at: string
+}
 
 export default function SoportePage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null)
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmitTicket = () => {
-    setShowSuccess(true)
+  // Form state
+  const [formData, setFormData] = useState({
+    nombre: "",
+    categoria: "",
+    prioridad: "",
+    asunto: "",
+    mensaje: "",
+  })
+
+  // Fetch tickets on mount
+  useEffect(() => {
+    fetchTickets()
+  }, [])
+
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/tickets-soporte/`)
+      if (response.ok) {
+        const data = await response.json()
+        setTickets(data)
+      }
+    } catch (error) {
+      console.error("Error fetching tickets:", error)
+    }
+  }
+
+  const handleSubmitTicket = async () => {
+    if (!formData.nombre || !formData.categoria || !formData.prioridad || !formData.asunto || !formData.mensaje) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/api/tickets-soporte/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        setShowSuccess(true)
+        setFormData({
+          nombre: "",
+          categoria: "",
+          prioridad: "",
+          asunto: "",
+          mensaje: "",
+        })
+        // Refresh tickets list
+        fetchTickets()
+      }
+    } catch (error) {
+      console.error("Error creating ticket:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filteredFaqs = faqItems
@@ -149,22 +216,7 @@ export default function SoportePage() {
           </div>
 
         {/* Contact Methods */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-6 bg-card border-sidebar-border hover:border-primary transition-colors cursor-pointer group">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all">
-                <MessageCircle className="h-6 w-6 text-primary group-hover:text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Chat en Vivo</h3>
-                <p className="text-sm text-muted-foreground mt-1">Respuesta en menos de 5 minutos</p>
-              </div>
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm">
-                Iniciar chat
-              </Button>
-            </div>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="p-6 bg-card border-sidebar-border hover:border-primary transition-colors cursor-pointer group">
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500 group-hover:scale-110 transition-all">
@@ -177,6 +229,21 @@ export default function SoportePage() {
               <Button
                 variant="outline"
                 className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white bg-transparent"
+                onClick={() => {
+                  const email = "edwardgiraldo101@gmail.com"
+                  const subject = "Consulta de Soporte - Momentum Fitness"
+                  const body = `Hola equipo de Momentum Fitness,
+
+Tengo una consulta sobre el sistema.
+
+Nombre:
+Asunto:
+Descripción del problema:
+
+
+Gracias por su atención.`
+                  window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank")
+                }}
               >
                 Enviar email
               </Button>
@@ -185,66 +252,18 @@ export default function SoportePage() {
 
           <Card className="p-6 bg-card border-sidebar-border hover:border-primary transition-colors cursor-pointer group">
             <div className="flex flex-col items-center text-center space-y-3">
-              <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500 group-hover:scale-110 transition-all">
-                <Phone className="h-6 w-6 text-purple-500 group-hover:text-white" />
+              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all">
+                <BookOpen className="h-6 w-6 text-primary group-hover:text-primary-foreground" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Teléfono</h3>
-                <p className="text-sm text-muted-foreground mt-1">+57 1 234 5678</p>
+                <h3 className="font-semibold text-foreground">Documentación</h3>
+                <p className="text-sm text-muted-foreground mt-1">Guía completa de uso</p>
               </div>
-              <Button
-                variant="outline"
-                className="border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white bg-transparent"
-              >
-                Llamar ahora
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm">
+                Ver documentación
               </Button>
             </div>
           </Card>
-        </div>
-
-        {/* Quick Resources */}
-        <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">Recursos Rápidos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-4 bg-card border-sidebar-border hover:border-primary transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-foreground">Documentación</h4>
-                  <p className="text-xs text-muted-foreground">Guías completas de uso</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </Card>
-
-            <Card className="p-4 bg-card border-sidebar-border hover:border-primary transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <Video className="h-5 w-5 text-blue-500" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-foreground">Video Tutoriales</h4>
-                  <p className="text-xs text-muted-foreground">Aprende con videos</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </Card>
-
-            <Card className="p-4 bg-card border-sidebar-border hover:border-primary transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-purple-500" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-foreground">API Reference</h4>
-                  <p className="text-xs text-muted-foreground">Integración y desarrollo</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </Card>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -317,49 +336,63 @@ export default function SoportePage() {
                 </div>
 
                 <div className="space-y-3">
-                  {supportTickets.map((ticket) => (
-                    <div
-                      key={ticket.id}
-                      className="p-4 rounded-lg bg-sidebar-accent border border-sidebar-border hover:border-primary transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-mono text-muted-foreground">{ticket.id}</span>
-                            {ticket.estado === "Resuelto" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                            {ticket.estado === "En progreso" && <Clock className="h-4 w-4 text-yellow-500" />}
-                            {ticket.estado === "Abierto" && <AlertCircle className="h-4 w-4 text-blue-500" />}
+                  {tickets.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No hay tickets creados aún</p>
+                    </div>
+                  ) : (
+                    tickets.map((ticket: Ticket) => (
+                      <div
+                        key={ticket.id}
+                        className="p-4 rounded-lg bg-sidebar-accent border border-sidebar-border hover:border-primary transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-mono text-muted-foreground">#{ticket.id}</span>
+                              {ticket.estado === "Resuelto" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                              {ticket.estado === "En progreso" && <Clock className="h-4 w-4 text-yellow-500" />}
+                              {ticket.estado === "Abierto" && <AlertCircle className="h-4 w-4 text-blue-500" />}
+                            </div>
+                            <p className="font-medium text-foreground">{ticket.asunto}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {new Date(ticket.created_at).toLocaleDateString("es-ES")}
+                            </p>
                           </div>
-                          <p className="font-medium text-foreground">{ticket.asunto}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{ticket.fecha}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              ticket.prioridad === "Alta"
-                                ? "bg-red-500/20 text-red-500"
-                                : ticket.prioridad === "Media"
-                                  ? "bg-yellow-500/20 text-yellow-500"
-                                  : "bg-blue-500/20 text-blue-500"
-                            }`}
-                          >
-                            {ticket.prioridad}
-                          </span>
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              ticket.estado === "Resuelto"
-                                ? "bg-green-500/20 text-green-500"
-                                : ticket.estado === "En progreso"
-                                  ? "bg-yellow-500/20 text-yellow-500"
-                                  : "bg-blue-500/20 text-blue-500"
-                            }`}
-                          >
-                            {ticket.estado}
-                          </span>
+                          <div className="flex flex-col items-end gap-2">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                ticket.prioridad === "high" || ticket.prioridad === "urgent"
+                                  ? "bg-red-500/20 text-red-500"
+                                  : ticket.prioridad === "medium"
+                                    ? "bg-yellow-500/20 text-yellow-500"
+                                    : "bg-blue-500/20 text-blue-500"
+                              }`}
+                            >
+                              {ticket.prioridad === "low"
+                                ? "Baja"
+                                : ticket.prioridad === "medium"
+                                  ? "Media"
+                                  : ticket.prioridad === "high"
+                                    ? "Alta"
+                                    : "Urgente"}
+                            </span>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                ticket.estado === "Resuelto"
+                                  ? "bg-green-500/20 text-green-500"
+                                  : ticket.estado === "En progreso"
+                                    ? "bg-yellow-500/20 text-yellow-500"
+                                    : "bg-blue-500/20 text-blue-500"
+                              }`}
+                            >
+                              {ticket.estado}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </Card>
@@ -377,17 +410,18 @@ export default function SoportePage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="ticket-name">Nombre</Label>
-                    <Input id="ticket-name" placeholder="Tu nombre" className="bg-sidebar" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="ticket-email">Email</Label>
-                    <Input id="ticket-email" type="email" placeholder="tu@email.com" className="bg-sidebar" />
+                    <Input
+                      id="ticket-name"
+                      placeholder="Tu nombre"
+                      className="bg-sidebar"
+                      value={formData.nombre}
+                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="ticket-category">Categoría</Label>
-                    <Select>
+                    <Select value={formData.categoria} onValueChange={(value) => setFormData({ ...formData, categoria: value })}>
                       <SelectTrigger className="bg-sidebar">
                         <SelectValue placeholder="Selecciona una categoría" />
                       </SelectTrigger>
@@ -402,7 +436,7 @@ export default function SoportePage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="ticket-priority">Prioridad</Label>
-                    <Select>
+                    <Select value={formData.prioridad} onValueChange={(value) => setFormData({ ...formData, prioridad: value })}>
                       <SelectTrigger className="bg-sidebar">
                         <SelectValue placeholder="Selecciona la prioridad" />
                       </SelectTrigger>
@@ -417,7 +451,13 @@ export default function SoportePage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="ticket-subject">Asunto</Label>
-                    <Input id="ticket-subject" placeholder="Breve descripción del problema" className="bg-sidebar" />
+                    <Input
+                      id="ticket-subject"
+                      placeholder="Breve descripción del problema"
+                      className="bg-sidebar"
+                      value={formData.asunto}
+                      onChange={(e) => setFormData({ ...formData, asunto: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -427,43 +467,24 @@ export default function SoportePage() {
                       placeholder="Describe tu problema o pregunta en detalle..."
                       rows={6}
                       className="bg-sidebar resize-none"
+                      value={formData.mensaje}
+                      onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
                     />
                   </div>
 
                   <Button
                     onClick={handleSubmitTicket}
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm"
+                    disabled={loading}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm disabled:opacity-50"
                   >
                     <Send className="h-4 w-4 mr-2" />
-                    Enviar ticket
+                    {loading ? "Enviando..." : "Enviar ticket"}
                   </Button>
-                </div>
-
-                <div className="pt-4 border-t border-sidebar-border">
-                  <p className="text-xs text-muted-foreground text-center">
-                    Tiempo promedio de respuesta: <span className="text-primary font-semibold">2 horas</span>
-                  </p>
                 </div>
               </div>
             </Card>
           </div>
         </div>
-
-        {/* Additional Resources */}
-        <Card className="p-6 bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-1">¿Necesitas ayuda personalizada?</h3>
-              <p className="text-muted-foreground">
-                Agenda una sesión con nuestro equipo de soporte para resolver tus dudas en tiempo real.
-              </p>
-            </div>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm">
-              Agendar sesión
-              <ExternalLink className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </Card>
 
         <SuccessToast
           open={showSuccess}

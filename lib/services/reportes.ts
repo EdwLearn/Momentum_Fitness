@@ -47,6 +47,15 @@ export interface ResumenIngresos {
   ingresos_por_cliente: number;
 }
 
+export interface ComparacionEmpleadosItem {
+  mes: string;
+  empleados: Array<{
+    id: number;
+    nombre: string;
+    horas: number;
+  }>;
+}
+
 export const reportesService = {
   // Obtener asistencias por día
   getAsistenciasPorDia: async (dias: number = 7): Promise<AsistenciasPorDiaItem[]> => {
@@ -101,6 +110,14 @@ export const reportesService = {
   // Obtener resumen de ingresos
   getResumenIngresos: async (): Promise<ResumenIngresos> => {
     const response = await api.get<ResumenIngresos>(`${BASE_URL}/resumen-ingresos`);
+    return response.data;
+  },
+
+  // Obtener comparación de empleados
+  getComparacionEmpleados: async (meses: number = 6): Promise<ComparacionEmpleadosItem[]> => {
+    const response = await api.get<ComparacionEmpleadosItem[]>(`${BASE_URL}/comparacion-empleados`, {
+      params: { meses }
+    });
     return response.data;
   },
 };

@@ -16,6 +16,7 @@ import {
   HelpCircle,
   Zap,
   Lock,
+  History,
 } from "lucide-react"
 
 const mainMenuItems = [
@@ -23,7 +24,7 @@ const mainMenuItems = [
   { name: "Clientes", href: "/clientes", icon: Users },
   { name: "Empleados", href: "/empleados", icon: UsersRound },
   { name: "Cupones & Referidos", href: "/cupones", icon: Ticket },
-  { name: "Notificaciones", href: "/notificaciones", icon: Bell },
+  { name: "Notificaciones", href: "/notificaciones", icon: Bell, disabled: true },
 ]
 
 const protectedMenuItems = [
@@ -61,6 +62,21 @@ export function Sidebar() {
           </p>
           {mainMenuItems.map((item) => {
             const isActive = pathname === item.href
+            const isDisabled = item.disabled
+
+            if (isDisabled) {
+              return (
+                <div
+                  key={item.name}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium opacity-40 cursor-not-allowed"
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                  <span className="ml-auto text-xs">(En progreso)</span>
+                </div>
+              )
+            }
+
             return (
               <Link
                 key={item.name}

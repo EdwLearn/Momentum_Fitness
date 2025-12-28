@@ -5,6 +5,8 @@ from app.core.database import get_db
 from app.models.usuario import Usuario
 from app.modules.usuarios.models.membresia import Membresia, EstadoMembresia, TipoPlan
 from app.modules.asistencia.models.asistencia import Asistencia
+from app.modules.empleados.models.empleado import Empleado
+from app.modules.empleados.models.asistencia_empleado import AsistenciaEmpleado
 from datetime import datetime, timedelta
 from typing import List
 from pydantic import BaseModel
@@ -47,6 +49,10 @@ class ResumenIngresos(BaseModel):
     ingresos_totales: float
     ticket_promedio: float
     ingresos_por_cliente: float
+
+class ComparacionEmpleadosItem(BaseModel):
+    mes: str
+    empleados: List[dict]
 
 @router.get("/asistencias-por-dia", response_model=List[AsistenciasPorDiaItem])
 def get_asistencias_por_dia(dias: int = 7, db: Session = Depends(get_db)):
@@ -389,3 +395,69 @@ def get_resumen_ingresos(db: Session = Depends(get_db)):
         ticket_promedio=float(ticket_promedio) / 1000,  # En miles
         ingresos_por_cliente=float(ingresos_por_cliente) / 1000  # En miles
     )
+
+@router.get("/comparacion-empleados", response_model=List[ComparacionEmpleadosItem])
+def get_comparacion_empleados(meses: int = 6, db: Session = Depends(get_db)):
+    """
+    Retorna comparación de horas trabajadas de todos los empleados en los últimos N meses
+    Formato optimizado para gráfico de líneas múltiples
+    """
+    from datetime import timezone
+    colombia_tz = timezone(timedelta(hours=-5))
+    now = datetime.now(colombia_tz)
+
+    # Obtener todos los empleados activos
+    empleados = db.query(Empleado).all()
+
+    # Crear estructura de datos optimizada para recharts
+    resultado = []
+
+    for mes_offset in range(meses - 1, -1, -1):  # De más antiguo a más reciente
+        # Calcular primer y último día del mes
+        if mes_offset == 0:
+            # Mes actual
+            primer_dia = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+            ultimo_dia = now.date()
+        else:
+            # Meses anteriores
+            fecha_mes = now - timedelta(days=mes_offset * 30)
+            primer_dia = fecha_mes.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+            # Último día del mes
+            if fecha_mes.month == 12:
+                siguiente_mes = fecha_mes.replace(year=fecha_mes.year + 1, month=1, day=1)
+            else:
+                siguiente_mes = fecha_mes.replace(month=fecha_mes.month + 1, day=1)
+            ultimo_dia = (siguiente_mes - timedelta(days=1)).date()
+
+        # Nombre del mes
+        mes_nombre = primer_dia.strftime("%b %Y")
+
+        # Datos de empleados para este mes
+        empleados_data = []
+
+        for emp in empleados:
+            # Calcular horas trabajadas del empleado en este mes
+            asistencias_mes = db.query(AsistenciaEmpleado).filter(
+                and_(
+                    AsistenciaEmpleado.empleado_id == emp.id,
+                    AsistenciaEmpleado.fecha >= primer_dia,
+                    AsistenciaEmpleado.fecha <= ultimo_dia
+                )
+            ).all()
+
+            horas_mes = sum(
+                a.horas_trabajadas for a in asistencias_mes if a.horas_trabajadas
+            ) or 0.0
+
+            empleados_data.append({
+                "id": emp.id,
+                "nombre": f"{emp.nombre} {emp.apellido or ''}".strip(),
+                "horas": round(horas_mes, 2)
+            })
+
+        resultado.append(ComparacionEmpleadosItem(
+            mes=mes_nombre,
+            empleados=empleados_data
+        ))
+
+    return resultado

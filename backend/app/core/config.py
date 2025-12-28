@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     CV_ENABLED: bool = False
     CV_CAMERA_URLS: Union[List[str], str] = ""
 
+    # Email Configuration
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SUPPORT_EMAIL: str = "edwardgiraldo101@gmail.com"
+
     @field_validator('ALLOWED_ORIGINS', mode='before')
     @classmethod
     def parse_cors_origins(cls, v):

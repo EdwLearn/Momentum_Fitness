@@ -5,8 +5,10 @@ from app.core.database import get_db
 from app.models.usuario import Usuario
 from app.modules.usuarios.models.membresia import Membresia, EstadoMembresia, TipoPlan
 from app.modules.asistencia.models.asistencia import Asistencia
+from app.modules.empleados.models.empleado import Empleado
+from app.modules.empleados.models.asistencia_empleado import AsistenciaEmpleado
 from datetime import datetime, timedelta, date
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -46,6 +48,22 @@ class HistorialClienteStats(BaseModel):
     total_dias_activo: int
     fecha_primera_inscripcion: str
     membresias: list[dict]
+
+class EmpleadoDashboardItem(BaseModel):
+    id: int
+    nombre: str
+    cedula: str
+    tipo_empleado: str
+    dias_trabajados_mes: int
+    horas_trabajadas_mes: float
+    ultimo_registro: Optional[str]
+
+class HistorialEmpleadoStats(BaseModel):
+    total_dias_trabajados: int
+    total_horas_trabajadas: float
+    fecha_contratacion: str
+    asistencias: list[dict]
+    comparacion_empleados: list[dict]
 
 @router.get("/clientes-activos", response_model=ClientesActivosStats)
 def get_clientes_activos_stats(db: Session = Depends(get_db)):
@@ -408,4 +426,203 @@ def get_historial_cliente(cliente_id: int, db: Session = Depends(get_db)):
         total_dias_activo=total_dias_activo,
         fecha_primera_inscripcion=fecha_primera_inscripcion,
         membresias=membresias_detalle
+    )
+
+@router.get("/empleados", response_model=list[EmpleadoDashboardItem])
+def get_empleados_dashboard(db: Session = Depends(get_db)):
+    """
+    Retorna todos los empleados con estadísticas del mes actual
+    """
+    now = datetime.utcnow()
+
+    # Primer día del mes actual
+    primer_dia_mes_actual = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Obtener todos los empleados
+    empleados = db.query(Empleado).all()
+
+    # Mapeo de nombres de tipos de empleados
+    nombres_tipos = {
+        "entrenador": "Entrenador",
+        "recepcion": "Recepción",
+    }
+
+    resultado = []
+    for empleado in empleados:
+        # Obtener asistencias del mes actual
+        asistencias_mes = db.query(AsistenciaEmpleado).filter(
+            and_(
+                AsistenciaEmpleado.empleado_id == empleado.id,
+                AsistenciaEmpleado.fecha >= primer_dia_mes_actual.date()
+            )
+        ).all()
+
+        # Calcular días trabajados (días con registro)
+        dias_trabajados_mes = len(asistencias_mes)
+
+        # Calcular horas trabajadas
+        horas_trabajadas_mes = sum(
+            a.horas_trabajadas for a in asistencias_mes if a.horas_trabajadas
+        ) or 0.0
+
+        # Obtener último registro
+        ultima_asistencia = db.query(AsistenciaEmpleado).filter(
+            AsistenciaEmpleado.empleado_id == empleado.id
+        ).order_by(AsistenciaEmpleado.fecha.desc()).first()
+
+        ultimo_registro = None
+        if ultima_asistencia:
+            ultimo_registro = ultima_asistencia.fecha.strftime("%Y-%m-%d")
+
+        resultado.append(EmpleadoDashboardItem(
+            id=empleado.id,
+            nombre=f"{empleado.nombre} {empleado.apellido or ''}".strip(),
+            cedula=empleado.cedula,
+            tipo_empleado=nombres_tipos.get(empleado.tipo_empleado.value, empleado.tipo_empleado.value),
+            dias_trabajados_mes=dias_trabajados_mes,
+            horas_trabajadas_mes=round(horas_trabajadas_mes, 2),
+            ultimo_registro=ultimo_registro
+        ))
+
+    # Ordenar por nombre
+    resultado.sort(key=lambda x: x.nombre)
+
+    return resultado
+
+@router.get("/empleados/{empleado_id}/historial", response_model=HistorialEmpleadoStats)
+def get_historial_empleado(empleado_id: int, db: Session = Depends(get_db)):
+    """
+    Retorna el historial completo de un empleado: tiempo total trabajado y todas sus asistencias
+    Incluye comparación de horas trabajadas con otros empleados en los últimos 6 meses
+    """
+    # Obtener el empleado
+    empleado = db.query(Empleado).filter(Empleado.id == empleado_id).first()
+
+    if not empleado:
+        # Si no existe el empleado, retornar datos vacíos
+        return HistorialEmpleadoStats(
+            total_dias_trabajados=0,
+            total_horas_trabajadas=0.0,
+            fecha_contratacion="N/A",
+            asistencias=[],
+            comparacion_empleados=[]
+        )
+
+    # Obtener todas las asistencias (ordenadas por fecha descendente)
+    asistencias = db.query(AsistenciaEmpleado).filter(
+        AsistenciaEmpleado.empleado_id == empleado_id
+    ).order_by(AsistenciaEmpleado.fecha.desc()).all()
+
+    # Calcular estadísticas
+    total_dias_trabajados = len(asistencias)
+    total_horas_trabajadas = sum(
+        a.horas_trabajadas for a in asistencias if a.horas_trabajadas
+    ) or 0.0
+
+    # Fecha de contratación
+    fecha_contratacion = empleado.fecha_contratacion.strftime("%Y-%m-%d") if empleado.fecha_contratacion else "N/A"
+
+    # Construir lista de asistencias con detalles
+    asistencias_detalle = []
+    for a in asistencias:
+        asistencias_detalle.append({
+            "id": a.id,
+            "fecha": a.fecha.strftime("%Y-%m-%d"),
+            "hora_entrada": a.hora_entrada.strftime("%H:%M:%S") if a.hora_entrada else None,
+            "hora_salida": a.hora_salida.strftime("%H:%M:%S") if a.hora_salida else None,
+            "horas_trabajadas": round(a.horas_trabajadas, 2) if a.horas_trabajadas else 0.0,
+        })
+
+    # Calcular comparación con otros empleados (últimos 6 meses)
+    from datetime import timezone
+    colombia_tz = timezone(timedelta(hours=-5))
+    now = datetime.now(colombia_tz)
+    seis_meses_atras = (now - timedelta(days=180)).date()
+
+    # Obtener todos los empleados
+    todos_empleados = db.query(Empleado).all()
+
+    # Calcular horas mensuales para cada empleado en los últimos 6 meses
+    comparacion_empleados = []
+
+    for mes_offset in range(5, -1, -1):  # Últimos 6 meses (del más antiguo al más reciente)
+        # Calcular primer y último día del mes
+        if mes_offset == 0:
+            # Mes actual
+            primer_dia = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+            ultimo_dia = now.date()
+        else:
+            # Meses anteriores
+            fecha_mes = now - timedelta(days=mes_offset * 30)
+            primer_dia = fecha_mes.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+            # Último día del mes
+            if fecha_mes.month == 12:
+                siguiente_mes = fecha_mes.replace(year=fecha_mes.year + 1, month=1, day=1)
+            else:
+                siguiente_mes = fecha_mes.replace(month=fecha_mes.month + 1, day=1)
+            ultimo_dia = (siguiente_mes - timedelta(days=1)).date()
+
+        # Nombre del mes
+        mes_nombre = primer_dia.strftime("%b %Y")
+
+        # Calcular horas para cada empleado en este mes
+        for emp in todos_empleados:
+            asistencias_mes = db.query(AsistenciaEmpleado).filter(
+                and_(
+                    AsistenciaEmpleado.empleado_id == emp.id,
+                    AsistenciaEmpleado.fecha >= primer_dia,
+                    AsistenciaEmpleado.fecha <= ultimo_dia
+                )
+            ).all()
+
+            horas_mes = sum(
+                a.horas_trabajadas for a in asistencias_mes if a.horas_trabajadas
+            ) or 0.0
+
+            # Buscar si ya existe el registro del mes
+            mes_existente = next(
+                (item for item in comparacion_empleados if item["mes"] == mes_nombre),
+                None
+            )
+
+            if mes_existente:
+                # Agregar las horas del empleado al mes existente
+                if emp.id == empleado_id:
+                    mes_existente["empleado_actual"] = round(horas_mes, 2)
+                else:
+                    mes_existente["otros_empleados"] = mes_existente.get("otros_empleados", [])
+                    mes_existente["otros_empleados"].append(round(horas_mes, 2))
+            else:
+                # Crear nuevo registro de mes
+                nuevo_mes = {
+                    "mes": mes_nombre,
+                    "empleado_actual": 0.0,
+                    "otros_empleados": []
+                }
+
+                if emp.id == empleado_id:
+                    nuevo_mes["empleado_actual"] = round(horas_mes, 2)
+                else:
+                    nuevo_mes["otros_empleados"].append(round(horas_mes, 2))
+
+                comparacion_empleados.append(nuevo_mes)
+
+    # Calcular promedio de otros empleados para cada mes
+    for mes_data in comparacion_empleados:
+        if mes_data["otros_empleados"]:
+            mes_data["promedio_otros"] = round(
+                sum(mes_data["otros_empleados"]) / len(mes_data["otros_empleados"]),
+                2
+            )
+        else:
+            mes_data["promedio_otros"] = 0.0
+        # Eliminar la lista detallada de otros empleados (no la necesitamos en el frontend)
+        del mes_data["otros_empleados"]
+
+    return HistorialEmpleadoStats(
+        total_dias_trabajados=total_dias_trabajados,
+        total_horas_trabajadas=round(total_horas_trabajadas, 2),
+        fecha_contratacion=fecha_contratacion,
+        asistencias=asistencias_detalle,
+        comparacion_empleados=comparacion_empleados
     )

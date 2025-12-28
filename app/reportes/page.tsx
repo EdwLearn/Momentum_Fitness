@@ -32,6 +32,7 @@ import {
   useIngresosPorCupon,
   useReferidosImpacto,
   useResumenIngresos,
+  useComparacionEmpleados,
 } from "@/lib/hooks/useReportes"
 
 export default function ReportesPage() {
@@ -84,6 +85,7 @@ export default function ReportesPage() {
   const { data: ingresosPorCupon, isLoading: isLoadingIngresosCupon } = useIngresosPorCupon()
   const { data: referidosImpacto, isLoading: isLoadingReferidos } = useReferidosImpacto()
   const { data: resumenIngresos, isLoading: isLoadingResumen } = useResumenIngresos()
+  const { data: comparacionEmpleados, isLoading: isLoadingComparacionEmpleados } = useComparacionEmpleados(6)
 
   // Colores verde momentum para gráficas principales
   const GREEN_COLOR = "#A4FF1A"
@@ -94,7 +96,8 @@ export default function ReportesPage() {
 
   // Loading state
   const isLoading = isLoadingAsistenciasDia || isLoadingAsistenciasPlan || isLoadingNuevasRenovaciones ||
-    isLoadingPlanesTop || isLoadingIngresosMes || isLoadingIngresosCupon || isLoadingReferidos || isLoadingResumen
+    isLoadingPlanesTop || isLoadingIngresosMes || isLoadingIngresosCupon || isLoadingReferidos || isLoadingResumen ||
+    isLoadingComparacionEmpleados
 
   // Función para exportar a CSV
   const exportToCSV = () => {
@@ -635,7 +638,86 @@ export default function ReportesPage() {
         </div>
       </div>
 
-      {/* Section C - Ingresos */}
+      {/* Section C - Empleados */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-foreground mb-4">Empleados</h2>
+        <ChartCard title="Comparación de horas trabajadas" subtitle="Horas mensuales por empleado (últimos 6 meses)">
+          <div className="h-80">
+            {isLoadingComparacionEmpleados ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Cargando...
+              </div>
+            ) : comparacionEmpleados && comparacionEmpleados.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={comparacionEmpleados.map(mes => {
+                  // Transformar datos para recharts: cada empleado es una línea
+                  const mesData: any = { mes: mes.mes }
+                  mes.empleados.forEach(emp => {
+                    mesData[emp.nombre] = emp.horas
+                  })
+                  return mesData
+                })}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2B35" />
+                  <XAxis
+                    dataKey="mes"
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    label={{
+                      value: 'Horas',
+                      angle: -90,
+                      position: 'insideLeft',
+                      style: { fill: '#9CA3AF', fontSize: 12 }
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#0A0B12",
+                      border: "1px solid #2A2B35",
+                      borderRadius: "8px",
+                      color: "#E5E5E5",
+                    }}
+                    labelStyle={{ color: "#E5E5E5" }}
+                    formatter={(value: number) => [`${value} hrs`, '']}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: "#E5E5E5", fontSize: "12px" }}
+                    formatter={(value) => <span style={{ color: '#E5E5E5' }}>{value}</span>}
+                  />
+                  {/* Generar una línea por cada empleado */}
+                  {comparacionEmpleados.length > 0 && comparacionEmpleados[0].empleados.map((emp, index) => {
+                    const colores = ["#A4FF1A", "#22D3EE", "#F97316", "#EC4899", "#8B5CF6", "#6366F1"]
+                    return (
+                      <Line
+                        key={emp.id}
+                        type="monotone"
+                        dataKey={emp.nombre}
+                        stroke={colores[index % colores.length]}
+                        strokeWidth={2}
+                        dot={{ fill: colores[index % colores.length], r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    )
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No hay datos de empleados disponibles
+              </div>
+            )}
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Section D - Ingresos */}
       <div className="mb-8">
         <h2 className="text-xl font-bold text-foreground mb-4">Ingresos</h2>
         <div className="grid grid-cols-1 gap-6">
@@ -693,7 +775,7 @@ export default function ReportesPage() {
         </div>
       </div>
 
-      {/* Section D - Cupones & Referidos */}
+      {/* Section E - Cupones & Referidos */}
       <div className="mb-8">
         <h2 className="text-xl font-bold text-foreground mb-4">Cupones & Referidos</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

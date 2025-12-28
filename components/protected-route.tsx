@@ -83,80 +83,80 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }
 
-  // Mostrar loading mientras verifica sesión
-  if (isChecking) {
+  // Si no está autenticado o está verificando, el DashboardLayout ya se encarga de mostrar el sidebar
+  // Solo mostramos el modal de contraseña sin ocultar el sidebar
+  if (isChecking || !isAuthenticated) {
     return (
-      <div className="fixed inset-0 bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  // Mostrar modal de contraseña si no está autenticado
-  if (!isAuthenticated) {
-    return (
-      <div className="fixed inset-0 bg-background/95 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-[#2a2a2a] border border-border rounded-xl p-8 w-full max-w-md shadow-2xl">
-          <div className="flex items-center justify-center mb-6">
-            <div className="bg-primary/10 p-4 rounded-full">
-              <Lock className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-
-          <h2 className="text-2xl font-bold text-center mb-2 text-foreground">
-            Contenido Protegido
-          </h2>
-          <p className="text-center text-muted-foreground mb-6">
-            Ingresa la contraseña para acceder a esta sección
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value)
-                    setError("")
-                  }}
-                  placeholder="Contraseña"
-                  className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
+      <>
+        {children}
+        {/* Overlay solo sobre el área de contenido (dejando el sidebar libre) */}
+        <div className="fixed left-64 top-0 right-0 bottom-0 bg-background/95 backdrop-blur-sm flex items-center justify-center z-50">
+          {isChecking ? (
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          ) : (
+            <div className="bg-[#2a2a2a] border border-border rounded-xl p-8 w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-center mb-6">
+                <div className="bg-primary/10 p-4 rounded-full">
+                  <Lock className="h-8 w-8 text-primary" />
+                </div>
               </div>
-              {error && (
-                <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                  <span className="text-lg">⚠️</span>
-                  {error}
-                </p>
-              )}
+
+              <h2 className="text-2xl font-bold text-center mb-2 text-foreground">
+                Contenido Protegido
+              </h2>
+              <p className="text-center text-muted-foreground mb-6">
+                Ingresa la contraseña para acceder a esta sección
+              </p>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value)
+                        setError("")
+                      }}
+                      placeholder="Contraseña"
+                      className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-12"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  {error && (
+                    <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                      <span className="text-lg">⚠️</span>
+                      {error}
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 text-base font-semibold"
+                >
+                  🔓 Desbloquear
+                </Button>
+              </form>
+
+              <p className="text-xs text-muted-foreground text-center mt-6">
+                La sesión expirará después de 10 minutos de inactividad
+              </p>
             </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 py-3 text-base font-semibold"
-            >
-              🔓 Desbloquear
-            </Button>
-          </form>
-
-          <p className="text-xs text-muted-foreground text-center mt-6">
-            La sesión expirará después de 10 minutos de inactividad
-          </p>
+          )}
         </div>
-      </div>
+      </>
     )
   }
 

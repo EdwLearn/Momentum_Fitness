@@ -12,6 +12,7 @@ export const reportesKeys = {
   ingresosPorCupon: () => [...reportesKeys.all, 'ingresos-cupon'] as const,
   referidosImpacto: () => [...reportesKeys.all, 'referidos-impacto'] as const,
   resumenIngresos: () => [...reportesKeys.all, 'resumen-ingresos'] as const,
+  comparacionEmpleados: (meses: number) => [...reportesKeys.all, 'comparacion-empleados', meses] as const,
 };
 
 // Hook para obtener asistencias por día
@@ -75,5 +76,13 @@ export function useResumenIngresos() {
   return useQuery({
     queryKey: reportesKeys.resumenIngresos(),
     queryFn: () => reportesService.getResumenIngresos(),
+  });
+}
+
+// Hook para obtener comparación de empleados
+export function useComparacionEmpleados(meses: number = 6) {
+  return useQuery({
+    queryKey: reportesKeys.comparacionEmpleados(meses),
+    queryFn: () => reportesService.getComparacionEmpleados(meses),
   });
 }

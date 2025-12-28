@@ -52,6 +52,34 @@ export interface HistorialClienteStats {
   }>
 }
 
+export interface EmpleadoDashboardItem {
+  id: number
+  nombre: string
+  cedula: string
+  tipo_empleado: string
+  dias_trabajados_mes: number
+  horas_trabajadas_mes: number
+  ultimo_registro: string | null
+}
+
+export interface HistorialEmpleadoStats {
+  total_dias_trabajados: number
+  total_horas_trabajadas: number
+  fecha_contratacion: string
+  asistencias: Array<{
+    id: number
+    fecha: string
+    hora_entrada: string | null
+    hora_salida: string | null
+    horas_trabajadas: number
+  }>
+  comparacion_empleados: Array<{
+    mes: string
+    empleado_actual: number
+    promedio_otros: number
+  }>
+}
+
 const BASE_PATH = '/api/dashboard'
 
 export const dashboardService = {
@@ -92,6 +120,16 @@ export const dashboardService = {
 
   getHistorialCliente: async (clienteId: number): Promise<HistorialClienteStats> => {
     const response = await api.get<HistorialClienteStats>(`${BASE_PATH}/clientes/${clienteId}/historial`)
+    return response.data
+  },
+
+  getEmpleados: async (): Promise<EmpleadoDashboardItem[]> => {
+    const response = await api.get<EmpleadoDashboardItem[]>(`${BASE_PATH}/empleados`)
+    return response.data
+  },
+
+  getHistorialEmpleado: async (empleadoId: number): Promise<HistorialEmpleadoStats> => {
+    const response = await api.get<HistorialEmpleadoStats>(`${BASE_PATH}/empleados/${empleadoId}/historial`)
     return response.data
   }
 }

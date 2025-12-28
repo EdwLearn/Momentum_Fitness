@@ -6,10 +6,11 @@ import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
 import { DataTable, StatusBadge } from "@/components/data-table"
 import { HistorialClienteModal } from "@/components/historial-cliente-modal"
+import { HistorialEmpleadoModal } from "@/components/historial-empleado-modal"
 import { Users, UserCheck, AlertTriangle, DollarSign } from "lucide-react"
 import { useDashboard } from "@/lib/hooks/useDashboard"
 import { useState } from "react"
-import type { ProximaRenovacionItem } from "@/lib/services/dashboard"
+import type { ProximaRenovacionItem, EmpleadoDashboardItem } from "@/lib/services/dashboard"
 import {
   BarChart,
   Bar,
@@ -40,18 +41,41 @@ export default function DashboardPage() {
     distribucionPlanes,
     isLoadingDistribucionPlanes,
     proximasRenovaciones,
-    isLoadingProximasRenovaciones
+    isLoadingProximasRenovaciones,
+    empleados,
+    isLoadingEmpleados
   } = useDashboard()
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [selectedPieIndex, setSelectedPieIndex] = useState<number | null>(null)
+  const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(null)
   const [selectedCliente, setSelectedCliente] = useState<{ id: number; nombre: string } | null>(null)
+  const [selectedEmpleado, setSelectedEmpleado] = useState<{ id: number; nombre: string } | null>(null)
 
   const onPieEnter = (_: any, index: number) => {
-    setActiveIndex(index)
+    if (selectedPieIndex === null) {
+      setActiveIndex(index)
+    }
   }
 
   const onPieLeave = () => {
-    setActiveIndex(null)
+    if (selectedPieIndex === null) {
+      setActiveIndex(null)
+    }
+  }
+
+  const onPieClick = (_: any, index: number) => {
+    if (selectedPieIndex === index) {
+      setSelectedPieIndex(null)
+      setActiveIndex(null)
+    } else {
+      setSelectedPieIndex(index)
+      setActiveIndex(index)
+    }
+  }
+
+  const onBarClick = (_: any, index: number) => {
+    setSelectedBarIndex(selectedBarIndex === index ? null : index)
   }
 
   const renderActiveShape = (props: any) => {
@@ -102,6 +126,10 @@ export default function DashboardPage() {
     setSelectedCliente({ id: item.id, nombre: item.cliente })
   }
 
+  const handleVerEmpleado = (item: EmpleadoDashboardItem) => {
+    setSelectedEmpleado({ id: item.id, nombre: item.nombre })
+  }
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -109,6 +137,23 @@ export default function DashboardPage() {
       minimumFractionDigits: 0,
     }).format(value)
   }
+
+  const empleadosColumns = [
+    { key: "nombre", header: "Nombre" },
+    { key: "cedula", header: "Cédula" },
+    { key: "tipo_empleado", header: "Tipo" },
+    { key: "dias_trabajados_mes", header: "Días (mes)" },
+    {
+      key: "horas_trabajadas_mes",
+      header: "Horas (mes)",
+      render: (item: EmpleadoDashboardItem) => `${item.horas_trabajadas_mes} hrs`,
+    },
+    {
+      key: "ultimo_registro",
+      header: "Último Registro",
+      render: (item: EmpleadoDashboardItem) => item.ultimo_registro || "Sin registro",
+    },
+  ]
 
   return (
     <ProtectedRoute>
@@ -164,13 +209,14 @@ export default function DashboardPage() {
                       backgroundColor: "#0A0B12",
                       border: "1px solid #2A2B35",
                       borderRadius: "8px",
-                      color: "#E5E5E5",
                     }}
+                    labelStyle={{ color: "#E5E5E5" }}
+                    itemStyle={{ color: "#A4FF1A" }}
                   />
                   <Bar
                     dataKey="asistencias"
-                    fill="#A4FF1A"
                     radius={[4, 4, 0, 0]}
+                    onClick={onBarClick}
                     onMouseEnter={(data, index, e) => {
                       e.target.setAttribute('opacity', '0.8')
                       e.target.setAttribute('transform', 'scale(1.05)')
@@ -181,7 +227,15 @@ export default function DashboardPage() {
                       e.target.setAttribute('opacity', '1')
                       e.target.setAttribute('transform', 'scale(1)')
                     }}
-                  />
+                  >
+                    {(asistenciaSemanal || []).map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={selectedBarIndex === index ? '#7FCC00' : '#A4FF1A'}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -209,6 +263,8 @@ export default function DashboardPage() {
                     dataKey="value"
                     onMouseEnter={onPieEnter}
                     onMouseLeave={onPieLeave}
+                    onClick={onPieClick}
+                    style={{ cursor: 'pointer' }}
                   >
                     {(distribucionPlanes || []).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -228,21 +284,39 @@ export default function DashboardPage() {
         </ChartCard>
       </div>
 
-      {/* Upcoming Renewals Table */}
-      <ChartCard title="Próximas Renovaciones" subtitle="Clientes con planes por vencer">
-        {isLoadingProximasRenovaciones ? (
+      {/* Empleados Table */}
+      <ChartCard title="Empleados" subtitle="Información y estadísticas de empleados">
+        {isLoadingEmpleados ? (
           <div className="flex items-center justify-center h-64 text-gray-400">
             Cargando...
           </div>
         ) : (
           <DataTable
-            columns={renewalColumns}
-            data={proximasRenovaciones || []}
-            onRowAction={handleVerCliente}
+            columns={empleadosColumns}
+            data={empleados || []}
+            onRowAction={handleVerEmpleado}
             actionLabel="Ver"
           />
         )}
       </ChartCard>
+
+      {/* Upcoming Renewals Table */}
+      <div className="mt-6">
+        <ChartCard title="Próximas Renovaciones" subtitle="Clientes con planes por vencer">
+          {isLoadingProximasRenovaciones ? (
+            <div className="flex items-center justify-center h-64 text-gray-400">
+              Cargando...
+            </div>
+          ) : (
+            <DataTable
+              columns={renewalColumns}
+              data={proximasRenovaciones || []}
+              onRowAction={handleVerCliente}
+              actionLabel="Ver"
+            />
+          )}
+        </ChartCard>
+      </div>
       </DashboardLayout>
 
       {/* Modal de Historial del Cliente */}
@@ -251,6 +325,15 @@ export default function DashboardPage() {
           clienteId={selectedCliente.id}
           clienteNombre={selectedCliente.nombre}
           onClose={() => setSelectedCliente(null)}
+        />
+      )}
+
+      {/* Modal de Historial del Empleado */}
+      {selectedEmpleado && (
+        <HistorialEmpleadoModal
+          empleadoId={selectedEmpleado.id}
+          empleadoNombre={selectedEmpleado.nombre}
+          onClose={() => setSelectedEmpleado(null)}
         />
       )}
     </ProtectedRoute>
