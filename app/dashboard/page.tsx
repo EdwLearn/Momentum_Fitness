@@ -157,7 +157,7 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <DashboardLayout title="Bienvenido, Admin" subtitle="Gestiona Momentum Fitness con métricas en tiempo real.">
+      <DashboardLayout title="Facturando como debe bro" subtitle="Gestiona Momentum Fitness con métricas en tiempo real.">
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <MetricCard

@@ -152,10 +152,15 @@ export default function SoportePage() {
 
   const fetchTickets = async () => {
     try {
+      console.log("Obteniendo tickets desde:", `${API_URL}/api/tickets-soporte/`)
       const response = await fetch(`${API_URL}/api/tickets-soporte/`)
+      console.log("Respuesta fetchTickets:", response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log("Tickets obtenidos:", data)
         setTickets(data)
+      } else {
+        console.error("Error al obtener tickets, status:", response.status)
       }
     } catch (error) {
       console.error("Error fetching tickets:", error)
@@ -163,12 +168,15 @@ export default function SoportePage() {
   }
 
   const handleSubmitTicket = async () => {
+    // Validar campos
     if (!formData.nombre || !formData.categoria || !formData.prioridad || !formData.asunto || !formData.mensaje) {
+      alert("Por favor completa todos los campos")
       return
     }
 
     setLoading(true)
     try {
+      console.log("Enviando ticket:", formData)
       const response = await fetch(`${API_URL}/api/tickets-soporte/`, {
         method: "POST",
         headers: {
@@ -177,7 +185,11 @@ export default function SoportePage() {
         body: JSON.stringify(formData),
       })
 
+      console.log("Respuesta del servidor:", response.status)
+
       if (response.ok) {
+        const data = await response.json()
+        console.log("Ticket creado:", data)
         setShowSuccess(true)
         setFormData({
           nombre: "",
@@ -187,13 +199,47 @@ export default function SoportePage() {
           mensaje: "",
         })
         // Refresh tickets list
-        fetchTickets()
+        await fetchTickets()
+      } else {
+        const errorData = await response.json()
+        console.error("Error del servidor:", errorData)
+        alert(`Error al crear el ticket: ${errorData.detail || "Error desconocido"}`)
       }
     } catch (error) {
       console.error("Error creating ticket:", error)
+      alert(`Error de conexión: ${error}. Verifica que el servidor backend esté corriendo.`)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleNewTicket = () => {
+    // Limpiar el formulario
+    setFormData({
+      nombre: "",
+      categoria: "",
+      prioridad: "",
+      asunto: "",
+      mensaje: "",
+    })
+    // Hacer scroll hacia el formulario con un pequeño delay para asegurar que el DOM se actualice
+    setTimeout(() => {
+      const formElement = document.getElementById("ticket-form")
+      if (formElement) {
+        // Calcular la posición considerando el sidebar y padding
+        const yOffset = -20 // offset para no quedar pegado al top
+        const element = formElement
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
+
+        window.scrollTo({ top: y, behavior: "smooth" })
+
+        // Enfocar el primer campo del formulario
+        const nombreInput = document.getElementById("ticket-name")
+        if (nombreInput) {
+          setTimeout(() => nombreInput.focus(), 500)
+        }
+      }
+    }, 100)
   }
 
   const filteredFaqs = faqItems
@@ -208,12 +254,11 @@ export default function SoportePage() {
     .filter((category) => category.questions.length > 0)
 
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      title="Centro de Soporte"
+      subtitle="Encuentra ayuda y recursos para usar Momentum Fitness"
+    >
       <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Centro de Soporte</h1>
-            <p className="text-muted-foreground mt-1">Encuentra ayuda y recursos para usar Momentum Fitness</p>
-          </div>
 
         {/* Contact Methods */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -330,7 +375,11 @@ Gracias por su atención.`
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-foreground">Mis Tickets de Soporte</h2>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button
+                    size="sm"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={handleNewTicket}
+                  >
                     Nuevo ticket
                   </Button>
                 </div>
@@ -400,7 +449,7 @@ Gracias por su atención.`
 
           {/* Contact Form */}
           <div className="lg:col-span-1">
-            <Card className="p-6 bg-card border-sidebar-border sticky top-6">
+            <Card id="ticket-form" className="p-6 bg-card border-sidebar-border sticky top-6">
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Crear Ticket</h2>
                 <p className="text-sm text-muted-foreground">

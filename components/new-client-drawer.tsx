@@ -419,392 +419,390 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
-        <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
-          <div className="w-screen max-w-2xl">
-            <div className="flex h-full flex-col overflow-y-scroll bg-card shadow-xl border-l border-border">
-              {/* Header */}
-              <div className="bg-secondary px-6 py-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-primary">Nuevo Cliente</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Completa la información del cliente y su membresía
-                    </p>
+    <>
+      {/* Overlay */}
+      <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal Centrado */}
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4">
+        <div className="max-h-[90vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl">
+          {/* Header */}
+          <div className="sticky top-0 bg-secondary px-6 py-4 border-b border-border">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Nuevo Cliente</h2>
+                <p className="text-sm text-muted-foreground">
+                  Completa la información del cliente y su membresía
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="px-6 py-6">
+            <div className="space-y-6">
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Datos Personales */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b border-border pb-2">Datos Personales</h3>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nombre">
+                      Nombre <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="nombre"
+                      value={formData.nombre}
+                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                      placeholder="Juan"
+                      required
+                      className="bg-secondary border-border"
+                    />
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="apellido">Apellido</Label>
+                    <Input
+                      id="apellido"
+                      value={formData.apellido}
+                      onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                      placeholder="Pérez"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cedula">
+                      Cédula <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="cedula"
+                      value={formData.cedula}
+                      onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
+                      placeholder="1234567890"
+                      required
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="correo@ejemplo.com"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Input
+                      id="telefono"
+                      value={formData.telefono}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      placeholder="3001234567"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
+                    <DatePicker
+                      value={formData.fechaNacimiento}
+                      onChange={(date) => setFormData({ ...formData, fechaNacimiento: date })}
+                      placeholder="Seleccionar fecha"
+                      maxDate={new Date().toISOString().split('T')[0]}
+                      yearRange={{ start: 1950, end: new Date().getFullYear() }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Género</Label>
+                    <div className="flex gap-4 pt-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="genero"
+                          value="masculino"
+                          checked={formData.genero === "masculino"}
+                          onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                          className="w-4 h-4 text-primary accent-primary"
+                        />
+                        <span className="text-sm">Masculino</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="genero"
+                          value="femenino"
+                          checked={formData.genero === "femenino"}
+                          onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
+                          className="w-4 h-4 text-primary accent-primary"
+                        />
+                        <span className="text-sm">Femenino</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {formData.fechaNacimiento && (
+                    <div className="space-y-2">
+                      <Label>Edad</Label>
+                      <div className="px-3 py-2 bg-secondary/50 border border-border rounded-md text-sm text-muted-foreground">
+                        {calcularEdad(formData.fechaNacimiento)} años
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="flex-1 px-6 py-6">
-                <div className="space-y-6">
-                  {error && (
-                    <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
-                      {error}
-                    </div>
-                  )}
+              {/* Información Física */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b border-border pb-2 text-foreground">Información Física</h3>
 
-                  {/* Datos Personales */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold border-b border-border pb-2">Datos Personales</h3>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="nombre">
-                          Nombre <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id="nombre"
-                          value={formData.nombre}
-                          onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                          placeholder="Juan"
-                          required
-                          className="bg-secondary border-border"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="apellido">Apellido</Label>
-                        <Input
-                          id="apellido"
-                          value={formData.apellido}
-                          onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                          placeholder="Pérez"
-                          className="bg-secondary border-border"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="cedula">
-                          Cédula <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id="cedula"
-                          value={formData.cedula}
-                          onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
-                          placeholder="1234567890"
-                          required
-                          className="bg-secondary border-border"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="correo@ejemplo.com"
-                          className="bg-secondary border-border"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="telefono">Teléfono</Label>
-                        <Input
-                          id="telefono"
-                          value={formData.telefono}
-                          onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                          placeholder="3001234567"
-                          className="bg-secondary border-border"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
-                        <DatePicker
-                          value={formData.fechaNacimiento}
-                          onChange={(date) => setFormData({ ...formData, fechaNacimiento: date })}
-                          placeholder="Seleccionar fecha"
-                          maxDate={new Date().toISOString().split('T')[0]}
-                          yearRange={{ start: 1950, end: new Date().getFullYear() }}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Género</Label>
-                        <div className="flex gap-4 pt-2">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="genero"
-                              value="masculino"
-                              checked={formData.genero === "masculino"}
-                              onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                              className="w-4 h-4 text-primary accent-primary"
-                            />
-                            <span className="text-sm">Masculino</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="genero"
-                              value="femenino"
-                              checked={formData.genero === "femenino"}
-                              onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                              className="w-4 h-4 text-primary accent-primary"
-                            />
-                            <span className="text-sm">Femenino</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {formData.fechaNacimiento && (
-                        <div className="space-y-2">
-                          <Label>Edad</Label>
-                          <div className="px-3 py-2 bg-secondary/50 border border-border rounded-md text-sm text-muted-foreground">
-                            {calcularEdad(formData.fechaNacimiento)} años
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="peso">Peso (kg)</Label>
+                    <Input
+                      id="peso"
+                      type="number"
+                      step="0.1"
+                      value={formData.peso}
+                      onChange={(e) => setFormData({ ...formData, peso: e.target.value })}
+                      placeholder="70.5"
+                      className="bg-secondary border-border"
+                    />
                   </div>
 
-                  {/* Información Física */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold border-b border-border pb-2 text-foreground">Información Física</h3>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="peso">Peso (kg)</Label>
-                        <Input
-                          id="peso"
-                          type="number"
-                          step="0.1"
-                          value={formData.peso}
-                          onChange={(e) => setFormData({ ...formData, peso: e.target.value })}
-                          placeholder="70.5"
-                          className="bg-secondary border-border"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="altura">Altura (cm)</Label>
-                        <Input
-                          id="altura"
-                          type="number"
-                          step="0.1"
-                          value={formData.altura}
-                          onChange={(e) => setFormData({ ...formData, altura: e.target.value })}
-                          placeholder="175"
-                          className="bg-secondary border-border"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Objetivo(s) Fitness</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {OBJETIVOS_FITNESS.map((objetivo) => (
-                          <label key={objetivo} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={formData.objetivos.includes(objetivo)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setFormData({ ...formData, objetivos: [...formData.objetivos, objetivo] })
-                                } else {
-                                  setFormData({ ...formData, objetivos: formData.objetivos.filter(o => o !== objetivo) })
-                                }
-                              }}
-                              className="w-4 h-4 text-primary accent-primary rounded"
-                            />
-                            <span className="text-sm">{objetivo}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="altura">Altura (cm)</Label>
+                    <Input
+                      id="altura"
+                      type="number"
+                      step="0.1"
+                      value={formData.altura}
+                      onChange={(e) => setFormData({ ...formData, altura: e.target.value })}
+                      placeholder="175"
+                      className="bg-secondary border-border"
+                    />
                   </div>
+                </div>
 
-                  {/* Información del Plan */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold border-b border-border pb-2">Información del Plan</h3>
+                <div className="space-y-2">
+                  <Label>Objetivo(s) Fitness</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {OBJETIVOS_FITNESS.map((objetivo) => (
+                      <label key={objetivo} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.objetivos.includes(objetivo)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, objetivos: [...formData.objetivos, objetivo] })
+                            } else {
+                              setFormData({ ...formData, objetivos: formData.objetivos.filter(o => o !== objetivo) })
+                            }
+                          }}
+                          className="w-4 h-4 text-primary accent-primary rounded"
+                        />
+                        <span className="text-sm">{objetivo}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
+              {/* Información del Plan */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b border-border pb-2">Información del Plan</h3>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tipoPlan">Tipo de Plan</Label>
+                  <Select
+                    value={formData.tipoPlan}
+                    onValueChange={(value) => setFormData({ ...formData, tipoPlan: value })}
+                  >
+                    <SelectTrigger className="bg-secondary border-border">
+                      <SelectValue placeholder="Selecciona un plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLANES.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.nombre} - {formatCurrency(plan.precio)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.tipoPlan && (
+                  <>
                     <div className="space-y-2">
-                      <Label htmlFor="tipoPlan">Tipo de Plan</Label>
-                      <Select
-                        value={formData.tipoPlan}
-                        onValueChange={(value) => setFormData({ ...formData, tipoPlan: value })}
-                      >
-                        <SelectTrigger className="bg-secondary border-border">
-                          <SelectValue placeholder="Selecciona un plan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PLANES.map((plan) => (
-                            <SelectItem key={plan.id} value={plan.id}>
-                              {plan.nombre} - {formatCurrency(plan.precio)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="fechaInicio">Fecha de Inicio</Label>
+                      <DatePicker
+                        value={formData.fechaInicio}
+                        onChange={(date) => setFormData({ ...formData, fechaInicio: date })}
+                        placeholder="Seleccionar fecha de inicio"
+                        minDate={new Date().toISOString().split('T')[0]}
+                      />
                     </div>
 
-                    {formData.tipoPlan && (
+                    {fechaFin && (
+                      <div className="space-y-2">
+                        <Label>Fecha de Fin (Auto-calculada)</Label>
+                        <div className="px-3 py-2 bg-secondary/50 border border-border rounded-md text-sm text-muted-foreground">
+                          {formatDisplayDate(fechaFin)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Checkbox Plan de Referidos - solo si plan >= Mensual */}
+                    {mostrarReferido && (
                       <>
-                        <div className="space-y-2">
-                          <Label htmlFor="fechaInicio">Fecha de Inicio</Label>
-                          <DatePicker
-                            value={formData.fechaInicio}
-                            onChange={(date) => setFormData({ ...formData, fechaInicio: date })}
-                            placeholder="Seleccionar fecha de inicio"
-                            minDate={new Date().toISOString().split('T')[0]}
-                          />
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+                          <p className="text-xs text-amber-800 dark:text-amber-200">
+                            ℹ️ <strong>Importante:</strong> Pase Día y Pase Flex no pueden recibir cupones ni beneficios de referidos.
+                          </p>
                         </div>
 
-                        {fechaFin && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="usarPlanReferidos"
+                            checked={formData.usarPlanReferidos}
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              usarPlanReferidos: e.target.checked,
+                              referidoPorCedula: e.target.checked ? formData.referidoPorCedula : ""
+                            })}
+                            className="w-4 h-4 text-primary accent-primary rounded"
+                            disabled={!!cuponValidado}
+                          />
+                          <Label htmlFor="usarPlanReferidos" className={`cursor-pointer ${cuponValidado ? 'text-muted-foreground' : ''}`}>
+                            Usar plan de referidos (5% descuento)
+                          </Label>
+                        </div>
+
+                        {formData.usarPlanReferidos && (
                           <div className="space-y-2">
-                            <Label>Fecha de Fin (Auto-calculada)</Label>
-                            <div className="px-3 py-2 bg-secondary/50 border border-border rounded-md text-sm text-muted-foreground">
-                              {formatDisplayDate(fechaFin)}
-                            </div>
+                            <Label htmlFor="referidoPorCedula">
+                              Cédula del referidor <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="referidoPorCedula"
+                              value={formData.referidoPorCedula}
+                              onChange={(e) => setFormData({ ...formData, referidoPorCedula: e.target.value })}
+                              placeholder="Cédula del referidor"
+                              className="bg-secondary border-border"
+                              required={formData.usarPlanReferidos}
+                            />
                           </div>
                         )}
 
-                        {/* Checkbox Plan de Referidos - solo si plan >= Mensual */}
-                        {mostrarReferido && (
-                          <>
-                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
-                              <p className="text-xs text-amber-800 dark:text-amber-200">
-                                ℹ️ <strong>Importante:</strong> Pase Día y Pase Flex no pueden recibir cupones ni beneficios de referidos.
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id="usarPlanReferidos"
-                                checked={formData.usarPlanReferidos}
-                                onChange={(e) => setFormData({
-                                  ...formData,
-                                  usarPlanReferidos: e.target.checked,
-                                  referidoPorCedula: e.target.checked ? formData.referidoPorCedula : ""
-                                })}
-                                className="w-4 h-4 text-primary accent-primary rounded"
-                                disabled={!!cuponValidado}
-                              />
-                              <Label htmlFor="usarPlanReferidos" className={`cursor-pointer ${cuponValidado ? 'text-muted-foreground' : ''}`}>
-                                Usar plan de referidos (5% descuento)
-                              </Label>
-                            </div>
-
-                            {formData.usarPlanReferidos && (
-                              <div className="space-y-2">
-                                <Label htmlFor="referidoPorCedula">
-                                  Cédula del referidor <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                  id="referidoPorCedula"
-                                  value={formData.referidoPorCedula}
-                                  onChange={(e) => setFormData({ ...formData, referidoPorCedula: e.target.value })}
-                                  placeholder="Cédula del referidor"
-                                  className="bg-secondary border-border"
-                                  required={formData.usarPlanReferidos}
-                                />
-                              </div>
-                            )}
-
-                            {/* Campo de Cupón */}
-                            <div className="space-y-2 pt-2">
-                              <Label htmlFor="codigoCupon">
-                                Código de cupón (opcional)
-                              </Label>
-                              <Input
-                                id="codigoCupon"
-                                value={formData.codigoCupon}
-                                onChange={(e) => setFormData({ ...formData, codigoCupon: e.target.value.toUpperCase() })}
-                                placeholder="Ej: PRIMERA-VEZ, UPGRADE-3M"
-                                className="bg-secondary border-border font-mono"
-                                disabled={formData.usarPlanReferidos && formData.referidoPorCedula !== ""}
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                ⚠️ Los cupones NO son acumulables con descuento por referido
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                📌 Cupones 3M/6M solo para usuarios con Pase Mes activo
-                              </p>
-                              {cuponValidado && (
-                                <p className="text-sm text-green-500 flex items-center gap-1">
-                                  ✓ Cupón válido: {cuponValidado.descuento}% descuento ({cuponValidado.nicho})
-                                </p>
-                              )}
-                              {cuponError && (
-                                <p className="text-sm text-destructive">
-                                  ✗ {cuponError}
-                                </p>
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* Mensaje informativo para Pase Día y Pase Flex */}
-                        {!mostrarReferido && formData.tipoPlan && (
-                          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                            <p className="text-xs text-muted-foreground">
-                              ℹ️ Los planes <strong>Pase Día</strong> y <strong>Pase Flex</strong> no pueden recibir cupones ni beneficios de referidos.
+                        {/* Campo de Cupón */}
+                        <div className="space-y-2 pt-2">
+                          <Label htmlFor="codigoCupon">
+                            Código de cupón (opcional)
+                          </Label>
+                          <Input
+                            id="codigoCupon"
+                            value={formData.codigoCupon}
+                            onChange={(e) => setFormData({ ...formData, codigoCupon: e.target.value.toUpperCase() })}
+                            placeholder="Ej: PRIMERA-VEZ, UPGRADE-3M"
+                            className="bg-secondary border-border font-mono"
+                            disabled={formData.usarPlanReferidos && formData.referidoPorCedula !== ""}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            ⚠️ Los cupones NO son acumulables con descuento por referido
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            📌 Cupones 3M/6M solo para usuarios con Pase Mes activo
+                          </p>
+                          {cuponValidado && (
+                            <p className="text-sm text-green-500 flex items-center gap-1">
+                              ✓ Cupón válido: {cuponValidado.descuento}% descuento ({cuponValidado.nicho})
                             </p>
-                          </div>
-                        )}
-
-                        {/* Resumen de precio */}
-                        <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Precio base:</span>
-                            <span className="font-medium">
-                              {formatCurrency(PLANES.find(p => p.id === formData.tipoPlan)?.precio || 0)}
-                            </span>
-                          </div>
-                          {descuentoAplicado && (
-                            <div className="flex items-center justify-between text-sm text-primary">
-                              <span>Descuento ({descuentoPorcentaje}% {tipoDescuento === "cupon" ? "cupón" : "referido"}):</span>
-                              <span className="font-medium">
-                                -{formatCurrency((PLANES.find(p => p.id === formData.tipoPlan)?.precio || 0) * (descuentoPorcentaje / 100))}
-                              </span>
-                            </div>
                           )}
-                          <div className="flex items-center justify-between pt-2 border-t border-primary/30">
-                            <span className="font-semibold text-primary">Total a pagar:</span>
-                            <span className="font-bold text-xl text-primary">
-                              {formatCurrency(precioFinal)}
-                            </span>
-                          </div>
+                          {cuponError && (
+                            <p className="text-sm text-destructive">
+                              ✗ {cuponError}
+                            </p>
+                          )}
                         </div>
                       </>
                     )}
-                  </div>
-                </div>
 
-                {/* Footer */}
-                <div className="flex gap-3 pt-6 mt-6 border-t border-border">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                    className="flex-1 border-border hover:bg-secondary"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createUsuario.isPending || createMembresia.isPending}
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                  >
-                    {(createUsuario.isPending || createMembresia.isPending) ? "Guardando..." : "Guardar Cliente"}
-                  </Button>
-                </div>
-              </form>
+                    {/* Mensaje informativo para Pase Día y Pase Flex */}
+                    {!mostrarReferido && formData.tipoPlan && (
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                        <p className="text-xs text-muted-foreground">
+                          ℹ️ Los planes <strong>Pase Día</strong> y <strong>Pase Flex</strong> no pueden recibir cupones ni beneficios de referidos.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Resumen de precio */}
+                {formData.tipoPlan && (
+                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Precio base:</span>
+                      <span className="font-medium">
+                        {formatCurrency(PLANES.find(p => p.id === formData.tipoPlan)?.precio || 0)}
+                      </span>
+                    </div>
+                    {descuentoAplicado && (
+                      <div className="flex items-center justify-between text-sm text-primary">
+                        <span>Descuento ({descuentoPorcentaje}% {tipoDescuento === "cupon" ? "cupón" : "referido"}):</span>
+                        <span className="font-medium">
+                          -{formatCurrency((PLANES.find(p => p.id === formData.tipoPlan)?.precio || 0) * (descuentoPorcentaje / 100))}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-2 border-t border-primary/30">
+                      <span className="font-semibold text-primary">Total a pagar:</span>
+                      <span className="font-bold text-xl text-primary">
+                        {formatCurrency(precioFinal)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex gap-3 pt-6 mt-6 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1 border-border hover:bg-secondary"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createUsuario.isPending || createMembresia.isPending}
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                >
+                  {(createUsuario.isPending || createMembresia.isPending) ? "Guardando..." : "Guardar Cliente"}
+                </Button>
+              </div>
             </div>
-          </div>
+          </form>
         </div>
       </div>
-    </div>
+    </>
   )
 }

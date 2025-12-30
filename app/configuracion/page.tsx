@@ -146,12 +146,11 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      title="Configuración"
+      subtitle="Administra la configuración de tu gimnasio"
+    >
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Configuración</h1>
-          <p className="text-muted-foreground mt-1">Administra la configuración de tu gimnasio</p>
-        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid grid-cols-3 w-full bg-sidebar-accent">

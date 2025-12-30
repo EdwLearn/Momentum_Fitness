@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { X, CheckCircle2, AlertCircle, Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -33,7 +34,6 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
     email: "",
     telefono: "",
     pesoInicial: "",
-    pesoActual: "",
     altura: "",
   })
   const [error, setError] = useState<string | null>(null)
@@ -68,7 +68,6 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
         email: usuario.email || "",
         telefono: usuario.telefono || "",
         pesoInicial: usuario.peso_inicial?.toString() || "",
-        pesoActual: usuario.peso_actual?.toString() || "",
         altura: usuario.altura?.toString() || "",
       })
     }
@@ -129,7 +128,6 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
         fecha_nacimiento: formData.fechaNacimiento ? `${formData.fechaNacimiento}T00:00:00` : undefined,
         referido_por_cedula: formData.referidoPorCedula || undefined,
         peso_inicial: formData.pesoInicial ? parseFloat(formData.pesoInicial) : undefined,
-        peso_actual: formData.pesoActual ? parseFloat(formData.pesoActual) : undefined,
         altura: formData.altura ? parseFloat(formData.altura) : undefined,
       }
 
@@ -177,21 +175,22 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
       {/* Overlay */}
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Drawer */}
-      <div className="fixed right-0 top-0 z-50 h-full w-full md:w-[600px] bg-card border-l border-border shadow-2xl overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Editar Cliente</h2>
-            <p className="text-sm text-muted-foreground">Actualiza la información del cliente</p>
+      {/* Modal Centrado */}
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[90vh] overflow-y-auto">
+        <Card className="bg-card border-border p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Editar Cliente</h2>
+              <p className="text-sm text-muted-foreground">Actualiza la información del cliente</p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">Información Básica</h3>
@@ -342,7 +341,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
           <div className="space-y-4 pt-4 border-t border-border">
             <h3 className="text-lg font-semibold text-foreground">Información Física</h3>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="pesoInicial">Peso Inicial (kg)</Label>
                 <Input
@@ -352,19 +351,6 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
                   value={formData.pesoInicial}
                   onChange={(e) => setFormData({ ...formData, pesoInicial: e.target.value })}
                   placeholder="70.5"
-                  className="bg-secondary border-border"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pesoActual">Peso Actual (kg)</Label>
-                <Input
-                  id="pesoActual"
-                  type="number"
-                  step="0.1"
-                  value={formData.pesoActual}
-                  onChange={(e) => setFormData({ ...formData, pesoActual: e.target.value })}
-                  placeholder="68.0"
                   className="bg-secondary border-border"
                 />
               </div>
@@ -426,7 +412,8 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
               </Button>
             </div>
           </div>
-        </form>
+          </form>
+        </Card>
       </div>
 
       {/* Delete Confirmation Dialog */}

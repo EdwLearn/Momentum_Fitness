@@ -422,3 +422,20 @@ export interface ReferidoStats {
     total_referidos: number;
   }>;
 }
+
+// ==========================================
+// HISTORIAL DE PESO
+// ==========================================
+
+export interface HistorialPeso {
+  id: number;
+  usuario_id: number;
+  peso: number;
+  fecha_pesaje: string;
+  circunferencia_brazos: number | null;
+  circunferencia_pecho: number | null;
+  circunferencia_cintura: number | null;
+  circunferencia_cadera: number | null;
+  circunferencia_piernas: number | null;
+  notas: string | null;
+}

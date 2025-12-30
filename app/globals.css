@@ -106,3 +106,15 @@
 .text-glow {
   text-shadow: 0 0 20px rgba(164, 255, 26, 0.5);
 }
+
+/* Custom animation for client progress panel */
+@keyframes fadeInSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

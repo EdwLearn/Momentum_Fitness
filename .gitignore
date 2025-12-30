@@ -3,6 +3,9 @@
 # dependencies
 /node_modules
 
+# python virtual environment
+/momentum
+
 # next.js
 /.next/
 /out/

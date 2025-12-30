@@ -9,7 +9,7 @@ import { Ticket, Users, Check, X, Plus, Loader2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from "recharts"
 import { NewCouponDrawer } from "@/components/new-coupon-drawer"
 import { SuccessToast } from "@/components/success-toast"
 import { useCupones, useCuponesStats, useToggleCuponActivo } from "@/lib/hooks/useCupones"
@@ -19,6 +19,8 @@ import { Cupon } from "@/types"
 export default function CuponesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [selectedPieIndex, setSelectedPieIndex] = useState<number | null>(null)
 
   // Fetch data from backend
   const { data: cupones = [], isLoading: loadingCupones } = useCupones()
@@ -38,6 +40,61 @@ export default function CuponesPage() {
     } catch (error) {
       console.error("Error toggling coupon:", error)
     }
+  }
+
+  const onPieEnter = (_: any, index: number) => {
+    if (selectedPieIndex === null) {
+      setActiveIndex(index)
+    }
+  }
+
+  const onPieLeave = () => {
+    if (selectedPieIndex === null) {
+      setActiveIndex(null)
+    }
+  }
+
+  const onPieClick = (_: any, index: number) => {
+    if (selectedPieIndex === index) {
+      setSelectedPieIndex(null)
+      setActiveIndex(null)
+    } else {
+      setSelectedPieIndex(index)
+      setActiveIndex(index)
+    }
+  }
+
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props
+
+    return (
+      <g>
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill="#E5E5E5" fontSize={16} fontWeight="bold">
+          {payload.name}
+        </text>
+        <text x={cx} y={cy} dy={28} textAnchor="middle" fill="#9CA3AF" fontSize={12}>
+          {`${value} (${(percent * 100).toFixed(1)}%)`}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 12}
+          outerRadius={outerRadius + 14}
+          fill={fill}
+        />
+      </g>
+    )
   }
 
 
@@ -221,17 +278,11 @@ export default function CuponesPage() {
   return (
     <DashboardLayout
       title="Cupones y Plan de Referidos"
-      subtitle="Gestiona cupones promocionales y el programa de referidos"
+      subtitle="Controla descuentos, promociones y métricas de conversión"
     >
       {/* Section: Cupones */}
       <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Gestión de Cupones</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Controla descuentos, promociones y métricas de conversión
-            </p>
-          </div>
+        <div className="flex items-center gap-4 mb-6">
           <Button
             onClick={() => setIsDrawerOpen(true)}
             className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(164,255,26,0.3)]"
@@ -246,7 +297,11 @@ export default function CuponesPage() {
           <MetricCard
             title="Total de Cupones Activos"
             value={cuponesStats?.cupones_activos ?? 0}
-            change={0}
+            change={
+              cuponesStats?.total_cupones && cuponesStats.total_cupones > 0
+                ? Math.round((cuponesStats.cupones_activos / cuponesStats.total_cupones) * 100)
+                : 0
+            }
             changeLabel={`${cuponesStats?.total_cupones ?? 0} cupones totales`}
             icon={Ticket}
           />
@@ -263,6 +318,8 @@ export default function CuponesPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
+                      activeIndex={activeIndex ?? undefined}
+                      activeShape={renderActiveShape}
                       data={nicheDistribution}
                       cx="50%"
                       cy="50%"
@@ -270,24 +327,21 @@ export default function CuponesPage() {
                       outerRadius={70}
                       paddingAngle={2}
                       dataKey="value"
+                      onMouseEnter={onPieEnter}
+                      onMouseLeave={onPieLeave}
+                      onClick={onPieClick}
+                      style={{ cursor: 'pointer' }}
                     >
                       {nicheDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#0A0B12",
-                        border: "1px solid #2A2B35",
-                        borderRadius: "8px",
-                        color: "#E5E5E5",
-                      }}
-                    />
                     <Legend
                       layout="vertical"
                       align="right"
                       verticalAlign="middle"
-                      wrapperStyle={{ color: "#9CA3AF", fontSize: "12px" }}
+                      wrapperStyle={{ color: "#E5E5E5", fontSize: "12px" }}
+                      formatter={(value) => <span style={{ color: '#E5E5E5' }}>{value}</span>}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -326,7 +380,11 @@ export default function CuponesPage() {
           <MetricCard
             title="Referidos Convertidos (últimos 3 meses)"
             value={referidosStats?.referidos_ultimos_3_meses ?? 0}
-            change={0}
+            change={
+              referidosStats?.referidos_ultimos_3_meses && referidosStats.referidos_ultimos_3_meses > 0
+                ? Math.round(((referidosStats.referidos_activos ?? 0) / referidosStats.referidos_ultimos_3_meses) * 100)
+                : 0
+            }
             changeLabel={`${referidosStats?.total_referidos ?? 0} referidos totales`}
             icon={Users}
           />

@@ -23,7 +23,7 @@ from app.models.ticket_soporte import TicketSoporte
 
 # 3. ENDPOINTS (al final)
 # Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
-from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard, reportes, configuracion, tickets_soporte
+from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard, reportes, configuracion, tickets_soporte, historial_peso
 
 # Nuevos endpoints del bot
 from app.modules.bot.endpoints import bot_endpoints
@@ -146,6 +146,12 @@ app.include_router(
     tickets_soporte.router,
     prefix="/api/tickets-soporte",
     tags=["🎫 Tickets de Soporte"]
+)
+
+app.include_router(
+    historial_peso.router,
+    prefix="/api",
+    tags=["⚖️ Historial de Peso"]
 )
 
 # Bot de Hospitalidad

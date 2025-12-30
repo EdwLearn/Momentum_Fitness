@@ -6,12 +6,14 @@ import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
 import { FilterableDataTable } from "@/components/filterable-data-table"
 import { StatusBadge } from "@/components/data-table"
-import { Users, UserCheck, UserX, Plus, Edit, RefreshCw } from "lucide-react"
+import { Users, UserCheck, UserX, Plus, Edit, RefreshCw, Scale, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ClientDetailModal } from "@/components/client-detail-modal"
 import { NewClientDrawer } from "@/components/new-client-drawer"
 import { EditClientDrawer } from "@/components/edit-client-drawer"
 import { RenewMembershipDrawer } from "@/components/renew-membership-drawer"
+import { WeightLogDrawer } from "@/components/weight-log-drawer"
+import { ClientProgressDrawer } from "@/components/client-progress-drawer"
 import { SuccessToast } from "@/components/success-toast"
 import { useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useMembresias } from "@/lib/hooks/useMembresias"
@@ -119,8 +121,12 @@ export default function ClientesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false)
   const [isRenewDrawerOpen, setIsRenewDrawerOpen] = useState(false)
+  const [isWeightDrawerOpen, setIsWeightDrawerOpen] = useState(false)
+  const [isProgressDrawerOpen, setIsProgressDrawerOpen] = useState(false)
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null)
   const [renewUsuario, setRenewUsuario] = useState<Usuario | null>(null)
+  const [weightUsuario, setWeightUsuario] = useState<Usuario | null>(null)
+  const [progressUsuario, setProgressUsuario] = useState<Usuario | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState("Cliente creado correctamente.")
 
@@ -193,14 +199,6 @@ export default function ClientesPage() {
       }
     },
     {
-      key: "fechaInicio",
-      header: "Fecha Registro",
-      sortable: true,
-      filter: {
-        type: "date" as const
-      }
-    },
-    {
       key: "fechaFin",
       header: "Fecha Fin",
       sortable: true,
@@ -253,7 +251,7 @@ export default function ClientesPage() {
       key: "acciones",
       header: "Acciones",
       render: (item: Client) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant="ghost"
             size="sm"
@@ -271,6 +269,24 @@ export default function ClientesPage() {
           >
             <RefreshCw className="h-4 w-4 mr-1" />
             Renovar
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleWeightClick(item.id)}
+            className="text-blue-600 hover:text-blue-600 hover:bg-blue-600/10"
+          >
+            <Scale className="h-4 w-4 mr-1" />
+            Pesar
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleProgressClick(item.id)}
+            className="text-purple-600 hover:text-purple-600 hover:bg-purple-600/10"
+          >
+            <TrendingUp className="h-4 w-4 mr-1" />
+            Ver Progreso
           </Button>
         </div>
       ),
@@ -339,6 +355,27 @@ export default function ClientesPage() {
     if (usuario) {
       setRenewUsuario(usuario)
       setIsRenewDrawerOpen(true)
+    }
+  }
+
+  const handleWeightClick = (clientId: number) => {
+    const usuario = usuarios?.find(u => u.id === clientId)
+    if (usuario) {
+      setWeightUsuario(usuario)
+      setIsWeightDrawerOpen(true)
+    }
+  }
+
+  const handleWeightLogged = () => {
+    setToastMessage("Peso registrado correctamente.")
+    setShowToast(true)
+  }
+
+  const handleProgressClick = (clientId: number) => {
+    const usuario = usuarios?.find(u => u.id === clientId)
+    if (usuario) {
+      setProgressUsuario(usuario)
+      setIsProgressDrawerOpen(true)
     }
   }
 
@@ -432,6 +469,27 @@ export default function ClientesPage() {
         }}
         onSuccess={handleMembershipRenewed}
         usuario={renewUsuario}
+      />
+
+      {/* Weight Log Drawer */}
+      <WeightLogDrawer
+        isOpen={isWeightDrawerOpen}
+        onClose={() => {
+          setIsWeightDrawerOpen(false)
+          setWeightUsuario(null)
+        }}
+        onSuccess={handleWeightLogged}
+        usuario={weightUsuario}
+      />
+
+      {/* Client Progress Drawer */}
+      <ClientProgressDrawer
+        isOpen={isProgressDrawerOpen}
+        onClose={() => {
+          setIsProgressDrawerOpen(false)
+          setProgressUsuario(null)
+        }}
+        usuario={progressUsuario}
       />
 
       {/* Success Toast */}

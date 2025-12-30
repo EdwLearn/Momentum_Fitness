@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { X, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -289,23 +290,24 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
       {/* Overlay */}
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Drawer */}
-      <div className="fixed right-0 top-0 z-50 h-full w-full md:w-[600px] bg-card border-l border-border shadow-2xl overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Renovar Membresía</h2>
-            <p className="text-sm text-muted-foreground">
-              {usuarioActual ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Selecciona un cliente para renovar su membresía"}
-            </p>
+      {/* Modal Centrado */}
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[90vh] overflow-y-auto">
+        <Card className="bg-card border-border p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Renovar Membresía</h2>
+              <p className="text-sm text-muted-foreground">
+                {usuarioActual ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Selecciona un cliente para renovar su membresía"}
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
               {error}
@@ -533,7 +535,8 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
               {createMembresia.isPending ? "Renovando..." : "Renovar Membresía"}
             </Button>
           </div>
-        </form>
+          </form>
+        </Card>
       </div>
     </>
   )
