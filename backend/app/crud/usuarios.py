@@ -86,10 +86,23 @@ def update_usuario(db: Session, usuario_id: int, usuario: UsuarioUpdate) -> Opti
     db_usuario = get_usuario(db, usuario_id)
     if db_usuario:
         update_data = usuario.model_dump(exclude_unset=True)
+
+        # Detectar si se actualizó el peso
+        peso_actualizado = 'peso_actual' in update_data
+
         for key, value in update_data.items():
             setattr(db_usuario, key, value)
         db.commit()
         db.refresh(db_usuario)
+
+        # Actualizar métricas de peso si cambió
+        if peso_actualizado:
+            try:
+                from app.modules.bot.services.metricas_service import MetricasService
+                MetricasService.actualizar_metricas_peso(db, usuario_id)
+            except Exception as e:
+                print(f"Error actualizando métricas de peso: {str(e)}")
+
     return db_usuario
 
 def delete_usuario(db: Session, usuario_id: int) -> bool:

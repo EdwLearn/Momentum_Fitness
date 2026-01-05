@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ChartCard } from "@/components/chart-card"
 import { FilterableDataTable } from "@/components/filterable-data-table"
 import { StatusBadge } from "@/components/data-table"
+import { HistorialClienteModal } from "@/components/historial-cliente-modal"
 import { CreditCard, Calendar, Repeat, Clock, Trophy, Gift } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
@@ -17,6 +18,7 @@ export default function SuscripcionesPage() {
   const { data: membresias, isLoading: isLoadingMembresias } = useMembresias()
   const { data: usuarios, isLoading: isLoadingUsuarios } = useUsuarios()
   const { data: stats, isLoading: isLoadingStats } = useSuscripcionesStats()
+  const [selectedCliente, setSelectedCliente] = useState<{ id: number; nombre: string } | null>(null)
 
   // Crear lookup map de usuarios
   const usuariosMap = useMemo(() => {
@@ -95,6 +97,7 @@ export default function SuscripcionesPage() {
 
         return {
           id: m.id,
+          usuario_id: m.usuario_id,
           cliente: usuario ? `${usuario.nombre} ${usuario.apellido}` : "Desconocido",
           plan: planNameMap[m.tipo_plan] || m.tipo_plan,
           fechaInicio: m.fecha_inicio.split('T')[0],
@@ -118,6 +121,11 @@ export default function SuscripcionesPage() {
   const totalActivas = stats?.total_activas || 0
   const totalReferidos = stats?.por_referidos || 0
   const tiposPlanesCount = stats?.tipos_planes || 6
+
+  // Handler para ver historial del cliente
+  const handleVerCliente = (item: any) => {
+    setSelectedCliente({ id: item.usuario_id, nombre: item.cliente })
+  }
 
   const subscriptionColumns = [
     {
@@ -347,9 +355,20 @@ export default function SuscripcionesPage() {
           searchPlaceholder="Buscar suscripciones por cliente, plan, método de pago..."
           showGlobalSearch={true}
           emptyMessage="No se encontraron suscripciones que coincidan con los filtros"
+          onRowAction={handleVerCliente}
+          actionLabel="Ver"
         />
       </ChartCard>
       </DashboardLayout>
+
+      {/* Modal de Historial del Cliente */}
+      {selectedCliente && (
+        <HistorialClienteModal
+          clienteId={selectedCliente.id}
+          clienteNombre={selectedCliente.nombre}
+          onClose={() => setSelectedCliente(null)}
+        />
+      )}
     </ProtectedRoute>
   )
 }

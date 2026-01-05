@@ -40,10 +40,10 @@ export function useNuevasVsRenovaciones(meses: number = 6) {
 }
 
 // Hook para obtener planes más vendidos
-export function usePlanesTop() {
+export function usePlanesTop(dias: number = 30) {
   return useQuery({
-    queryKey: reportesKeys.planesTop(),
-    queryFn: () => reportesService.getPlanesTop(),
+    queryKey: [...reportesKeys.planesTop(), dias],
+    queryFn: () => reportesService.getPlanesTop(dias),
   });
 }
 

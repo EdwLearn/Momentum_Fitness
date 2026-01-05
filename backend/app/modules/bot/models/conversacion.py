@@ -24,5 +24,9 @@ class Conversacion(Base):
     es_trigger = Column(Boolean, default=False)
     tipo_trigger = Column(String, nullable=True)  # racha, peso, inactividad, logro
 
+    # Tracking de respuestas
+    fue_respondido = Column(Boolean, default=False)
+    fecha_respuesta = Column(DateTime, nullable=True)
+
     # Relación
     usuario = relationship("Usuario", back_populates="conversaciones")

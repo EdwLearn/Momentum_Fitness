@@ -82,8 +82,10 @@ export const reportesService = {
   },
 
   // Obtener planes más vendidos
-  getPlanesTop: async (): Promise<PlanesTopItem[]> => {
-    const response = await api.get<PlanesTopItem[]>(`${BASE_URL}/planes-top`);
+  getPlanesTop: async (dias: number = 30): Promise<PlanesTopItem[]> => {
+    const response = await api.get<PlanesTopItem[]>(`${BASE_URL}/planes-top`, {
+      params: { dias }
+    });
     return response.data;
   },
 

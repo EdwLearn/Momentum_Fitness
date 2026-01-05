@@ -61,11 +61,11 @@ export function ClientProgressDrawer({ isOpen, onClose, usuario }: ClientProgres
   // Evaluar si está en dirección correcta según objetivo
   const evaluarObjetivo = () => {
     const objetivo = usuario.objetivo?.toLowerCase() || ""
-    if (objetivo === "subir" || objetivo === "subir de peso") {
+    if (objetivo.includes("subir") || objetivo.includes("ganar") || objetivo.includes("aumentar")) {
       return pesoActual > pesoInicial
-    } else if (objetivo === "bajar" || objetivo === "bajar de peso") {
+    } else if (objetivo.includes("bajar") || objetivo.includes("perder") || objetivo.includes("reducir")) {
       return pesoActual < pesoInicial
-    } else if (objetivo === "mantener" || objetivo === "mantener peso") {
+    } else if (objetivo.includes("mantener") || objetivo.includes("mantenimiento") || objetivo.includes("estable")) {
       return Math.abs(diferenciaPeso) <= 2
     }
     return null // No hay objetivo definido
@@ -372,63 +372,117 @@ export function ClientProgressDrawer({ isOpen, onClose, usuario }: ClientProgres
                     Análisis Corporal Interactivo
                   </h3>
                   <div className={`grid gap-6 transition-all duration-1500 ease-in-out ${selectedZone ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-                    {/* Hombre de Vitruvio */}
+                    {/* Figura Anatómica */}
                     <div className={`bg-secondary/30 rounded-lg p-6 flex items-center justify-center transition-all duration-1500 ease-in-out ${selectedZone ? '' : 'mx-auto max-w-4xl'}`}>
                       <div className="relative w-full transition-all duration-1500 ease-in-out">
                         <img
-                          src="/vitruvio.svg"
-                          alt="Hombre de Vitruvio"
+                          src={usuario.genero?.toLowerCase() === 'femenino' ? "/optimized woman.svg" : "/vitruvio.svg"}
+                          alt={usuario.genero?.toLowerCase() === 'femenino' ? "Figura Femenina" : "Hombre de Vitruvio"}
                           className={`w-full h-auto mx-auto transition-all duration-1500 ease-in-out ${selectedZone ? 'max-w-md' : 'max-w-2xl'}`}
                         />
                         {/* Zonas Interactivas */}
                         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-                          {/* Brazos */}
-                          <rect
-                            x="13" y="23" width="22" height="16"
-                            className="cursor-pointer hover:fill-blue-500/30 transition-all"
-                            fill={selectedZone === 'brazos' ? 'rgba(59, 130, 246, 0.3)' : 'transparent'}
-                            rx="4"
-                            onClick={() => setSelectedZone(selectedZone === 'brazos' ? null : 'brazos')}
-                          />
-                          <rect
-                            x="65" y="23" width="22" height="16"
-                            className="cursor-pointer hover:fill-blue-500/30 transition-all"
-                            fill={selectedZone === 'brazos' ? 'rgba(59, 130, 246, 0.3)' : 'transparent'}
-                            rx="4"
-                            onClick={() => setSelectedZone(selectedZone === 'brazos' ? null : 'brazos')}
-                          />
-                          {/* Pecho */}
-                          <rect
-                            x="35" y="28" width="30" height="15"
-                            className="cursor-pointer hover:fill-green-500/30 transition-all"
-                            fill={selectedZone === 'pecho' ? 'rgba(34, 197, 94, 0.3)' : 'transparent'}
-                            rx="4"
-                            onClick={() => setSelectedZone(selectedZone === 'pecho' ? null : 'pecho')}
-                          />
-                          {/* Cintura */}
-                          <rect
-                            x="38" y="44" width="24" height="12"
-                            className="cursor-pointer hover:fill-yellow-500/30 transition-all"
-                            fill={selectedZone === 'cintura' ? 'rgba(234, 179, 8, 0.3)' : 'transparent'}
-                            rx="4"
-                            onClick={() => setSelectedZone(selectedZone === 'cintura' ? null : 'cintura')}
-                          />
-                          {/* Cadera */}
-                          <rect
-                            x="36" y="54" width="28" height="10"
-                            className="cursor-pointer hover:fill-red-500/30 transition-all"
-                            fill={selectedZone === 'cadera' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}
-                            rx="4"
-                            onClick={() => setSelectedZone(selectedZone === 'cadera' ? null : 'cadera')}
-                          />
-                          {/* Piernas */}
-                          <rect
-                            x="30" y="66" width="40" height="28"
-                            className="cursor-pointer hover:fill-purple-500/30 transition-all"
-                            fill={selectedZone === 'piernas' ? 'rgba(168, 85, 247, 0.3)' : 'transparent'}
-                            rx="4"
-                            onClick={() => setSelectedZone(selectedZone === 'piernas' ? null : 'piernas')}
-                          />
+                          {usuario.genero?.toLowerCase() === 'femenino' ? (
+                            <>
+                              {/* Brazos - Mujer */}
+                              <rect
+                                x="8" y="25" width="24" height="16"
+                                className="cursor-pointer hover:fill-blue-500/30 transition-all"
+                                fill={selectedZone === 'brazos' ? 'rgba(59, 130, 246, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'brazos' ? null : 'brazos')}
+                              />
+                              <rect
+                                x="60" y="25" width="24" height="16"
+                                className="cursor-pointer hover:fill-blue-500/30 transition-all"
+                                fill={selectedZone === 'brazos' ? 'rgba(59, 130, 246, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'brazos' ? null : 'brazos')}
+                              />
+                              {/* Pecho - Mujer */}
+                              <rect
+                                x="32" y="32" width="30" height="13"
+                                className="cursor-pointer hover:fill-green-500/30 transition-all"
+                                fill={selectedZone === 'pecho' ? 'rgba(34, 197, 94, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'pecho' ? null : 'pecho')}
+                              />
+                              {/* Cintura - Mujer */}
+                              <rect
+                                x="35" y="46" width="24" height="10"
+                                className="cursor-pointer hover:fill-yellow-500/30 transition-all"
+                                fill={selectedZone === 'cintura' ? 'rgba(234, 179, 8, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'cintura' ? null : 'cintura')}
+                              />
+                              {/* Cadera - Mujer */}
+                              <rect
+                                x="33" y="54" width="28" height="10"
+                                className="cursor-pointer hover:fill-red-500/30 transition-all"
+                                fill={selectedZone === 'cadera' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'cadera' ? null : 'cadera')}
+                              />
+                              {/* Piernas - Mujer */}
+                              <rect
+                                x="30" y="66" width="40" height="28"
+                                className="cursor-pointer hover:fill-purple-500/30 transition-all"
+                                fill={selectedZone === 'piernas' ? 'rgba(168, 85, 247, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'piernas' ? null : 'piernas')}
+                              />
+                            </>
+                          ) : (
+                            <>
+                              {/* Brazos - Hombre */}
+                              <rect
+                                x="13" y="23" width="22" height="16"
+                                className="cursor-pointer hover:fill-blue-500/30 transition-all"
+                                fill={selectedZone === 'brazos' ? 'rgba(59, 130, 246, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'brazos' ? null : 'brazos')}
+                              />
+                              <rect
+                                x="65" y="23" width="22" height="16"
+                                className="cursor-pointer hover:fill-blue-500/30 transition-all"
+                                fill={selectedZone === 'brazos' ? 'rgba(59, 130, 246, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'brazos' ? null : 'brazos')}
+                              />
+                              {/* Pecho - Hombre */}
+                              <rect
+                                x="35" y="28" width="30" height="15"
+                                className="cursor-pointer hover:fill-green-500/30 transition-all"
+                                fill={selectedZone === 'pecho' ? 'rgba(34, 197, 94, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'pecho' ? null : 'pecho')}
+                              />
+                              {/* Cintura - Hombre */}
+                              <rect
+                                x="38" y="44" width="24" height="12"
+                                className="cursor-pointer hover:fill-yellow-500/30 transition-all"
+                                fill={selectedZone === 'cintura' ? 'rgba(234, 179, 8, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'cintura' ? null : 'cintura')}
+                              />
+                              {/* Cadera - Hombre */}
+                              <rect
+                                x="36" y="54" width="28" height="10"
+                                className="cursor-pointer hover:fill-red-500/30 transition-all"
+                                fill={selectedZone === 'cadera' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'cadera' ? null : 'cadera')}
+                              />
+                              {/* Piernas - Hombre */}
+                              <rect
+                                x="30" y="66" width="40" height="28"
+                                className="cursor-pointer hover:fill-purple-500/30 transition-all"
+                                fill={selectedZone === 'piernas' ? 'rgba(168, 85, 247, 0.3)' : 'transparent'}
+                                rx="4"
+                                onClick={() => setSelectedZone(selectedZone === 'piernas' ? null : 'piernas')}
+                              />
+                            </>
+                          )}
                         </svg>
                       </div>
                     </div>

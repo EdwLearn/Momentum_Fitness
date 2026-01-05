@@ -37,12 +37,14 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
 
   const getEstadoBadgeColor = (estado: string) => {
     switch (estado.toLowerCase()) {
-      case 'activo':
+      case 'activa':
         return 'bg-green-500/10 text-green-500 border-green-500/20'
-      case 'vencido':
+      case 'vencida':
         return 'bg-red-500/10 text-red-500 border-red-500/20'
-      case 'cancelado':
+      case 'cancelada':
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+      case 'suspendida':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20'
       default:
         return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
     }
@@ -113,7 +115,7 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
                   <div>
                     <p className="text-sm text-muted-foreground">Membresías Activas</p>
                     <p className="text-xl font-bold text-foreground">
-                      {historial.membresias.filter(m => m.estado.toLowerCase() === 'activo').length}
+                      {historial.membresias.filter(m => m.estado.toLowerCase() === 'activa').length}
                     </p>
                   </div>
                   <div>

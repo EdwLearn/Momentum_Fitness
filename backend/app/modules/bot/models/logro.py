@@ -31,5 +31,8 @@ class Logro(Base):
     # Si ya se notificó al usuario
     notificado = Column(Boolean, default=False)
 
+    # Si ya generó alerta para Osne
+    genero_alerta = Column(Boolean, default=False)
+
     # Relación
     usuario = relationship("Usuario", back_populates="logros")

@@ -33,9 +33,9 @@ class Settings(BaseSettings):
     # Claude API (Anthropic)
     ANTHROPIC_API_KEY: str = ""
 
-    # Bot de Hospitalidad
-    BOT_NAME: str = "GymBot"
-    BOT_MODEL: str = "claude-3-5-sonnet-20241022"
+    # Bot de Hospitalidad (usa Ollama/qwen2.5:7b por defecto - ver llm_config.py)
+    BOT_NAME: str = "Osneither"
+    BOT_MODEL: str = "claude-3-5-sonnet-20241022"  # Solo se usa si USE_LOCAL_LLM=false
     BOT_MAX_TOKENS: int = 1024
     BOT_TEMPERATURE: float = 0.7
 
@@ -55,6 +55,12 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     SUPPORT_EMAIL: str = "edwardgiraldo101@gmail.com"
+
+    # WhatsApp Business API Configuration
+    WHATSAPP_ACCESS_TOKEN: str = ""  # Token de acceso permanente de Meta
+    WHATSAPP_PHONE_NUMBER_ID: str = ""  # ID del número de teléfono de WhatsApp Business
+    WHATSAPP_VERIFY_TOKEN: str = "momentum_fitness_webhook_2024"  # Token para verificación del webhook (puedes cambiarlo)
+    WHATSAPP_BUSINESS_ACCOUNT_ID: str = ""  # ID de la cuenta de WhatsApp Business
 
     @field_validator('ALLOWED_ORIGINS', mode='before')
     @classmethod

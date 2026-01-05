@@ -118,3 +118,43 @@
     transform: translateX(0);
   }
 }
+
+/* <CHANGE> Custom Scrollbar Momentum Style */
+/* Para navegadores basados en Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0b12;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #a4ff1a 0%, #7fc615 100%);
+  border-radius: 10px;
+  border: 2px solid #0a0b12;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #b8ff3d 0%, #a4ff1a 100%);
+  box-shadow: 0 0 15px rgba(164, 255, 26, 0.5);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #a4ff1a;
+  box-shadow: 0 0 20px rgba(164, 255, 26, 0.7);
+}
+
+/* Esquinas del scrollbar */
+::-webkit-scrollbar-corner {
+  background: #0a0b12;
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #a4ff1a #0a0b12;
+}

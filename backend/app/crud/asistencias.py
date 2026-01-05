@@ -52,6 +52,14 @@ def create_asistencia(db: Session, asistencia: AsistenciaCreate) -> Asistencia:
 
     db.commit()
     db.refresh(db_asistencia)
+
+    # Actualizar métricas del usuario
+    try:
+        from app.modules.bot.services.metricas_service import MetricasService
+        MetricasService.actualizar_metricas_asistencia(db, asistencia.usuario_id)
+    except Exception as e:
+        print(f"Error actualizando métricas: {str(e)}")
+
     return db_asistencia
 
 def update_asistencia(db: Session, asistencia_id: int, asistencia: AsistenciaUpdate) -> Optional[Asistencia]:

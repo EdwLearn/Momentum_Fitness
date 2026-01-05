@@ -12,8 +12,12 @@ from app.modules.usuarios.models.usuario import Usuario
 from app.modules.usuarios.models.membresia import Membresia
 from app.modules.asistencia.models.asistencia import Asistencia
 from app.modules.metricas.models.metrica import Metrica
-from app.modules.bot.models.conversacion import Conversacion
-from app.modules.bot.models.logro import Logro
+
+# Modelos del bot (DESACTIVADOS)
+# from app.modules.bot.models.conversacion import Conversacion
+# from app.modules.bot.models.logro import Logro
+# from app.modules.whatsapp.models.mensaje_whatsapp import MensajeWhatsApp
+
 from app.models.cupon import Cupon
 from app.models.referido import Referido
 from app.modules.empleados.models.empleado import Empleado
@@ -25,9 +29,12 @@ from app.models.ticket_soporte import TicketSoporte
 # Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
 from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard, reportes, configuracion, tickets_soporte, historial_peso
 
-# Nuevos endpoints del bot
-from app.modules.bot.endpoints import bot_endpoints
+# Nuevos endpoints del bot (DESACTIVADO)
+# from app.modules.bot.endpoints import bot_endpoints, alertas_endpoints
 from app.modules.computer_vision.endpoints import cv_endpoints_placeholder
+
+# Endpoints de WhatsApp (DESACTIVADO)
+# from app.modules.whatsapp.endpoints import whatsapp_endpoints
 
 
 @asynccontextmanager
@@ -41,7 +48,7 @@ async def lifespan(app: FastAPI):
     print("📊 Creando tablas de base de datos...")
     Base.metadata.create_all(bind=engine)
     print("✅ Base de datos inicializada")
-    print("🤖 Bot de hospitalidad listo")
+    print("⚠️  Bot y notificaciones desactivados")
     print(f"📡 Servidor corriendo en: http://localhost:8000")
     print(f"📚 Documentación: http://localhost:8000/docs")
 
@@ -154,12 +161,19 @@ app.include_router(
     tags=["⚖️ Historial de Peso"]
 )
 
-# Bot de Hospitalidad
-app.include_router(
-    bot_endpoints.router,
-    prefix="/api/bot",
-    tags=["🤖 Bot de Hospitalidad"]
-)
+# Bot de Hospitalidad (DESACTIVADO)
+# app.include_router(
+#     bot_endpoints.router,
+#     prefix="/api/bot",
+#     tags=["🤖 Bot de Hospitalidad"]
+# )
+
+# Alertas para Osneither (DESACTIVADO)
+# app.include_router(
+#     alertas_endpoints.router,
+#     prefix="/api/bot",
+#     tags=["🚨 Alertas Osne"]
+# )
 
 # Computer Vision (Futuro)
 app.include_router(
@@ -167,6 +181,13 @@ app.include_router(
     prefix="/api/cv",
     tags=["👁️ Computer Vision (Futuro)"]
 )
+
+# WhatsApp Business (DESACTIVADO)
+# app.include_router(
+#     whatsapp_endpoints.router,
+#     prefix="/api/whatsapp",
+#     tags=["💬 WhatsApp Business"]
+# )
 
 # ==========================================
 # ENDPOINTS RAÍZ
@@ -189,13 +210,9 @@ async def root():
             "metricas": "✅ Activo",
             "cupones": "✅ Activo",
             "referidos": "✅ Activo",
-            "bot_hospitalidad": "✅ Activo",
+            "bot_hospitalidad": "❌ Desactivado",
+            "notificaciones": "❌ Desactivado",
             "computer_vision": "⏳ Planificado"
-        },
-        "bot": {
-            "nombre": settings.BOT_NAME,
-            "modelo": settings.BOT_MODEL,
-            "estado": "🤖 En línea"
         },
         "documentacion": {
             "swagger": "/docs",
@@ -209,8 +226,8 @@ async def root():
             "metricas": "/api/metricas",
             "cupones": "/api/cupones",
             "referidos": "/api/referidos",
-            "bot_chat": "/api/bot/chat",
-            "bot_triggers": "/api/bot/triggers"
+            "dashboard": "/api/dashboard",
+            "reportes": "/api/reportes"
         }
     }
 
@@ -224,7 +241,7 @@ async def health_check():
         "status": "healthy",
         "version": settings.VERSION,
         "database": "connected",
-        "bot": "online"
+        "bot": "offline"
     }
 
 
@@ -240,21 +257,21 @@ async def system_stats():
     try:
         total_usuarios = db.query(Usuario).count()
         total_asistencias = db.query(Asistencia).count()
-        total_conversaciones = db.query(Conversacion).count()
-        total_logros = db.query(Logro).count()
 
         return {
             "sistema": settings.PROJECT_NAME,
             "version": settings.VERSION,
             "estadisticas": {
                 "total_usuarios": total_usuarios,
-                "total_asistencias": total_asistencias,
-                "total_conversaciones_bot": total_conversaciones,
-                "total_logros": total_logros
+                "total_asistencias": total_asistencias
             },
             "base_datos": {
                 "tipo": "PostgreSQL" if "postgresql" in settings.DATABASE_URL else "SQLite",
                 "estado": "conectada"
+            },
+            "modulos": {
+                "bot": "desactivado",
+                "notificaciones": "desactivado"
             }
         }
     finally:

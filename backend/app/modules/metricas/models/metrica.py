@@ -36,4 +36,4 @@ class Metrica(Base):
     notas = Column(String, nullable=True)
 
     # Relación
-    usuario = relationship("Usuario", back_populates="metricas")
+    usuario = relationship("Usuario", back_populates="mediciones")

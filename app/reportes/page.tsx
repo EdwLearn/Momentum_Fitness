@@ -5,9 +5,7 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ChartCard } from "@/components/chart-card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
-import { FileDown, FileText } from "lucide-react"
 import {
   LineChart,
   Line,
@@ -39,7 +37,6 @@ export default function ReportesPage() {
   const [dateRange, setDateRange] = useState("30-dias")
   const [customDateFrom, setCustomDateFrom] = useState<string>("")
   const [customDateTo, setCustomDateTo] = useState<string>("")
-  const [isExporting, setIsExporting] = useState(false)
 
   // Calcular días basado en el filtro seleccionado
   const diasAsistencias = useMemo(() => {
@@ -80,7 +77,7 @@ export default function ReportesPage() {
   const { data: asistenciasPorDia, isLoading: isLoadingAsistenciasDia } = useAsistenciasPorDia(diasAsistencias)
   const { data: asistenciasPorPlan, isLoading: isLoadingAsistenciasPlan } = useAsistenciasPorPlan(diasAsistencias)
   const { data: nuevasVsRenovaciones, isLoading: isLoadingNuevasRenovaciones } = useNuevasVsRenovaciones(mesesReportes)
-  const { data: planesTop, isLoading: isLoadingPlanesTop } = usePlanesTop()
+  const { data: planesTop, isLoading: isLoadingPlanesTop } = usePlanesTop(diasAsistencias)
   const { data: ingresosPorMes, isLoading: isLoadingIngresosMes } = useIngresosPorMes(mesesReportes)
   const { data: ingresosPorCupon, isLoading: isLoadingIngresosCupon } = useIngresosPorCupon()
   const { data: referidosImpacto, isLoading: isLoadingReferidos } = useReferidosImpacto()
@@ -98,311 +95,6 @@ export default function ReportesPage() {
   const isLoading = isLoadingAsistenciasDia || isLoadingAsistenciasPlan || isLoadingNuevasRenovaciones ||
     isLoadingPlanesTop || isLoadingIngresosMes || isLoadingIngresosCupon || isLoadingReferidos || isLoadingResumen ||
     isLoadingComparacionEmpleados
-
-  // Función para exportar a CSV
-  const exportToCSV = () => {
-    setIsExporting(true)
-    try {
-      let csvContent = "data:text/csv;charset=utf-8,"
-
-      // Obtener el nombre del período
-      const getPeriodName = () => {
-        if (dateRange === "7-dias") return "Ultimos_7_dias"
-        if (dateRange === "30-dias") return "Ultimos_30_dias"
-        if (dateRange === "este-mes") return "Este_mes"
-        if (dateRange === "personalizado" && customDateFrom && customDateTo) {
-          return `${customDateFrom}_a_${customDateTo}`.replace(/-/g, "_")
-        }
-        return "Reporte"
-      }
-
-      // Encabezado del reporte
-      csvContent += `Reporte de Gimnasio - ${getPeriodName()}\n`
-      csvContent += `Fecha de generacion: ${new Date().toLocaleDateString('es-ES')}\n\n`
-
-      // Sección: Asistencias por día
-      csvContent += "ASISTENCIAS POR DIA\n"
-      csvContent += "Fecha,Asistencias\n"
-      asistenciasPorDia?.forEach(item => {
-        csvContent += `${item.fecha},${item.asistencias}\n`
-      })
-      csvContent += "\n"
-
-      // Sección: Asistencias por plan
-      csvContent += "ASISTENCIAS POR PLAN\n"
-      csvContent += "Plan,Asistencias\n"
-      asistenciasPorPlan?.forEach(item => {
-        csvContent += `${item.plan},${item.asistencias}\n`
-      })
-      csvContent += "\n"
-
-      // Sección: Nuevas vs Renovaciones
-      csvContent += "NUEVAS SUSCRIPCIONES VS RENOVACIONES\n"
-      csvContent += "Mes,Nuevas,Renovaciones\n"
-      nuevasVsRenovaciones?.forEach(item => {
-        csvContent += `${item.mes},${item.nuevas},${item.renovaciones}\n`
-      })
-      csvContent += "\n"
-
-      // Sección: Planes más vendidos
-      csvContent += "PLANES MAS VENDIDOS\n"
-      csvContent += "Plan,Ventas\n"
-      planesTop?.forEach(item => {
-        csvContent += `${item.plan},${item.ventas}\n`
-      })
-      csvContent += "\n"
-
-      // Sección: Ingresos por mes
-      csvContent += "INGRESOS POR MES\n"
-      csvContent += "Mes,Ingresos (Millones)\n"
-      ingresosPorMes?.forEach(item => {
-        csvContent += `${item.mes},${item.ingresos}\n`
-      })
-      csvContent += "\n"
-
-      // Sección: Resumen de Ingresos
-      csvContent += "RESUMEN DE INGRESOS\n"
-      csvContent += "Metrica,Valor\n"
-      csvContent += `Ingresos Totales (Millones),${resumenIngresos?.ingresos_totales || 0}\n`
-      csvContent += `Ticket Promedio (Miles),${resumenIngresos?.ticket_promedio || 0}\n`
-      csvContent += `Ingresos por Cliente (Miles),${resumenIngresos?.ingresos_por_cliente || 0}\n`
-      csvContent += "\n"
-
-      // Sección: Referidos
-      csvContent += "IMPACTO DE REFERIDOS\n"
-      csvContent += "Metrica,Valor\n"
-      csvContent += `Clientes Referidos,${referidosImpacto?.clientes_referidos || 0}\n`
-      csvContent += `Porcentaje,${referidosImpacto?.porcentaje || 0}%\n`
-      csvContent += `Meses Gratis Entregados,${referidosImpacto?.meses_gratis || 0}\n`
-      csvContent += `Ratio de Conversion,${referidosImpacto?.ratio_conversion || 0}%\n`
-
-      // Crear el enlace de descarga
-      const encodedUri = encodeURI(csvContent)
-      const link = document.createElement("a")
-      link.setAttribute("href", encodedUri)
-      link.setAttribute("download", `Reporte_Gimnasio_${getPeriodName()}_${new Date().toISOString().split('T')[0]}.csv`)
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } catch (error) {
-      console.error("Error exportando CSV:", error)
-      alert("Error al exportar el archivo CSV")
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
-  // Función para exportar a PDF
-  const exportToPDF = async () => {
-    setIsExporting(true)
-    try {
-      // Importar jsPDF y autoTable con sintaxis correcta para v5
-      const [jsPDFModule] = await Promise.all([
-        import('jspdf'),
-        import('jspdf-autotable') // Esto extiende el prototipo de jsPDF
-      ])
-
-      const jsPDF = jsPDFModule.default
-
-      // Crear documento
-      const doc = new jsPDF() as any
-
-      let yPos = 20
-
-      // Obtener el nombre del período
-      const getPeriodName = () => {
-        if (dateRange === "7-dias") return "Ultimos 7 dias"
-        if (dateRange === "30-dias") return "Ultimos 30 dias"
-        if (dateRange === "este-mes") return "Este mes"
-        if (dateRange === "personalizado" && customDateFrom && customDateTo) {
-          return `${customDateFrom} a ${customDateTo}`
-        }
-        return "Reporte General"
-      }
-
-      // Título
-      doc.setFontSize(18)
-      doc.text("Reporte de Gimnasio Momentum Fitness", 105, yPos, { align: "center" })
-      yPos += 10
-
-      doc.setFontSize(12)
-      doc.text(`Periodo: ${getPeriodName()}`, 105, yPos, { align: "center" })
-      yPos += 7
-
-      doc.setFontSize(10)
-      doc.text(`Fecha de generacion: ${new Date().toLocaleDateString('es-ES')}`, 105, yPos, { align: "center" })
-      yPos += 15
-
-      // Tabla: Asistencias por dia
-      if (asistenciasPorDia && asistenciasPorDia.length > 0) {
-        doc.setFontSize(14)
-        doc.text("Asistencias por dia", 14, yPos)
-        yPos += 7
-
-        doc.autoTable({
-          startY: yPos,
-          head: [['Fecha', 'Asistencias']],
-          body: asistenciasPorDia.map((item: any) => [item.fecha || '', item.asistencias || 0]),
-          theme: 'grid',
-          headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
-        })
-        yPos = doc.lastAutoTable.finalY + 10
-      }
-
-      // Tabla: Asistencias por plan
-      if (asistenciasPorPlan && asistenciasPorPlan.length > 0) {
-        if (yPos > 250) {
-          doc.addPage()
-          yPos = 20
-        }
-
-        doc.setFontSize(14)
-        doc.text("Asistencias por plan", 14, yPos)
-        yPos += 7
-
-        doc.autoTable({
-          startY: yPos,
-          head: [['Plan', 'Asistencias']],
-          body: asistenciasPorPlan.map((item: any) => [item.plan || '', item.asistencias || 0]),
-          theme: 'grid',
-          headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
-        })
-        yPos = doc.lastAutoTable.finalY + 10
-      }
-
-      // Tabla: Nuevas vs Renovaciones
-      if (nuevasVsRenovaciones && nuevasVsRenovaciones.length > 0) {
-        if (yPos > 250) {
-          doc.addPage()
-          yPos = 20
-        }
-
-        doc.setFontSize(14)
-        doc.text("Nuevas suscripciones vs Renovaciones", 14, yPos)
-        yPos += 7
-
-        doc.autoTable({
-          startY: yPos,
-          head: [['Mes', 'Nuevas', 'Renovaciones']],
-          body: nuevasVsRenovaciones.map((item: any) => [item.mes || '', item.nuevas || 0, item.renovaciones || 0]),
-          theme: 'grid',
-          headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
-        })
-        yPos = doc.lastAutoTable.finalY + 10
-      }
-
-      // Tabla: Planes mas vendidos
-      if (planesTop && planesTop.length > 0) {
-        if (yPos > 250) {
-          doc.addPage()
-          yPos = 20
-        }
-
-        doc.setFontSize(14)
-        doc.text("Planes mas vendidos", 14, yPos)
-        yPos += 7
-
-        doc.autoTable({
-          startY: yPos,
-          head: [['Plan', 'Ventas']],
-          body: planesTop.map((item: any) => [item.plan || '', item.ventas || 0]),
-          theme: 'grid',
-          headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
-        })
-        yPos = doc.lastAutoTable.finalY + 10
-      }
-
-      // Tabla: Ingresos por mes
-      if (ingresosPorMes && ingresosPorMes.length > 0) {
-        if (yPos > 250) {
-          doc.addPage()
-          yPos = 20
-        }
-
-        doc.setFontSize(14)
-        doc.text("Ingresos por mes", 14, yPos)
-        yPos += 7
-
-        doc.autoTable({
-          startY: yPos,
-          head: [['Mes', 'Ingresos (Millones)']],
-          body: ingresosPorMes.map((item: any) => [item.mes || '', `$${item.ingresos || 0}M`]),
-          theme: 'grid',
-          headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
-        })
-        yPos = doc.lastAutoTable.finalY + 10
-      }
-
-      // Resumen de Ingresos
-      if (resumenIngresos) {
-        if (yPos > 220) {
-          doc.addPage()
-          yPos = 20
-        }
-
-        doc.setFontSize(14)
-        doc.text("Resumen de Ingresos", 14, yPos)
-        yPos += 7
-
-        doc.autoTable({
-          startY: yPos,
-          head: [['Metrica', 'Valor']],
-          body: [
-            ['Ingresos Totales', `$${resumenIngresos.ingresos_totales?.toFixed(1) || 0}M`],
-            ['Ticket Promedio', `$${resumenIngresos.ticket_promedio?.toFixed(1) || 0}K`],
-            ['Ingresos por Cliente', `$${resumenIngresos.ingresos_por_cliente?.toFixed(1) || 0}K`],
-          ],
-          theme: 'grid',
-          headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
-        })
-        yPos = doc.lastAutoTable.finalY + 10
-      }
-
-      // Impacto de Referidos
-      if (referidosImpacto) {
-        if (yPos > 220) {
-          doc.addPage()
-          yPos = 20
-        }
-
-        doc.setFontSize(14)
-        doc.text("Impacto de Referidos", 14, yPos)
-        yPos += 7
-
-        doc.autoTable({
-          startY: yPos,
-          head: [['Metrica', 'Valor']],
-          body: [
-            ['Clientes Referidos', referidosImpacto.clientes_referidos || 0],
-            ['Porcentaje del total', `${referidosImpacto.porcentaje?.toFixed(1) || 0}%`],
-            ['Meses Gratis Entregados', referidosImpacto.meses_gratis || 0],
-            ['Ratio de Conversion', `${referidosImpacto.ratio_conversion?.toFixed(1) || 0}%`],
-          ],
-          theme: 'grid',
-          headStyles: { fillColor: [164, 255, 26], textColor: [0, 0, 0] },
-        })
-      }
-
-      // Guardar el PDF
-      const getPeriodFileName = () => {
-        if (dateRange === "7-dias") return "Ultimos_7_dias"
-        if (dateRange === "30-dias") return "Ultimos_30_dias"
-        if (dateRange === "este-mes") return "Este_mes"
-        if (dateRange === "personalizado" && customDateFrom && customDateTo) {
-          return `${customDateFrom}_a_${customDateTo}`.replace(/-/g, "_")
-        }
-        return "Reporte"
-      }
-
-      doc.save(`Reporte_Gimnasio_${getPeriodFileName()}_${new Date().toISOString().split('T')[0]}.pdf`)
-    } catch (error) {
-      console.error("Error exportando PDF:", error)
-      const errorMessage = error instanceof Error ? error.message : "Error desconocido"
-      alert(`Error al exportar el archivo PDF: ${errorMessage}`)
-    } finally {
-      setIsExporting(false)
-    }
-  }
 
   // Mostrar loading state
   if (isLoading) {
@@ -602,37 +294,47 @@ export default function ReportesPage() {
 
           <ChartCard title="Planes más vendidos" subtitle="Ranking de popularidad">
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={planesTop || []} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis dataKey="plan" type="category" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    cursor={{ fill: 'transparent' }}
-                    contentStyle={{
-                      backgroundColor: "#0A0B12",
-                      border: "1px solid #2A2B35",
-                      borderRadius: "8px",
-                      color: "#E5E5E5",
-                    }}
-                  />
-                  <Bar
-                    dataKey="ventas"
-                    fill={GREEN_COLOR}
-                    radius={[0, 4, 4, 0]}
-                    onMouseEnter={(data, index, e) => {
-                      const target = e.target as SVGElement;
-                      target.style.transform = 'scaleX(1.05)';
-                      target.style.transformOrigin = 'left';
-                      target.style.transition = 'transform 0.2s ease';
-                    }}
-                    onMouseLeave={(data, index, e) => {
-                      const target = e.target as SVGElement;
-                      target.style.transform = 'scaleX(1)';
-                    }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              {isLoadingPlanesTop ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Cargando...
+                </div>
+              ) : planesTop && planesTop.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={planesTop} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis dataKey="plan" type="category" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      cursor={{ fill: 'transparent' }}
+                      contentStyle={{
+                        backgroundColor: "#0A0B12",
+                        border: "1px solid #2A2B35",
+                        borderRadius: "8px",
+                        color: "#E5E5E5",
+                      }}
+                    />
+                    <Bar
+                      dataKey="ventas"
+                      fill={GREEN_COLOR}
+                      radius={[0, 4, 4, 0]}
+                      onMouseEnter={(data, index, e) => {
+                        const target = e.target as SVGElement;
+                        target.style.transform = 'scaleX(1.05)';
+                        target.style.transformOrigin = 'left';
+                        target.style.transition = 'transform 0.2s ease';
+                      }}
+                      onMouseLeave={(data, index, e) => {
+                        const target = e.target as SVGElement;
+                        target.style.transform = 'scaleX(1)';
+                      }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No hay datos de planes vendidos en este período
+                </div>
+              )}
             </div>
           </ChartCard>
         </div>
@@ -854,32 +556,6 @@ export default function ReportesPage() {
           </ChartCard>
         </div>
       </div>
-
-      {/* Export Section */}
-      <ChartCard title="Exportar datos" subtitle="Descarga reportes en diferentes formatos">
-        <div className="flex flex-wrap gap-4">
-          <Button
-            onClick={exportToCSV}
-            disabled={isExporting}
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <FileText className="h-4 w-4" />
-            {isExporting ? "Exportando..." : "Exportar CSV"}
-          </Button>
-          <Button
-            onClick={exportToPDF}
-            disabled={isExporting}
-            variant="outline"
-            className="gap-2 bg-transparent"
-          >
-            <FileDown className="h-4 w-4" />
-            {isExporting ? "Exportando..." : "Exportar PDF"}
-          </Button>
-        </div>
-        <p className="text-sm text-muted-foreground mt-4">
-          Los reportes se exportarán según el período de tiempo seleccionado.
-        </p>
-      </ChartCard>
       </DashboardLayout>
     </ProtectedRoute>
   )

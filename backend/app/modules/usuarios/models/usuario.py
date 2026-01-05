@@ -39,6 +39,11 @@ class Usuario(Base):
     # Relaciones
     membresias = relationship("Membresia", foreign_keys="[Membresia.usuario_id]", back_populates="usuario", cascade="all, delete-orphan")
     asistencias = relationship("Asistencia", back_populates="usuario", cascade="all, delete-orphan")
-    metricas = relationship("Metrica", back_populates="usuario", cascade="all, delete-orphan")
-    conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")
-    logros = relationship("Logro", back_populates="usuario", cascade="all, delete-orphan")
+    mediciones = relationship("Metrica", back_populates="usuario", cascade="all, delete-orphan")
+
+    # Relaciones del bot (DESACTIVADAS)
+    # metricas = relationship("MetricasUsuario", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
+    # conversaciones = relationship("Conversacion", back_populates="usuario", cascade="all, delete-orphan")
+    # logros = relationship("Logro", back_populates="usuario", cascade="all, delete-orphan")
+    # alertas_osne = relationship("AlertaOsne", back_populates="usuario", cascade="all, delete-orphan")
+    # mensajes_whatsapp = relationship("MensajeWhatsApp", back_populates="usuario", cascade="all, delete-orphan")

@@ -409,13 +409,26 @@ def get_historial_cliente(cliente_id: int, db: Session = Depends(get_db)):
     # Fecha de primera inscripción
     fecha_primera_inscripcion = membresias[0].fecha_inicio.strftime("%Y-%m-%d")
 
+    # Obtener fecha actual para comparar estados
+    now = datetime.utcnow()
+
     # Construir lista de membresías con detalles
     membresias_detalle = []
     for m in membresias:
+        # Calcular el estado real basado en la fecha de fin y el estado de la membresía
+        estado_real = m.estado
+
+        # Si la membresía está marcada como activa pero ya venció, cambiar a vencida
+        if m.estado == EstadoMembresia.ACTIVA and m.fecha_fin < now:
+            estado_real = EstadoMembresia.VENCIDA
+        # Si la membresía no está activa (activo=False) y no está cancelada/suspendida, es vencida
+        elif not m.activo and m.estado not in [EstadoMembresia.CANCELADA, EstadoMembresia.SUSPENDIDA]:
+            estado_real = EstadoMembresia.VENCIDA
+
         membresias_detalle.append({
             "id": m.id,
             "tipo_plan": nombres_planes.get(m.tipo_plan, m.tipo_plan.value),
-            "estado": nombres_estados.get(m.estado, m.estado.value),
+            "estado": nombres_estados.get(estado_real, estado_real.value),
             "fecha_inicio": m.fecha_inicio.strftime("%Y-%m-%d"),
             "fecha_fin": m.fecha_fin.strftime("%Y-%m-%d"),
             "duracion_dias": m.duracion_dias,

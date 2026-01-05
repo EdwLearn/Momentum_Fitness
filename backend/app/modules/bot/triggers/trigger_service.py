@@ -6,6 +6,7 @@ from app.modules.usuarios.models.usuario import Usuario
 from app.modules.asistencia.models.asistencia import Asistencia
 from app.modules.metricas.models.metrica import Metrica, TipoMetrica
 from app.modules.bot.models.logro import Logro, TipoLogro
+from app.modules.bot.services.analisis_service import AnalisisService
 
 class TriggerService:
     """
@@ -84,6 +85,10 @@ class TriggerService:
                         "contexto": {"dias": racha}
                     })
 
+                    # Analizar si requiere alerta para Osne
+                    if not nuevo_logro.genero_alerta:
+                        TriggerService._generar_alerta_si_necesario(db, usuario.id)
+
         return triggers
 
     @staticmethod
@@ -132,6 +137,10 @@ class TriggerService:
                                 "cambio_kg": usuario.peso_actual - usuario.peso_inicial
                             }
                         })
+
+                        # Analizar si requiere alerta para Osne
+                        if not nuevo_logro.genero_alerta:
+                            TriggerService._generar_alerta_si_necesario(db, usuario.id)
                     break  # Solo notificar el umbral más bajo alcanzado
 
         return triggers
@@ -212,3 +221,33 @@ class TriggerService:
         if logro:
             logro.notificado = True
             db.commit()
+
+    @staticmethod
+    def _generar_alerta_si_necesario(db: Session, usuario_id: int):
+        """
+        Analiza un usuario y genera alerta para Osne si es necesario.
+        """
+        try:
+            usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+            if not usuario:
+                return
+
+            analisis_service = AnalisisService(db)
+            analisis = analisis_service.analizar_usuario(usuario)
+
+            if analisis:
+                alerta = analisis_service.crear_alerta_osne(analisis)
+
+                # Marcar logros relacionados como generadores de alerta
+                logros_pendientes = db.query(Logro).filter(
+                    Logro.usuario_id == usuario_id,
+                    Logro.genero_alerta == False
+                ).all()
+
+                for logro in logros_pendientes:
+                    logro.genero_alerta = True
+
+                db.commit()
+
+        except Exception as e:
+            print(f"Error generando alerta para usuario {usuario_id}: {str(e)}")

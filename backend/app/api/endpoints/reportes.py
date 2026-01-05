@@ -191,10 +191,17 @@ def get_nuevas_vs_renovaciones(meses: int = 6, db: Session = Depends(get_db)):
     return resultado
 
 @router.get("/planes-top", response_model=List[PlanesTopItem])
-def get_planes_top(db: Session = Depends(get_db)):
+def get_planes_top(dias: int = 30, db: Session = Depends(get_db)):
     """
-    Retorna los planes más vendidos (todas las membresías históricas)
+    Retorna los planes más vendidos en los últimos N días
     """
+    from datetime import timezone
+    colombia_tz = timezone(timedelta(hours=-5))
+    now = datetime.now(colombia_tz)
+
+    # Calcular fecha de inicio como datetime (al inicio del día, N días atrás)
+    fecha_inicio = (now - timedelta(days=dias)).replace(hour=0, minute=0, second=0, microsecond=0)
+
     nombres_planes = {
         TipoPlan.PASE_DIARIO: "Pase Diario",
         TipoPlan.PASE_FLEX: "Pase Flex",
@@ -204,10 +211,12 @@ def get_planes_top(db: Session = Depends(get_db)):
         TipoPlan.ELITE_ANUAL: "Elite Anual",
     }
 
-    # Contar todas las membresías por tipo de plan
+    # Contar membresías por tipo de plan en el rango de fechas (fecha_inicio >= fecha_limite)
     ventas_por_plan = db.query(
         Membresia.tipo_plan,
         func.count(Membresia.id).label('count')
+    ).filter(
+        Membresia.fecha_inicio >= fecha_inicio
     ).group_by(Membresia.tipo_plan).all()
 
     resultado = []
