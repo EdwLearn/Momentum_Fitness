@@ -15,7 +15,7 @@ interface ClientProgressDrawerProps {
   usuario: Usuario | null
 }
 
-export function ClientProgressDrawer({ isOpen, onClose, usuario }: ClientProgressDrawerProps) {
+export function UsuarioProgressDrawer({ isOpen, onClose, usuario }: ClientProgressDrawerProps) {
   const [historial, setHistorial] = useState<HistorialPeso[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -121,7 +121,7 @@ export function ClientProgressDrawer({ isOpen, onClose, usuario }: ClientProgres
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="h-6 w-6 text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">Progreso del Cliente</h2>
+                <h2 className="text-2xl font-bold text-foreground">Progreso del Usuario</h2>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">
@@ -156,7 +156,7 @@ export function ClientProgressDrawer({ isOpen, onClose, usuario }: ClientProgres
           ) : historial.length === 0 ? (
             <div className="text-center py-12">
               <Scale className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No hay registros de peso para este cliente</p>
+              <p className="text-muted-foreground">No hay registros de peso para este usuario</p>
               <p className="text-sm text-muted-foreground mt-2">
                 Usa el botón "Pesar" para agregar el primer registro
               </p>

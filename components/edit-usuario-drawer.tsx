@@ -21,7 +21,7 @@ interface EditClientDrawerProps {
   usuario: Usuario | null
 }
 
-export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditClientDrawerProps) {
+export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditClientDrawerProps) {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -29,7 +29,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
     edad: "",
     genero: "",
     fechaNacimiento: "",
-    tipoUsuario: "Cliente",
+    tipoUsuario: "Usuario",
     referidoPorCedula: "",
     email: "",
     telefono: "",
@@ -51,7 +51,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
   useEffect(() => {
     if (usuario && isOpen) {
       const tipoUsuarioMap: Record<string, string> = {
-        [TipoUsuario.CLIENTE]: "Cliente",
+        [TipoUsuario.CLIENTE]: "Usuario",
         [TipoUsuario.ENTRENADOR]: "Empleado",
         [TipoUsuario.ADMIN]: "Admin",
       }
@@ -63,7 +63,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
         edad: "", // No se guarda edad directamente
         genero: "", // No se guarda género directamente
         fechaNacimiento: usuario.fecha_nacimiento ? usuario.fecha_nacimiento.split("T")[0] : "",
-        tipoUsuario: tipoUsuarioMap[usuario.tipo || TipoUsuario.CLIENTE] || "Cliente",
+        tipoUsuario: tipoUsuarioMap[usuario.tipo || TipoUsuario.CLIENTE] || "Usuario",
         referidoPorCedula: usuario.referido_por_cedula || "",
         email: usuario.email || "",
         telefono: usuario.telefono || "",
@@ -91,7 +91,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
         setReferidoError(null)
       } catch (error) {
         setReferidoInfo(null)
-        setReferidoError("No se encontró un cliente con esta cédula")
+        setReferidoError("No se encontró un usuario con esta cédula")
       } finally {
         setIsSearchingReferido(false)
       }
@@ -113,7 +113,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
     try {
       // Map tipoUsuario to TipoUsuario enum
       const tipoUsuarioMap: Record<string, TipoUsuario> = {
-        Cliente: TipoUsuario.CLIENTE,
+        Usuario: TipoUsuario.CLIENTE,
         Empleado: TipoUsuario.ENTRENADOR,
         Admin: TipoUsuario.ADMIN,
       }
@@ -141,7 +141,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
       onClose()
     } catch (err) {
       console.error("Error updating usuario:", err)
-      setError("Error al actualizar el cliente. Por favor intenta de nuevo.")
+      setError("Error al actualizar el usuario. Por favor intenta de nuevo.")
     }
   }
 
@@ -164,7 +164,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
       setDeleteConfirmCedula("")
     } catch (err: any) {
       console.error("Error deleting usuario:", err)
-      setDeleteError(err.response?.data?.detail || "Error al eliminar el cliente. Por favor intenta de nuevo.")
+      setDeleteError(err.response?.data?.detail || "Error al eliminar el usuario. Por favor intenta de nuevo.")
     }
   }
 
@@ -181,8 +181,8 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Editar Cliente</h2>
-              <p className="text-sm text-muted-foreground">Actualiza la información del cliente</p>
+              <h2 className="text-2xl font-bold text-foreground">Editar Usuario</h2>
+              <p className="text-sm text-muted-foreground">Actualiza la información del usuario</p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
@@ -258,17 +258,17 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cliente">Cliente</SelectItem>
+                    <SelectItem value="Usuario">Usuario</SelectItem>
                     <SelectItem value="Empleado">Empleado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Campo de Referido - Solo para clientes */}
-              {formData.tipoUsuario === "Cliente" && (
+              {/* Campo de Referido - Solo para usuarios */}
+              {formData.tipoUsuario === "Usuario" && (
                 <div className="space-y-2">
                   <Label htmlFor="referidoPorCedula">
-                    Referido por (Cédula del cliente)
+                    Referido por (Cédula del usuario)
                     <span className="ml-2 text-xs text-muted-foreground">(Opcional)</span>
                   </Label>
                   <div className="relative">
@@ -276,7 +276,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
                       id="referidoPorCedula"
                       value={formData.referidoPorCedula}
                       onChange={(e) => setFormData({ ...formData, referidoPorCedula: e.target.value })}
-                      placeholder="Ingresa la cédula del cliente que lo refirió"
+                      placeholder="Ingresa la cédula del usuario que lo refirió"
                       className="bg-secondary border-border pr-10"
                     />
                     {isSearchingReferido && (
@@ -292,7 +292,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
                   {referidoInfo && (
                     <p className="text-sm text-[#A4FF1A] flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
-                      Cliente encontrado: {referidoInfo.nombre} {referidoInfo.apellido}
+                      Usuario encontrado: {referidoInfo.nombre} {referidoInfo.apellido}
                     </p>
                   )}
                   {referidoError && formData.referidoPorCedula.length >= 3 && (
@@ -408,7 +408,7 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
                 disabled={updateUsuario.isPending || deleteUsuario.isPending}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar Cliente
+                Eliminar Usuario
               </Button>
             </div>
           </div>
@@ -431,16 +431,16 @@ export function EditClientDrawer({ isOpen, onClose, onSuccess, usuario }: EditCl
                   <Trash2 className="h-6 w-6 text-destructive" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground">¿Eliminar cliente?</h3>
+                  <h3 className="text-lg font-semibold text-foreground">¿Eliminar usuario?</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Esta acción no se puede deshacer. Se eliminará toda la información del cliente.
+                    Esta acción no se puede deshacer. Se eliminará toda la información del usuario.
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="deleteConfirm" className="text-foreground">
-                  Para confirmar, ingresa el documento del cliente:{" "}
+                  Para confirmar, ingresa el documento del usuario:{" "}
                   <span className="font-semibold text-primary">{formData.cedula}</span>
                 </Label>
                 <Input

@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
 import { DataTable, StatusBadge } from "@/components/data-table"
-import { HistorialClienteModal } from "@/components/historial-cliente-modal"
+import { HistorialUsuarioModal } from "@/components/historial-usuario-modal"
 import { HistorialEmpleadoModal } from "@/components/historial-empleado-modal"
 import { Users, UserCheck, AlertTriangle, DollarSign } from "lucide-react"
 import { useDashboard } from "@/lib/hooks/useDashboard"
@@ -112,7 +112,7 @@ export default function DashboardPage() {
   }
 
   const renewalColumns = [
-    { key: "cliente", header: "Cliente" },
+    { key: "usuario", header: "Usuario" },
     { key: "plan", header: "Tipo de Plan" },
     { key: "fecha_fin", header: "Fecha Fin" },
     {
@@ -123,7 +123,7 @@ export default function DashboardPage() {
   ]
 
   const handleVerCliente = (item: ProximaRenovacionItem) => {
-    setSelectedCliente({ id: item.id, nombre: item.cliente })
+    setSelectedCliente({ id: item.id, nombre: item.usuario })
   }
 
   const handleVerEmpleado = (item: EmpleadoDashboardItem) => {
@@ -161,7 +161,7 @@ export default function DashboardPage() {
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <MetricCard
-          title="Clientes Activos"
+          title="Usuarios Activos"
           value={isLoadingClientesActivos ? "..." : clientesActivosStats?.total || 0}
           change={isLoadingClientesActivos ? undefined : clientesActivosStats?.cambio_porcentual}
           changeLabel="vs mes anterior"
@@ -302,7 +302,7 @@ export default function DashboardPage() {
 
       {/* Upcoming Renewals Table */}
       <div className="mt-6">
-        <ChartCard title="Próximas Renovaciones" subtitle="Clientes con planes por vencer">
+        <ChartCard title="Próximas Renovaciones" subtitle="Usuarios con planes por vencer">
           {isLoadingProximasRenovaciones ? (
             <div className="flex items-center justify-center h-64 text-gray-400">
               Cargando...
@@ -319,9 +319,9 @@ export default function DashboardPage() {
       </div>
       </DashboardLayout>
 
-      {/* Modal de Historial del Cliente */}
+      {/* Modal de Historial del Usuario */}
       {selectedCliente && (
-        <HistorialClienteModal
+        <HistorialUsuarioModal
           clienteId={selectedCliente.id}
           clienteNombre={selectedCliente.nombre}
           onClose={() => setSelectedCliente(null)}

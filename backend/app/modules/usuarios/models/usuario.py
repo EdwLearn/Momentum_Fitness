@@ -7,7 +7,7 @@ from app.core.database import Base
 class TipoUsuario(str, enum.Enum):
     ADMIN = "admin"
     ENTRENADOR = "entrenador"
-    CLIENTE = "cliente"
+    CLIENTE = "usuario"
 
 class Usuario(Base):
     __tablename__ = "usuarios"
@@ -27,7 +27,7 @@ class Usuario(Base):
     peso_inicial = Column(Float, nullable=True)
     peso_actual = Column(Float, nullable=True)
     altura = Column(Float, nullable=True)
-    objetivo = Column(String, nullable=True)  # Objetivos fitness del cliente
+    objetivo = Column(String, nullable=True)  # Objetivos fitness del usuario
     genero = Column(String, nullable=True)    # Masculino/Femenino
     dias_entrenados = Column(Integer, default=0, nullable=False)  # Contador de días que ha asistido al gimnasio
 

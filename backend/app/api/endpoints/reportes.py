@@ -329,12 +329,12 @@ def get_referidos_impacto(db: Session = Depends(get_db)):
     """
     from app.models.referido import Referido
 
-    # Total de clientes activos
+    # Total de usuarios activos
     total_clientes = db.query(Usuario).filter(
         Usuario.activo == True
     ).count()
 
-    # Clientes que fueron referidos (tienen referido_por_cedula)
+    # Usuarios que fueron referidos (tienen referido_por_cedula)
     clientes_referidos = db.query(Usuario).filter(
         and_(
             Usuario.activo == True,
@@ -353,7 +353,7 @@ def get_referidos_impacto(db: Session = Depends(get_db)):
         Referido.cumple_condicion == True
     ).count()
 
-    # Ratio de conversión: porcentaje de referidos que se convierten en clientes activos
+    # Ratio de conversión: porcentaje de referidos que se convierten en usuarios activos
     ratio_conversion = (referidos_activos / total_referidos * 100) if total_referidos > 0 else 0
 
     # Meses gratis entregados: calcular basado en el sistema de 3 referidos = 1 mes
@@ -380,7 +380,7 @@ def get_referidos_impacto(db: Session = Depends(get_db)):
 @router.get("/resumen-ingresos", response_model=ResumenIngresos)
 def get_resumen_ingresos(db: Session = Depends(get_db)):
     """
-    Retorna resumen de ingresos: totales, ticket promedio, ingresos por cliente
+    Retorna resumen de ingresos: totales, ticket promedio, ingresos por usuario
     """
     # Ingresos totales (todas las membresías)
     ingresos_totales = db.query(
@@ -393,10 +393,10 @@ def get_resumen_ingresos(db: Session = Depends(get_db)):
     # Ticket promedio
     ticket_promedio = (ingresos_totales / total_membresias) if total_membresias > 0 else 0
 
-    # Total de clientes únicos
+    # Total de usuarios únicos
     total_clientes = db.query(func.count(func.distinct(Membresia.usuario_id))).scalar() or 1
 
-    # Ingresos por cliente
+    # Ingresos por usuario
     ingresos_por_cliente = ingresos_totales / total_clientes if total_clientes > 0 else 0
 
     return ResumenIngresos(

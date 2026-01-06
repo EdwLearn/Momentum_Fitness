@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { ChartCard } from "@/components/chart-card"
 import { FilterableDataTable } from "@/components/filterable-data-table"
 import { StatusBadge } from "@/components/data-table"
-import { HistorialClienteModal } from "@/components/historial-cliente-modal"
+import { HistorialUsuarioModal } from "@/components/historial-usuario-modal"
 import { CreditCard, Calendar, Repeat, Clock, Trophy, Gift } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
@@ -98,7 +98,7 @@ export default function SuscripcionesPage() {
         return {
           id: m.id,
           usuario_id: m.usuario_id,
-          cliente: usuario ? `${usuario.nombre} ${usuario.apellido}` : "Desconocido",
+          usuario: usuario ? `${usuario.nombre} ${usuario.apellido}` : "Desconocido",
           plan: planNameMap[m.tipo_plan] || m.tipo_plan,
           fechaInicio: m.fecha_inicio.split('T')[0],
           fechaFin: m.fecha_fin.split('T')[0],
@@ -122,19 +122,19 @@ export default function SuscripcionesPage() {
   const totalReferidos = stats?.por_referidos || 0
   const tiposPlanesCount = stats?.tipos_planes || 6
 
-  // Handler para ver historial del cliente
+  // Handler para ver historial del usuario
   const handleVerCliente = (item: any) => {
-    setSelectedCliente({ id: item.usuario_id, nombre: item.cliente })
+    setSelectedCliente({ id: item.usuario_id, nombre: item.usuario })
   }
 
   const subscriptionColumns = [
     {
-      key: "cliente",
-      header: "Cliente",
+      key: "usuario",
+      header: "Usuario",
       sortable: true,
       filter: {
         type: "text" as const,
-        placeholder: "Buscar cliente..."
+        placeholder: "Buscar usuario..."
       }
     },
     {
@@ -352,7 +352,7 @@ export default function SuscripcionesPage() {
         <FilterableDataTable
           columns={subscriptionColumns}
           data={subscriptionsData}
-          searchPlaceholder="Buscar suscripciones por cliente, plan, método de pago..."
+          searchPlaceholder="Buscar suscripciones por usuario, plan, método de pago..."
           showGlobalSearch={true}
           emptyMessage="No se encontraron suscripciones que coincidan con los filtros"
           onRowAction={handleVerCliente}
@@ -361,9 +361,9 @@ export default function SuscripcionesPage() {
       </ChartCard>
       </DashboardLayout>
 
-      {/* Modal de Historial del Cliente */}
+      {/* Modal de Historial del Usuario */}
       {selectedCliente && (
-        <HistorialClienteModal
+        <HistorialUsuarioModal
           clienteId={selectedCliente.id}
           clienteNombre={selectedCliente.nombre}
           onClose={() => setSelectedCliente(null)}

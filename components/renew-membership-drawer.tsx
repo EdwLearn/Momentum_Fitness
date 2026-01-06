@@ -195,7 +195,7 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
     setError(null)
 
     if (!selectedUsuarioId) {
-      setError("Debe seleccionar un cliente")
+      setError("Debe seleccionar un usuario")
       return
     }
 
@@ -206,7 +206,7 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
 
     const usuarioSeleccionado = usuarios?.find(u => u.id === selectedUsuarioId)
     if (!usuarioSeleccionado) {
-      setError("Cliente no encontrado")
+      setError("Usuario no encontrado")
       return
     }
 
@@ -280,8 +280,8 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
   // Obtener usuario seleccionado actual
   const usuarioActual = selectedUsuarioId ? usuarios?.find(u => u.id === selectedUsuarioId) : null
 
-  // Filtrar solo clientes (no empleados)
-  const soloClientes = usuarios?.filter(u => u.tipo === "cliente") || []
+  // Filtrar solo usuarios (no empleados)
+  const soloClientes = usuarios?.filter(u => u.tipo === "usuario") || []
 
   if (!isOpen) return null
 
@@ -298,7 +298,7 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
             <div>
               <h2 className="text-2xl font-bold text-foreground">Renovar Membresía</h2>
               <p className="text-sm text-muted-foreground">
-                {usuarioActual ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Selecciona un cliente para renovar su membresía"}
+                {usuarioActual ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Selecciona un usuario para renovar su membresía"}
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -317,11 +317,11 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
           {/* Client Selection - Only show if no usuario prop was passed */}
           {!usuario && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Seleccionar Cliente</h3>
+              <h3 className="text-lg font-semibold text-foreground">Seleccionar Usuario</h3>
 
               <div className="space-y-2">
                 <Label htmlFor="clienteSelect">
-                  Cliente <span className="text-destructive">*</span>
+                  Usuario <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={selectedUsuarioId?.toString() || ""}
@@ -329,12 +329,12 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
                   required
                 >
                   <SelectTrigger className="bg-secondary border-border">
-                    <SelectValue placeholder="Selecciona un cliente" />
+                    <SelectValue placeholder="Selecciona un usuario" />
                   </SelectTrigger>
                   <SelectContent>
-                    {soloClientes.map((cliente) => (
-                      <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                        {cliente.nombre} {cliente.apellido} - {cliente.telefono}
+                    {soloClientes.map((usuario) => (
+                      <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                        {usuario.nombre} {usuario.apellido} - {usuario.telefono}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -138,9 +138,9 @@ export function WeightLogDrawer({ isOpen, onClose, onSuccess, usuario }: WeightL
 
           {/* Content */}
           <div>
-          {/* Cliente Info */}
+          {/* Usuario Info */}
           <div className="mb-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">Cliente</p>
+            <p className="text-sm text-muted-foreground">Usuario</p>
             <p className="font-semibold">{usuario.nombre} {usuario.apellido}</p>
             {usuario.peso_actual && (
               <p className="text-sm text-muted-foreground mt-1">
@@ -242,7 +242,7 @@ export function WeightLogDrawer({ isOpen, onClose, onSuccess, usuario }: WeightL
               <Label htmlFor="notas">Notas (opcional)</Label>
               <Textarea
                 id="notas"
-                placeholder="Ej: Cliente reporta mejor condición física..."
+                placeholder="Ej: Usuario reporta mejor condición física..."
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
                 rows={3}

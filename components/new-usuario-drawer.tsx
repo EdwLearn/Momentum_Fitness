@@ -32,7 +32,7 @@ const PLANES = [
   { id: TipoPlan.ELITE_ANUAL, nombre: "Membresía Platinum", precio: 479900, duracion: 365 },
 ]
 
-export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = TipoUsuario.CLIENTE }: NewClientDrawerProps) {
+export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = TipoUsuario.CLIENTE }: NewClientDrawerProps) {
   const [formData, setFormData] = useState({
     // Datos personales
     nombre: "",
@@ -264,7 +264,7 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
     if (formData.fechaNacimiento) {
       const edad = calcularEdad(formData.fechaNacimiento)
       if (edad < 15) {
-        setError("El cliente debe tener al menos 15 años")
+        setError("El usuario debe tener al menos 15 años")
         return
       }
     }
@@ -342,7 +342,7 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
           } catch (asistenciaError: any) {
             // Si falla el registro de asistencia, mostrar error pero no bloquear la creación del usuario
             console.error('Error al registrar asistencia automática:', asistenciaError)
-            setError(`Cliente creado exitosamente, pero hubo un error al registrar la asistencia automática: ${asistenciaError.response?.data?.detail || 'Error desconocido'}`)
+            setError(`Usuario creado exitosamente, pero hubo un error al registrar la asistencia automática: ${asistenciaError.response?.data?.detail || 'Error desconocido'}`)
           }
         }
       }
@@ -376,7 +376,7 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
       setCuponValidado(null)
       setCuponError(null)
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Error al crear el cliente")
+      setError(err.response?.data?.detail || "Error al crear el usuario")
     }
   }
 
@@ -430,9 +430,9 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
           <div className="sticky top-0 bg-secondary px-6 py-4 border-b border-border">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Nuevo Cliente</h2>
+                <h2 className="text-2xl font-bold text-foreground">Nuevo Usuario</h2>
                 <p className="text-sm text-muted-foreground">
-                  Completa la información del cliente y su membresía
+                  Completa la información del usuario y su membresía
                 </p>
               </div>
               <Button variant="ghost" size="icon" onClick={onClose}>
@@ -796,7 +796,7 @@ export function NewClientDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = 
                   disabled={createUsuario.isPending || createMembresia.isPending}
                   className="flex-1 bg-primary hover:bg-primary/90"
                 >
-                  {(createUsuario.isPending || createMembresia.isPending) ? "Guardando..." : "Guardar Cliente"}
+                  {(createUsuario.isPending || createMembresia.isPending) ? "Guardando..." : "Guardar Usuario"}
                 </Button>
               </div>
             </div>

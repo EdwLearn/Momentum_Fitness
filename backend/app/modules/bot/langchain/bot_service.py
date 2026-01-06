@@ -19,7 +19,7 @@ class GymBotService:
         self.llm = get_conversational_llm(use_local=True)
 
         # Definir el prompt del sistema para el bot
-        self.system_prompt = """Eres el asistente virtual de Momentum Fitness. Tu función es responder preguntas sobre el gimnasio y ayudar a los clientes.
+        self.system_prompt = """Eres el asistente virtual de Momentum Fitness. Tu función es responder preguntas sobre el gimnasio y ayudar a los usuarios.
 
 INFORMACIÓN DEL GIMNASIO (Momentum Fitness 2026):
 - Horarios:
@@ -53,33 +53,33 @@ TU ROL:
 CÓMO RESPONDER:
 - Sé directo y útil
 - Usa 2-3 oraciones máximo
-- Si mencionan datos personales del cliente (peso, asistencia), reconócelos brevemente
+- Si mencionan datos personales del usuario (peso, asistencia), reconócelos brevemente
 - Usa emojis ocasionalmente para ser amigable
 - IMPORTANTE: Si piden hablar con asesor/persona/Osne, termina con [ALERTA_ASESOR]
 
 EJEMPLOS:
-Cliente: "¿Cuáles son los horarios?"
+Usuario: "¿Cuáles son los horarios?"
 Tú: "Lunes a Viernes: 5 AM-12 PM y 2 PM-9 PM. Sábados: 7 AM-12 PM. Domingos y festivos estamos cerrados ⏰"
 
-Cliente: "¿Abren los domingos?"
+Usuario: "¿Abren los domingos?"
 Tú: "No, los domingos y festivos no hay servicio. Te esperamos de lunes a sábado ⚡️"
 
-Cliente: "¿Cuánto cuesta el plan mensual?"
+Usuario: "¿Cuánto cuesta el plan mensual?"
 Tú: "El plan mensual cuesta $59.900. También tenemos opciones de 3 meses ($149.900), 6 meses ($269.900) y anual ($479.900) 💪"
 
-Cliente: "¿Tienen promoción de referidos?"
+Usuario: "¿Tienen promoción de referidos?"
 Tú: "Sí! Trae 3 amigos y ganas un mes GRATIS. Es acumulable y tus amigos deben comprar plan mensual o superior 💚"
 
-Cliente: "¿Dónde quedan?"
+Usuario: "¿Dónde quedan?"
 Tú: "Estamos en el Barrio Belén, a 8 minutos del parque principal. Una ubicación estratégica, tranquila y segura 📍"
 
-Cliente: "Quiero hablar con un asesor"
+Usuario: "Quiero hablar con un asesor"
 Tú: "¡Perfecto! Un asesor se pondrá en contacto contigo muy pronto para ayudarte de forma personalizada 📱 [ALERTA_ASESOR]"
 
-Cliente: "Necesito ayuda con mi rutina"
+Usuario: "Necesito ayuda con mi rutina"
 Tú: "Con gusto te ayudamos. Un asesor especializado te contactará para darte un plan personalizado según tus objetivos 💪 [ALERTA_ASESOR]"
 
-Cliente: "¿Puedo hablar con Osne?"
+Usuario: "¿Puedo hablar con Osne?"
 Tú: "Claro! Le avisaré a Osne para que se comunique contigo personalmente 📞 [ALERTA_ASESOR]"
 
 REGLAS CRÍTICAS:
@@ -214,7 +214,7 @@ TEMAS QUE REQUIEREN ASESOR (usa [ALERTA_ASESOR]):
                     usuario_id=usuario_id,
                     tipo_alerta='solicitud_asesor',
                     prioridad=2,  # Media-Alta prioridad
-                    razon=f"El cliente {usuario.nombre} {usuario.apellido} solicitó atención personalizada",
+                    razon=f"El usuario {usuario.nombre} {usuario.apellido} solicitó atención personalizada",
                     accion_sugerida='contactar_cliente',
                     contexto_json=json.dumps({
                         "mensaje_cliente": mensaje,
@@ -311,12 +311,12 @@ TEMAS QUE REQUIEREN ASESOR (usa [ALERTA_ASESOR]):
         datos_situacion: Dict
     ) -> str:
         """
-        Genera una alerta inteligente para Osneither sobre un cliente.
+        Genera una alerta inteligente para Osneither sobre un usuario.
 
         Tipos de situación:
-        - 'cliente_destacado': Cliente con progreso excepcional
-        - 'riesgo_desercion': Cliente que puede abandonar
-        - 'oportunidad_upsell': Cliente listo para upgrade de plan
+        - 'cliente_destacado': Usuario con progreso excepcional
+        - 'riesgo_desercion': Usuario que puede abandonar
+        - 'oportunidad_upsell': Usuario listo para upgrade de plan
         - 'problema_detectado': Algo requiere atención inmediata
         """
 
@@ -324,7 +324,7 @@ TEMAS QUE REQUIEREN ASESOR (usa [ALERTA_ASESOR]):
         if not usuario:
             return "Usuario no encontrado"
 
-        # Preparar contexto del cliente
+        # Preparar contexto del usuario
         user_context = self.get_user_context(db, usuario_id)
 
         # Prompt especializado para generar alertas a Osneither

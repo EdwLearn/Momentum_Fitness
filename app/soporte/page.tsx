@@ -24,22 +24,22 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 const faqItems = [
   {
-    category: "Clientes",
+    category: "Usuarios",
     questions: [
       {
-        q: "¿Cómo registro un nuevo cliente?",
-        a: "Ve a la sección 'Clientes' en el menú lateral y haz clic en el botón '+ Nuevo Cliente'. Completa el formulario con los datos personales (nombre, email, teléfono, cédula), selecciona el tipo de plan (Mensual, Trimestral, Semestral o Anual) y haz clic en 'Crear Cliente'. El sistema generará automáticamente las fechas de inicio y fin de la suscripción.",
+        q: "¿Cómo registro un nuevo usuario?",
+        a: "Ve a la sección 'Usuarios' en el menú lateral y haz clic en el botón '+ Nuevo Usuario'. Completa el formulario con los datos personales (nombre, email, teléfono, cédula), selecciona el tipo de plan (Mensual, Trimestral, Semestral o Anual) y haz clic en 'Crear Usuario'. El sistema generará automáticamente las fechas de inicio y fin de la suscripción.",
       },
       {
-        q: "¿Cómo edito o elimino un cliente?",
-        a: "En la tabla de clientes, cada fila tiene botones de acción en el lado derecho. Usa el ícono de lápiz para editar los datos del cliente o el ícono de papelera para eliminarlo. Al editar, podrás modificar todos los campos excepto la cédula. La eliminación requiere confirmación.",
+        q: "¿Cómo edito o elimino un usuario?",
+        a: "En la tabla de usuarios, cada fila tiene botones de acción en el lado derecho. Usa el ícono de lápiz para editar los datos del usuario o el ícono de papelera para eliminarlo. Al editar, podrás modificar todos los campos excepto la cédula. La eliminación requiere confirmación.",
       },
       {
-        q: "¿Cómo puedo buscar clientes?",
-        a: "Usa la barra de búsqueda en la parte superior de la tabla de clientes. Puedes buscar por nombre, email, teléfono o cédula. La búsqueda es instantánea y filtra los resultados mientras escribes.",
+        q: "¿Cómo puedo buscar usuarios?",
+        a: "Usa la barra de búsqueda en la parte superior de la tabla de usuarios. Puedes buscar por nombre, email, teléfono o cédula. La búsqueda es instantánea y filtra los resultados mientras escribes.",
       },
       {
-        q: "¿Qué información puedo ver de cada cliente?",
+        q: "¿Qué información puedo ver de cada usuario?",
         a: "La tabla muestra: nombre completo, email, teléfono, cédula, tipo de plan (Mensual/Trimestral/Semestral/Anual), fecha de inicio, fecha de vencimiento y estado de la suscripción (Activa/Vencida/Por vencer). Los estados tienen códigos de colores para identificación rápida.",
       },
     ],
@@ -49,7 +49,7 @@ const faqItems = [
     questions: [
       {
         q: "¿Qué tipos de planes están disponibles?",
-        a: "Momentum Fitness ofrece 6 tipos de planes: Pase Diario (1 día - acceso único), Pase Flex (15 días - acceso flexible sin compromiso), Mensual (30 días), Trimestral (90 días), Semestral (180 días) y Anual (365 días). Al crear o editar un cliente, selecciona el tipo de plan y el sistema calculará automáticamente la fecha de vencimiento según corresponda.",
+        a: "Momentum Fitness ofrece 6 tipos de planes: Pase Diario (1 día - acceso único), Pase Flex (15 días - acceso flexible sin compromiso), Mensual (30 días), Trimestral (90 días), Semestral (180 días) y Anual (365 días). Al crear o editar un usuario, selecciona el tipo de plan y el sistema calculará automáticamente la fecha de vencimiento según corresponda.",
       },
       {
         q: "¿Cuál es la diferencia entre Pase Diario y Pase Flex?",
@@ -57,11 +57,11 @@ const faqItems = [
       },
       {
         q: "¿Cómo funciona el sistema de vencimiento?",
-        a: "El sistema calcula automáticamente las fechas según el tipo de plan. Una suscripción se marca como 'Por vencer' cuando faltan 7 días o menos para su vencimiento, y como 'Vencida' después de la fecha de fin. Puedes ver el estado con códigos de colores en la tabla de clientes. Los pases diarios vencen al finalizar el día.",
+        a: "El sistema calcula automáticamente las fechas según el tipo de plan. Una suscripción se marca como 'Por vencer' cuando faltan 7 días o menos para su vencimiento, y como 'Vencida' después de la fecha de fin. Puedes ver el estado con códigos de colores en la tabla de usuarios. Los pases diarios vencen al finalizar el día.",
       },
       {
         q: "¿Cómo renuevo una suscripción vencida?",
-        a: "Para renovar una suscripción, edita el cliente usando el botón de lápiz, actualiza la fecha de inicio a la fecha actual o deseada, y confirma. El sistema recalculará automáticamente la fecha de vencimiento según el tipo de plan seleccionado. También puedes cambiar el tipo de plan durante la renovación.",
+        a: "Para renovar una suscripción, edita el usuario usando el botón de lápiz, actualiza la fecha de inicio a la fecha actual o deseada, y confirma. El sistema recalculará automáticamente la fecha de vencimiento según el tipo de plan seleccionado. También puedes cambiar el tipo de plan durante la renovación.",
       },
     ],
   },
@@ -69,8 +69,8 @@ const faqItems = [
     category: "Asistencia",
     questions: [
       {
-        q: "¿Cómo registro la asistencia de un cliente?",
-        a: "Ve a la sección 'Asistencia' en el menú lateral. Puedes buscar al cliente por nombre o cédula, seleccionarlo de la lista y hacer clic en '+ Registrar Asistencia'. El sistema registrará automáticamente la fecha y hora actual. También puedes ver el historial completo de asistencias de cada cliente.",
+        q: "¿Cómo registro la asistencia de un usuario?",
+        a: "Ve a la sección 'Asistencia' en el menú lateral. Puedes buscar al usuario por nombre o cédula, seleccionarlo de la lista y hacer clic en '+ Registrar Asistencia'. El sistema registrará automáticamente la fecha y hora actual. También puedes ver el historial completo de asistencias de cada usuario.",
       },
       {
         q: "¿Puedo ver estadísticas de asistencia?",
@@ -87,15 +87,15 @@ const faqItems = [
     questions: [
       {
         q: "¿Qué información muestra el Dashboard?",
-        a: "El Dashboard principal muestra métricas clave en tiempo real: total de clientes activos con tendencia porcentual, asistencias del día, ingresos del mes, gráficos de asistencia semanal, distribución de planes, clientes próximos a vencer, y actividad reciente. Todo con actualizaciones automáticas.",
+        a: "El Dashboard principal muestra métricas clave en tiempo real: total de usuarios activos con tendencia porcentual, asistencias del día, ingresos del mes, gráficos de asistencia semanal, distribución de planes, usuarios próximos a vencer, y actividad reciente. Todo con actualizaciones automáticas.",
       },
       {
         q: "¿Cómo genero reportes?",
-        a: "En la sección 'Reportes' puedes generar reportes de ingresos, asistencia, y clientes. Selecciona el tipo de reporte, ajusta el rango de fechas usando el selector de calendario, y haz clic en 'Generar'. Los reportes incluyen gráficos visuales y tablas detalladas para análisis.",
+        a: "En la sección 'Reportes' puedes generar reportes de ingresos, asistencia, y usuarios. Selecciona el tipo de reporte, ajusta el rango de fechas usando el selector de calendario, y haz clic en 'Generar'. Los reportes incluyen gráficos visuales y tablas detalladas para análisis.",
       },
       {
         q: "¿Qué tipos de reportes puedo generar?",
-        a: "Puedes generar tres tipos principales de reportes: Reportes de Ingresos (mostrando totales por periodo, desglose por tipo de plan y tendencias), Reportes de Asistencia (con estadísticas de asistencias diarias, semanales y mensuales), y Reportes de Clientes (con información sobre nuevos clientes, renovaciones y distribución de planes).",
+        a: "Puedes generar tres tipos principales de reportes: Reportes de Ingresos (mostrando totales por periodo, desglose por tipo de plan y tendencias), Reportes de Asistencia (con estadísticas de asistencias diarias, semanales y mensuales), y Reportes de Usuarios (con información sobre nuevos usuarios, renovaciones y distribución de planes).",
       },
     ],
   },
@@ -104,15 +104,15 @@ const faqItems = [
     questions: [
       {
         q: "¿Cómo funcionan los cupones de descuento?",
-        a: "En la sección 'Cupones' puedes crear códigos promocionales con porcentaje de descuento, fecha de vencimiento y límite de usos. Los clientes pueden usar estos códigos al momento de inscribirse o renovar para obtener descuentos en sus planes.",
+        a: "En la sección 'Cupones' puedes crear códigos promocionales con porcentaje de descuento, fecha de vencimiento y límite de usos. Los usuarios pueden usar estos códigos al momento de inscribirse o renovar para obtener descuentos en sus planes.",
       },
       {
         q: "¿Qué es el sistema de referidos?",
-        a: "El sistema de referidos permite que tus clientes actuales inviten a nuevos usuarios. Cuando un cliente nuevo se registra usando el código de referido de un miembro existente, ambos pueden recibir beneficios (descuentos, extensión de suscripción, etc.).",
+        a: "El sistema de referidos permite que tus usuarios actuales inviten a nuevos usuarios. Cuando un usuario nuevo se registra usando el código de referido de un miembro existente, ambos pueden recibir beneficios (descuentos, extensión de suscripción, etc.).",
       },
       {
         q: "¿Cómo puedo rastrear el uso de cupones y referidos?",
-        a: "En las secciones de Cupones y Referidos encontrarás dashboards con estadísticas de uso, cupones más populares, clientes que más refieren, total de descuentos otorgados, y tasas de conversión. Esto te ayuda a medir el éxito de tus campañas promocionales.",
+        a: "En las secciones de Cupones y Referidos encontrarás dashboards con estadísticas de uso, cupones más populares, usuarios que más refieren, total de descuentos otorgados, y tasas de conversión. Esto te ayuda a medir el éxito de tus campañas promocionales.",
       },
     ],
   },

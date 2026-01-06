@@ -8,7 +8,7 @@ export const useDashboard = () => {
     error: errorClientesActivos,
     refetch: refetchClientesActivos
   } = useQuery({
-    queryKey: ['dashboard', 'clientes-activos'],
+    queryKey: ['dashboard', 'usuarios-activos'],
     queryFn: dashboardService.getClientesActivos,
     refetchInterval: 30000, // Actualizar cada 30 segundos
   })

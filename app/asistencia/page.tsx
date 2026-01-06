@@ -120,9 +120,9 @@ export default function AsistenciaPage() {
         return {
           id: asistencia.id,
           fecha: `${asistencia.fecha.split('T')[0]} ${asistencia.hora_entrada}`,
-          cliente: usuario ? `${usuario.nombre} ${usuario.apellido}` : "Desconocido",
+          usuario: usuario ? `${usuario.nombre} ${usuario.apellido}` : "Desconocido",
           evento: asistencia.hora_salida ? "Salida" : "Entrada",
-          tipoUsuario: usuario?.tipo || "Cliente",
+          tipoUsuario: usuario?.tipo || "Usuario",
           plan: membresia ? (planMap[membresia.tipo_plan] || membresia.tipo_plan) : "N/A",
         }
       })
@@ -202,7 +202,7 @@ export default function AsistenciaPage() {
 
   const attendanceColumns = [
     { key: "fecha", header: "Fecha & Hora" },
-    { key: "cliente", header: "Cliente" },
+    { key: "usuario", header: "Usuario" },
     { key: "plan", header: "Plan Vigente" },
   ]
 
@@ -219,7 +219,7 @@ export default function AsistenciaPage() {
       <Card className="mb-6 border-border bg-card">
         <CardHeader>
           <CardTitle className="text-xl">Marcar Asistencia</CardTitle>
-          <CardDescription>Ingrese la cédula del cliente para registrar su entrada</CardDescription>
+          <CardDescription>Ingrese la cédula del usuario para registrar su entrada</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 mb-4">

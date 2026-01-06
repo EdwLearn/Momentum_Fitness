@@ -71,7 +71,7 @@ def buscar_usuario_por_cedula(cedula: str, db: Session = Depends(get_db)):
     if not puede_ref:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Este cliente no puede referir. Solo clientes con planes Mensual, 3 Meses, 6 Meses o Elite Anual pueden referir."
+            detail="Este usuario no puede referir. Solo usuarios con planes Mensual, 3 Meses, 6 Meses o Elite Anual pueden referir."
         )
 
     return db_usuario

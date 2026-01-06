@@ -39,7 +39,7 @@ class PlanDistributionItem(BaseModel):
 
 class ProximaRenovacionItem(BaseModel):
     id: int
-    cliente: str
+    usuario: str
     plan: str
     fecha_fin: str
     estado: str
@@ -65,14 +65,14 @@ class HistorialEmpleadoStats(BaseModel):
     asistencias: list[dict]
     comparacion_empleados: list[dict]
 
-@router.get("/clientes-activos", response_model=ClientesActivosStats)
+@router.get("/usuarios-activos", response_model=ClientesActivosStats)
 def get_clientes_activos_stats(db: Session = Depends(get_db)):
     """
-    Retorna el número de clientes activos y el cambio porcentual vs el mes anterior
+    Retorna el número de usuarios activos y el cambio porcentual vs el mes anterior
     """
     now = datetime.utcnow()
 
-    # Clientes activos actuales (con membresía activa)
+    # Usuarios activos actuales (con membresía activa)
     clientes_activos_actuales = db.query(Usuario.id).join(
         Membresia, Membresia.usuario_id == Usuario.id
     ).filter(
@@ -92,7 +92,7 @@ def get_clientes_activos_stats(db: Session = Depends(get_db)):
     else:
         primer_dia_mes_anterior = primer_dia_mes_actual.replace(month=now.month - 1)
 
-    # Clientes activos el mes anterior (al inicio del mes)
+    # Usuarios activos el mes anterior (al inicio del mes)
     # Contamos usuarios que tenían membresía activa en el inicio del mes actual
     clientes_activos_mes_anterior = db.query(Usuario.id).join(
         Membresia, Membresia.usuario_id == Usuario.id
@@ -263,7 +263,7 @@ def get_asistencia_semanal(db: Session = Depends(get_db)):
 @router.get("/distribucion-planes", response_model=list[PlanDistributionItem])
 def get_distribucion_planes(db: Session = Depends(get_db)):
     """
-    Retorna la distribución de clientes activos por tipo de plan
+    Retorna la distribución de usuarios activos por tipo de plan
     """
     now = datetime.utcnow()
 
@@ -302,7 +302,7 @@ def get_distribucion_planes(db: Session = Depends(get_db)):
     # Construir resultado
     resultado = []
     for tipo_plan, count in distribucion:
-        if count > 0:  # Solo incluir planes con al menos 1 cliente
+        if count > 0:  # Solo incluir planes con al menos 1 usuario
             resultado.append(PlanDistributionItem(
                 name=nombres_planes.get(tipo_plan, tipo_plan.value),
                 value=count,
@@ -317,7 +317,7 @@ def get_distribucion_planes(db: Session = Depends(get_db)):
 @router.get("/proximas-renovaciones", response_model=list[ProximaRenovacionItem])
 def get_proximas_renovaciones(db: Session = Depends(get_db)):
     """
-    Retorna los clientes con planes que vencen en los próximos 7 días
+    Retorna los usuarios con planes que vencen en los próximos 7 días
     """
     now = datetime.utcnow()
     fecha_limite = now + timedelta(days=7)
@@ -356,7 +356,7 @@ def get_proximas_renovaciones(db: Session = Depends(get_db)):
 
         resultado.append(ProximaRenovacionItem(
             id=usuario.id,
-            cliente=f"{usuario.nombre} {usuario.apellido}",
+            usuario=f"{usuario.nombre} {usuario.apellido}",
             plan=nombres_planes.get(membresia.tipo_plan, membresia.tipo_plan.value),
             fecha_fin=membresia.fecha_fin.strftime("%Y-%m-%d"),
             estado=estado
@@ -367,10 +367,10 @@ def get_proximas_renovaciones(db: Session = Depends(get_db)):
 
     return resultado
 
-@router.get("/clientes/{cliente_id}/historial", response_model=HistorialClienteStats)
+@router.get("/usuarios/{cliente_id}/historial", response_model=HistorialClienteStats)
 def get_historial_cliente(cliente_id: int, db: Session = Depends(get_db)):
     """
-    Retorna el historial completo de un cliente: tiempo total con suscripción y todas sus membresías
+    Retorna el historial completo de un usuario: tiempo total con suscripción y todas sus membresías
     """
     # Obtener todas las membresías del usuario (ordenadas por fecha de inicio)
     membresias = db.query(Membresia).filter(

@@ -27,25 +27,25 @@ export const planDistribution = [
 ]
 
 export const upcomingRenewals = [
-  { cliente: "María González", plan: "Mensual", fechaFin: "2024-12-15", estado: "Por vencer" },
-  { cliente: "Carlos Rodríguez", plan: "Trimestral", fechaFin: "2024-12-18", estado: "Por vencer" },
-  { cliente: "Ana Martínez", plan: "Mensual", fechaFin: "2024-12-20", estado: "Activo" },
-  { cliente: "Juan Pérez", plan: "Anual", fechaFin: "2024-12-12", estado: "Por vencer" },
-  { cliente: "Laura Sánchez", plan: "Mensual", fechaFin: "2024-12-25", estado: "Activo" },
+  { usuario: "María González", plan: "Mensual", fechaFin: "2024-12-15", estado: "Por vencer" },
+  { usuario: "Carlos Rodríguez", plan: "Trimestral", fechaFin: "2024-12-18", estado: "Por vencer" },
+  { usuario: "Ana Martínez", plan: "Mensual", fechaFin: "2024-12-20", estado: "Activo" },
+  { usuario: "Juan Pérez", plan: "Anual", fechaFin: "2024-12-12", estado: "Por vencer" },
+  { usuario: "Laura Sánchez", plan: "Mensual", fechaFin: "2024-12-25", estado: "Activo" },
 ]
 
 export const recentAttendance = [
-  { fecha: "2024-12-10 08:30", cliente: "María González", evento: "Entrada", tipoUsuario: "Cliente", plan: "Mensual" },
+  { fecha: "2024-12-10 08:30", usuario: "María González", evento: "Entrada", tipoUsuario: "Usuario", plan: "Mensual" },
   {
     fecha: "2024-12-10 08:45",
-    cliente: "Carlos Rodríguez",
+    usuario: "Carlos Rodríguez",
     evento: "Entrada",
-    tipoUsuario: "Cliente",
+    tipoUsuario: "Usuario",
     plan: "Trimestral",
   },
-  { fecha: "2024-12-10 09:00", cliente: "Pedro López", evento: "Entrada", tipoUsuario: "Empleado", plan: "N/A" },
-  { fecha: "2024-12-10 09:15", cliente: "Ana Martínez", evento: "Entrada", tipoUsuario: "Cliente", plan: "Mensual" },
-  { fecha: "2024-12-10 09:30", cliente: "María González", evento: "Salida", tipoUsuario: "Cliente", plan: "Mensual" },
+  { fecha: "2024-12-10 09:00", usuario: "Pedro López", evento: "Entrada", tipoUsuario: "Empleado", plan: "N/A" },
+  { fecha: "2024-12-10 09:15", usuario: "Ana Martínez", evento: "Entrada", tipoUsuario: "Usuario", plan: "Mensual" },
+  { fecha: "2024-12-10 09:30", usuario: "María González", evento: "Salida", tipoUsuario: "Usuario", plan: "Mensual" },
 ]
 
 export const hourlyAttendance = [
@@ -127,7 +127,7 @@ export const clients = [
 
 export const subscriptions = [
   {
-    cliente: "María González",
+    usuario: "María González",
     plan: "Mensual",
     fechaInicio: "2024-11-15",
     fechaFin: "2024-12-15",
@@ -136,7 +136,7 @@ export const subscriptions = [
     origen: "Normal",
   },
   {
-    cliente: "Carlos Rodríguez",
+    usuario: "Carlos Rodríguez",
     plan: "Trimestral",
     fechaInicio: "2024-09-01",
     fechaFin: "2024-12-01",
@@ -145,7 +145,7 @@ export const subscriptions = [
     origen: "Referido",
   },
   {
-    cliente: "Ana Martínez",
+    usuario: "Ana Martínez",
     plan: "Anual",
     fechaInicio: "2024-03-01",
     fechaFin: "2025-03-01",
@@ -154,7 +154,7 @@ export const subscriptions = [
     origen: "Cupón",
   },
   {
-    cliente: "Juan Pérez",
+    usuario: "Juan Pérez",
     plan: "Mensual",
     fechaInicio: "2024-11-12",
     fechaFin: "2024-12-12",
@@ -163,7 +163,7 @@ export const subscriptions = [
     origen: "Normal",
   },
   {
-    cliente: "Laura Sánchez",
+    usuario: "Laura Sánchez",
     plan: "Mensual",
     fechaInicio: "2024-11-25",
     fechaFin: "2024-12-25",
@@ -217,7 +217,7 @@ export const notificationRules = [
   {
     id: 1,
     titulo: "Bienvenida",
-    descripcion: "Mensaje de bienvenida al nuevo cliente",
+    descripcion: "Mensaje de bienvenida al nuevo usuario",
     trigger: "Registro",
     activo: true,
   },
@@ -282,27 +282,27 @@ export const notificationRules = [
 export const recentNotifications = [
   {
     fecha: "2024-12-10 10:30",
-    cliente: "María González",
+    usuario: "María González",
     regla: "Renovación 5 días",
     canal: "WhatsApp",
     estado: "Enviado",
   },
   {
     fecha: "2024-12-10 09:15",
-    cliente: "Carlos Rodríguez",
+    usuario: "Carlos Rodríguez",
     regla: "Inactividad 3 días",
     canal: "Email",
     estado: "Enviado",
   },
   {
     fecha: "2024-12-10 08:00",
-    cliente: "Ana Martínez",
+    usuario: "Ana Martínez",
     regla: "Motivación 15 días",
     canal: "WhatsApp",
     estado: "Enviado",
   },
-  { fecha: "2024-12-09 18:30", cliente: "Juan Pérez", regla: "Renovación 24h", canal: "WhatsApp", estado: "Pendiente" },
-  { fecha: "2024-12-09 12:00", cliente: "Laura Sánchez", regla: "Bienvenida", canal: "Email", estado: "Fallido" },
+  { fecha: "2024-12-09 18:30", usuario: "Juan Pérez", regla: "Renovación 24h", canal: "WhatsApp", estado: "Pendiente" },
+  { fecha: "2024-12-09 12:00", usuario: "Laura Sánchez", regla: "Bienvenida", canal: "Email", estado: "Fallido" },
 ]
 
 export const employees = [

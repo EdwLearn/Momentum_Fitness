@@ -144,7 +144,7 @@ def delete_usuario(db: Session, usuario_id: int) -> bool:
 def puede_referir(db: Session, cedula: str) -> bool:
     """
     Verifica si un usuario puede referir a otros.
-    Reglas: Solo clientes con planes Mensual, Plan 3 Meses, Plan 6 Meses, Elite Anual
+    Reglas: Solo usuarios con planes Mensual, Plan 3 Meses, Plan 6 Meses, Elite Anual
     """
     usuario = get_usuario_by_cedula(db, cedula)
     if not usuario:

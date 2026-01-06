@@ -21,7 +21,7 @@ import {
 
 const mainMenuItems = [
   { name: "Asistencia", href: "/", icon: UserCheck },
-  { name: "Clientes", href: "/clientes", icon: Users },
+  { name: "Usuarios", href: "/clientes", icon: Users },
   { name: "Empleados", href: "/empleados", icon: UsersRound },
   { name: "Cupones & Referidos", href: "/cupones", icon: Ticket },
   { name: "Notificaciones", href: "/notificaciones", icon: Bell, disabled: true },

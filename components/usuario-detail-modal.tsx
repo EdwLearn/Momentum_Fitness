@@ -39,7 +39,7 @@ const subscriptionHistory = [
   { fecha: "2024-09-15", plan: "Mensual", monto: "$180.000", metodo: "Tarjeta" },
 ]
 
-export function ClientDetailModal({ client, onClose }: ClientDetailModalProps) {
+export function UsuarioDetailModal({ client, onClose }: ClientDetailModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}

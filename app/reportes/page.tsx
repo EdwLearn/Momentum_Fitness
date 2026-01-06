@@ -469,7 +469,7 @@ export default function ReportesPage() {
                 <p className="text-2xl font-bold text-foreground">${resumenIngresos?.ticket_promedio?.toFixed(1) || 0}K</p>
               </div>
               <div className="bg-secondary/50 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Ingresos por Cliente</p>
+                <p className="text-sm text-muted-foreground mb-1">Ingresos por Usuario</p>
                 <p className="text-2xl font-bold text-foreground">${resumenIngresos?.ingresos_por_cliente?.toFixed(1) || 0}K</p>
               </div>
             </div>
@@ -535,10 +535,10 @@ export default function ReportesPage() {
           <ChartCard title="Impacto de referidos" subtitle="Métricas de programa de referidos">
             <div className="space-y-4">
               <div className="bg-secondary/50 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Clientes por Referidos</p>
+                <p className="text-sm text-muted-foreground mb-1">Usuarios por Referidos</p>
                 <p className="text-3xl font-bold text-primary">{referidosImpacto?.clientes_referidos || 0}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {referidosImpacto?.porcentaje?.toFixed(1) || 0}% del total de clientes
+                  {referidosImpacto?.porcentaje?.toFixed(1) || 0}% del total de usuarios
                 </p>
               </div>
 

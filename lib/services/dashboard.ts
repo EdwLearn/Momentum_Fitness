@@ -32,7 +32,7 @@ export interface PlanDistributionItem {
 
 export interface ProximaRenovacionItem {
   id: number
-  cliente: string
+  usuario: string
   plan: string
   fecha_fin: string
   estado: string
@@ -84,7 +84,7 @@ const BASE_PATH = '/api/dashboard'
 
 export const dashboardService = {
   getClientesActivos: async (): Promise<ClientesActivosStats> => {
-    const response = await api.get<ClientesActivosStats>(`${BASE_PATH}/clientes-activos`)
+    const response = await api.get<ClientesActivosStats>(`${BASE_PATH}/usuarios-activos`)
     return response.data
   },
 
@@ -118,8 +118,8 @@ export const dashboardService = {
     return response.data
   },
 
-  getHistorialCliente: async (clienteId: number): Promise<HistorialClienteStats> => {
-    const response = await api.get<HistorialClienteStats>(`${BASE_PATH}/clientes/${clienteId}/historial`)
+  getHistorialUsuario: async (clienteId: number): Promise<HistorialClienteStats> => {
+    const response = await api.get<HistorialClienteStats>(`${BASE_PATH}/usuarios/${clienteId}/historial`)
     return response.data
   },
 

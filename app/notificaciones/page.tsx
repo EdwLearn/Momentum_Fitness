@@ -29,7 +29,7 @@ const triggerColors: Record<string, string> = {
 export default function NotificacionesPage() {
   const notificationColumns = [
     { key: "fecha", header: "Fecha" },
-    { key: "cliente", header: "Cliente" },
+    { key: "usuario", header: "Usuario" },
     { key: "regla", header: "Regla" },
     {
       key: "canal",
@@ -93,7 +93,7 @@ export default function NotificacionesPage() {
       </ChartCard>
 
       {/* Recent Notifications Table */}
-      <ChartCard title="Notificaciones Recientes" subtitle="Historial de mensajes enviados a clientes">
+      <ChartCard title="Notificaciones Recientes" subtitle="Historial de mensajes enviados a usuarios">
         <DataTable
           columns={notificationColumns}
           data={recentNotifications}

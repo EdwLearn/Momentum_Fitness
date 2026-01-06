@@ -8,12 +8,12 @@ import { FilterableDataTable } from "@/components/filterable-data-table"
 import { StatusBadge } from "@/components/data-table"
 import { Users, UserCheck, UserX, Plus, Edit, RefreshCw, Scale, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ClientDetailModal } from "@/components/client-detail-modal"
-import { NewClientDrawer } from "@/components/new-client-drawer"
-import { EditClientDrawer } from "@/components/edit-client-drawer"
+import { UsuarioDetailModal } from "@/components/usuario-detail-modal"
+import { NewUsuarioDrawer } from "@/components/new-usuario-drawer"
+import { EditUsuarioDrawer } from "@/components/edit-usuario-drawer"
 import { RenewMembershipDrawer } from "@/components/renew-membership-drawer"
 import { WeightLogDrawer } from "@/components/weight-log-drawer"
-import { ClientProgressDrawer } from "@/components/client-progress-drawer"
+import { UsuarioProgressDrawer } from "@/components/usuario-progress-drawer"
 import { SuccessToast } from "@/components/success-toast"
 import { useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useMembresias } from "@/lib/hooks/useMembresias"
@@ -128,13 +128,13 @@ export default function ClientesPage() {
   const [weightUsuario, setWeightUsuario] = useState<Usuario | null>(null)
   const [progressUsuario, setProgressUsuario] = useState<Usuario | null>(null)
   const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState("Cliente creado correctamente.")
+  const [toastMessage, setToastMessage] = useState("Usuario creado correctamente.")
 
   // Fetch usuarios and membresias from API
   const { data: usuarios, isLoading: isLoadingUsuarios, isError: isErrorUsuarios } = useUsuarios()
   const { data: membresias, isLoading: isLoadingMembresias, isError: isErrorMembresias } = useMembresias()
 
-  // Filtrar solo clientes (excluir empleados)
+  // Filtrar solo usuarios (excluir empleados)
   const soloClientes = useMemo(() => {
     if (!usuarios) return []
     return usuarios.filter(u => u.tipo === TipoUsuario.CLIENTE)
@@ -146,7 +146,7 @@ export default function ClientesPage() {
     return usuarios.filter(u => u.tipo === TipoUsuario.ENTRENADOR || u.tipo === TipoUsuario.ADMIN)
   }, [usuarios])
 
-  // Transform usuarios to clients (solo clientes, no empleados)
+  // Transform usuarios to clients (solo usuarios, no empleados)
   const clients = useMemo(() => {
     if (!soloClientes || !membresias) return []
     return soloClientes.map(u => mapUsuarioToClient(u, membresias, usuarios || []))
@@ -328,12 +328,12 @@ export default function ClientesPage() {
   const totalEmpleados = employees.length
 
   const handleClientCreated = () => {
-    setToastMessage("Cliente creado correctamente.")
+    setToastMessage("Usuario creado correctamente.")
     setShowToast(true)
   }
 
   const handleClientUpdated = () => {
-    setToastMessage("Cliente actualizado correctamente.")
+    setToastMessage("Usuario actualizado correctamente.")
     setShowToast(true)
   }
 
@@ -382,11 +382,11 @@ export default function ClientesPage() {
   // Loading state
   if (isLoading) {
     return (
-      <DashboardLayout title="Gestión de Clientes" subtitle="Administra y visualiza la información de tus clientes">
+      <DashboardLayout title="Gestión de Usuarios" subtitle="Administra y visualiza la información de tus usuarios">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Cargando clientes...</p>
+            <p className="mt-4 text-muted-foreground">Cargando usuarios...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -396,10 +396,10 @@ export default function ClientesPage() {
   // Error state
   if (isError) {
     return (
-      <DashboardLayout title="Gestión de Clientes" subtitle="Administra y visualiza la información de tus clientes">
+      <DashboardLayout title="Gestión de Usuarios" subtitle="Administra y visualiza la información de tus usuarios">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-destructive">Error al cargar los clientes</p>
+            <p className="text-destructive">Error al cargar los usuarios</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Asegúrate de que el servidor backend esté ejecutándose en {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}
             </p>
@@ -410,16 +410,16 @@ export default function ClientesPage() {
   }
 
   return (
-    <DashboardLayout title="Gestión de Clientes" subtitle="Administra y visualiza la información de tus clientes">
+    <DashboardLayout title="Gestión de Usuarios" subtitle="Administra y visualiza la información de tus usuarios">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <MetricCard title="Total Clientes" value={totalClientes} icon={Users} />
-        <MetricCard title="Clientes Activos" value={clientesActivos} icon={UserCheck} />
-        <MetricCard title="Clientes Inactivos" value={clientesInactivos} variant="warning" icon={UserX} />
+        <MetricCard title="Total Usuarios" value={totalClientes} icon={Users} />
+        <MetricCard title="Usuarios Activos" value={clientesActivos} icon={UserCheck} />
+        <MetricCard title="Usuarios Inactivos" value={clientesInactivos} variant="warning" icon={UserX} />
       </div>
 
       {/* Clients Table */}
-      <ChartCard title="Lista de Clientes" subtitle="Administra y filtra tus clientes">
+      <ChartCard title="Lista de Usuarios" subtitle="Administra y filtra tus usuarios">
         {/* Actions Bar */}
         <div className="flex justify-end mb-4">
           <Button
@@ -427,7 +427,7 @@ export default function ClientesPage() {
             onClick={() => setIsDrawerOpen(true)}
           >
             <Plus className="h-4 w-4" />
-            Nuevo cliente
+            Nuevo usuario
           </Button>
         </div>
 
@@ -435,22 +435,22 @@ export default function ClientesPage() {
         <FilterableDataTable
           columns={clientColumns}
           data={clients}
-          searchPlaceholder="Buscar clientes por nombre, cédula, plan..."
+          searchPlaceholder="Buscar usuarios por nombre, cédula, plan..."
           showGlobalSearch={true}
-          emptyMessage="No se encontraron clientes que coincidan con los filtros"
+          emptyMessage="No se encontraron usuarios que coincidan con los filtros"
         />
       </ChartCard>
 
 
 
       {/* Client Detail Modal */}
-      {selectedClient && <ClientDetailModal client={selectedClient} onClose={() => setSelectedClient(null)} />}
+      {selectedClient && <UsuarioDetailModal client={selectedClient} onClose={() => setSelectedClient(null)} />}
 
       {/* New Client Drawer */}
-      <NewClientDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onSuccess={handleClientCreated} />
+      <NewUsuarioDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onSuccess={handleClientCreated} />
 
       {/* Edit Client Drawer */}
-      <EditClientDrawer
+      <EditUsuarioDrawer
         isOpen={isEditDrawerOpen}
         onClose={() => {
           setIsEditDrawerOpen(false)
@@ -483,7 +483,7 @@ export default function ClientesPage() {
       />
 
       {/* Client Progress Drawer */}
-      <ClientProgressDrawer
+      <UsuarioProgressDrawer
         isOpen={isProgressDrawerOpen}
         onClose={() => {
           setIsProgressDrawerOpen(false)

@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button"
 import { useQuery } from '@tanstack/react-query'
 import { dashboardService } from '@/lib/services/dashboard'
 
-interface HistorialClienteModalProps {
+interface HistorialUsuarioModalProps {
   clienteId: number
   clienteNombre: string
   onClose: () => void
 }
 
-export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: HistorialClienteModalProps) {
+export function HistorialUsuarioModal({ clienteId, clienteNombre, onClose }: HistorialUsuarioModalProps) {
   const { data: historial, isLoading } = useQuery({
-    queryKey: ['historial-cliente', clienteId],
-    queryFn: () => dashboardService.getHistorialCliente(clienteId),
+    queryKey: ['historial-usuario', clienteId],
+    queryFn: () => dashboardService.getHistorialUsuario(clienteId),
   })
 
   const formatDate = (dateStr: string) => {
@@ -119,7 +119,7 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Tiempo como Cliente</p>
+                    <p className="text-sm text-muted-foreground">Tiempo como Usuario</p>
                     <p className="text-xl font-bold text-foreground">
                       {historial.fecha_primera_inscripcion !== "N/A"
                         ? (() => {
@@ -193,7 +193,7 @@ export function HistorialClienteModal({ clienteId, clienteNombre, onClose }: His
             </>
           ) : (
             <div className="flex items-center justify-center h-64 text-muted-foreground">
-              No se encontró información del cliente
+              No se encontró información del usuario
             </div>
           )}
         </div>

@@ -5,7 +5,7 @@
 export enum TipoUsuario {
   ADMIN = "admin",
   ENTRENADOR = "entrenador",
-  CLIENTE = "cliente",
+  CLIENTE = "usuario",
 }
 
 export enum TipoPlan {
