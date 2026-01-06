@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import os
 
 # 1. CONFIGURACIÓN (primero)
 from app.core.config import settings
@@ -44,13 +45,32 @@ async def lifespan(app: FastAPI):
     Se ejecuta al iniciar y al cerrar el servidor.
     """
     # Startup
+    print("=" * 60)
     print("🚀 Iniciando Sistema de Gestión de Gimnasio v2.0.0")
+    print("=" * 60)
+
+    # Mostrar información de la base de datos
+    import sys
+    from pathlib import Path
+    is_frozen = getattr(sys, 'frozen', False)
+
+    print(f"🔧 Modo: {'Producción (Ejecutable)' if is_frozen else 'Desarrollo'}")
+    print(f"📂 Base de datos: {settings.DATABASE_URL}")
+
+    if is_frozen:
+        if sys.platform == 'win32':
+            data_dir = Path(os.environ.get('APPDATA', '')) / 'MomentumFitness'
+        else:
+            data_dir = Path.home() / '.momentum-fitness'
+        print(f"📁 Directorio de datos: {data_dir}")
+
     print("📊 Creando tablas de base de datos...")
     Base.metadata.create_all(bind=engine)
     print("✅ Base de datos inicializada")
     print("⚠️  Bot y notificaciones desactivados")
     print(f"📡 Servidor corriendo en: http://localhost:8000")
     print(f"📚 Documentación: http://localhost:8000/docs")
+    print("=" * 60)
 
     yield
 
@@ -280,10 +300,16 @@ async def system_stats():
 
 if __name__ == "__main__":
     import uvicorn
+    import sys
+
+    # Detectar si estamos corriendo como ejecutable de PyInstaller
+    # En ese caso, desactivar reload para evitar problemas
+    is_frozen = getattr(sys, 'frozen', False)
+
     uvicorn.run(
-        "main:app",
+        app,  # Usar la app directamente en lugar de string cuando es frozen
         host="0.0.0.0",
         port=8000,
-        reload=True,
+        reload=False if is_frozen else True,  # Desactivar reload en ejecutable
         log_level="info"
     )

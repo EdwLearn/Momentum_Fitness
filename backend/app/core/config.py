@@ -2,6 +2,45 @@ from pydantic_settings import BaseSettings
 from pydantic import field_validator
 from typing import List, Union
 import secrets
+import os
+import sys
+from pathlib import Path
+
+
+def get_data_dir():
+    """
+    Obtiene el directorio de datos de la aplicación.
+    - En desarrollo: usa el directorio actual
+    - En producción (PyInstaller): usa AppData en Windows o home en Linux/Mac
+    """
+    if getattr(sys, 'frozen', False):
+        # Ejecutable de PyInstaller
+        if sys.platform == 'win32':
+            # Windows: usar AppData/Roaming/MomentumFitness
+            data_dir = Path(os.environ.get('APPDATA', os.path.expanduser('~'))) / 'MomentumFitness'
+        else:
+            # Linux/Mac: usar ~/.momentum-fitness
+            data_dir = Path.home() / '.momentum-fitness'
+
+        # Crear directorio si no existe
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copiar BD de plantilla si no existe
+        db_path = data_dir / 'gimnasio.db'
+        if not db_path.exists():
+            # Buscar la BD de plantilla en el bundle de PyInstaller
+            if hasattr(sys, '_MEIPASS'):
+                # _MEIPASS es el directorio temporal donde PyInstaller extrae los archivos
+                template_db = Path(sys._MEIPASS) / 'gimnasio_template.db'
+                if template_db.exists():
+                    import shutil
+                    shutil.copy2(template_db, db_path)
+                    print(f"✅ Base de datos precargada copiada a: {db_path}")
+
+        return data_dir
+    else:
+        # Desarrollo: usar directorio actual
+        return Path.cwd()
 
 
 class Settings(BaseSettings):
@@ -14,8 +53,16 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # Base de datos
-    DATABASE_URL: str = "sqlite:///backend/gimnasio.db"
+    # Base de datos - usa ruta absoluta en producción
+    DATABASE_URL: str = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Si no se especificó DATABASE_URL, usar la ruta por defecto
+        if self.DATABASE_URL is None:
+            data_dir = get_data_dir()
+            db_path = data_dir / "gimnasio.db"
+            self.DATABASE_URL = f"sqlite:///{db_path}"
 
     # Configuración del pool de conexiones (solo PostgreSQL)
     DB_POOL_SIZE: int = 20
