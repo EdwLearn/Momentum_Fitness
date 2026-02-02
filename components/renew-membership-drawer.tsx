@@ -26,10 +26,13 @@ interface RenewMembershipDrawerProps {
 const PLANES = [
   { id: TipoPlan.PASE_DIARIO, nombre: "Pase Diario", precio: 5000, duracion: 1 },
   { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (14 días)", precio: 39900, duracion: 14 },
+  { id: TipoPlan.ESTUDIANTE, nombre: "Estudiante", precio: 45000, duracion: 30 },
   { id: TipoPlan.MENSUAL, nombre: "Mensual", precio: 59900, duracion: 30 },
   { id: TipoPlan.PLAN_3_MESES, nombre: "Plan 3 Meses", precio: 149900, duracion: 90 },
   { id: TipoPlan.PLAN_6_MESES, nombre: "Plan 6 Meses", precio: 269900, duracion: 180 },
   { id: TipoPlan.ELITE_ANUAL, nombre: "Membresía Platinum", precio: 479900, duracion: 365 },
+  { id: TipoPlan.SOCIO, nombre: "Socio (De por vida)", precio: 0, duracion: 36500 },
+  { id: TipoPlan.CORTESIA, nombre: "Cortesía (Gratis)", precio: 0, duracion: 36500 },
 ]
 
 export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = null }: RenewMembershipDrawerProps) {
@@ -117,10 +120,11 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
       }
     }
 
-    // Validar que el plan sea elegible (no Pase Diario ni Pase Flex)
-    if (formData.tipoPlan === TipoPlan.PASE_DIARIO || formData.tipoPlan === TipoPlan.PASE_FLEX) {
+    // Validar que el plan sea elegible (no planes especiales)
+    const planesEspeciales = [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX, TipoPlan.SOCIO, TipoPlan.CORTESIA]
+    if (planesEspeciales.includes(formData.tipoPlan as TipoPlan)) {
       setCuponValidado(null)
-      setCuponError("Cupones no aplican a Pase Diario o Pase Flex")
+      setCuponError("Cupones no aplican a este tipo de plan")
       return
     }
 
@@ -272,10 +276,9 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
     }).format(value)
   }
 
-  // Determinar si debe mostrar el campo de referido (todos los planes excepto Pase Diario y Pase Flex)
-  const mostrarReferido = formData.tipoPlan &&
-    formData.tipoPlan !== TipoPlan.PASE_DIARIO &&
-    formData.tipoPlan !== TipoPlan.PASE_FLEX
+  // Determinar si debe mostrar el campo de referido (todos los planes excepto planes especiales)
+  const planesEspeciales = [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX, TipoPlan.SOCIO, TipoPlan.CORTESIA]
+  const mostrarReferido = formData.tipoPlan && !planesEspeciales.includes(formData.tipoPlan as TipoPlan)
 
   // Obtener usuario seleccionado actual
   const usuarioActual = selectedUsuarioId ? usuarios?.find(u => u.id === selectedUsuarioId) : null
@@ -291,12 +294,12 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Centrado */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[90vh] overflow-y-auto">
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <Card className="bg-card border-border p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Renovar Membresía</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Renovar Membresía</h2>
               <p className="text-sm text-muted-foreground">
                 {usuarioActual ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Selecciona un usuario para renovar su membresía"}
               </p>
@@ -317,7 +320,7 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
           {/* Client Selection - Only show if no usuario prop was passed */}
           {!usuario && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Seleccionar Usuario</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-foreground">Seleccionar Usuario</h3>
 
               <div className="space-y-2">
                 <Label htmlFor="clienteSelect">
@@ -345,7 +348,7 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
 
           {/* Plan Selection */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Seleccionar Nuevo Plan</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">Seleccionar Nuevo Plan</h3>
 
             <div className="space-y-2">
               <Label htmlFor="tipoPlan">
@@ -423,7 +426,7 @@ export function RenewMembershipDrawer({ isOpen, onClose, onSuccess, usuario = nu
           {/* Discounts Section */}
           {mostrarReferido && formData.tipoPlan && (
             <div className="space-y-4 pt-4 border-t border-border">
-              <h3 className="text-lg font-semibold text-foreground">Descuentos</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-foreground">Descuentos</h3>
 
               {/* Checkbox Plan de Referidos */}
               <div className="flex items-center gap-2">

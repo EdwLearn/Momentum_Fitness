@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { membresiasService } from '@/lib/services/membresias';
-import { MembresiaCreateSimple, MembresiaUpdate } from '@/types';
+import { MembresiaCreateSimple, MembresiaUpdate, CortesiaCreate } from '@/types';
 
 // Query keys
 export const membresiasKeys = {
@@ -122,6 +122,23 @@ export function useRenovarMembresia() {
     onSuccess: (data) => {
       // Invalidar cachés relevantes
       queryClient.invalidateQueries({ queryKey: membresiasKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: membresiasKeys.byUsuario(data.usuario_id) });
+      queryClient.invalidateQueries({ queryKey: membresiasKeys.activa(data.usuario_id) });
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    },
+  });
+}
+
+// Hook para crear una cortesía flexible
+export function useCreateCortesia() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CortesiaCreate) => membresiasService.createCortesia(data),
+    onSuccess: (data) => {
+      // Invalidar cachés relevantes
+      queryClient.invalidateQueries({ queryKey: membresiasKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: membresiasKeys.stats() });
       queryClient.invalidateQueries({ queryKey: membresiasKeys.byUsuario(data.usuario_id) });
       queryClient.invalidateQueries({ queryKey: membresiasKeys.activa(data.usuario_id) });
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });

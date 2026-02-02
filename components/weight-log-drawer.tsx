@@ -123,13 +123,13 @@ export function WeightLogDrawer({ isOpen, onClose, onSuccess, usuario }: WeightL
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Modal Centrado */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[90vh] overflow-y-auto">
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <Card className="bg-card border-border p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-2">
               <Scale className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold text-foreground">Registrar Peso</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Registrar Peso</h2>
             </div>
             <Button variant="ghost" size="icon" onClick={handleClose}>
               <X className="h-5 w-5" />
@@ -255,7 +255,7 @@ export function WeightLogDrawer({ isOpen, onClose, onSuccess, usuario }: WeightL
               </div>
             )}
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"

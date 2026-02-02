@@ -88,4 +88,23 @@ export const cuponesService = {
     const response = await api.post<{ message: string }>(`${BASE_PATH}/reset-anuales`);
     return response.data;
   },
+
+  /**
+   * Crear cupón de pre-venta con 25% de descuento
+   */
+  crearCuponPreVenta: async (data: {
+    codigo: string;
+    nicho: string;
+    fecha_expiracion?: string | null;
+  }): Promise<Cupon> => {
+    const cuponData: CuponCreate = {
+      codigo: data.codigo,
+      nicho: data.nicho,
+      descuento: 25, // Será forzado por el backend
+      activo: true,
+      fecha_expiracion: data.fecha_expiracion || null,
+    };
+    const response = await api.post<Cupon>(`${BASE_PATH}/preventa`, cuponData);
+    return response.data;
+  },
 };

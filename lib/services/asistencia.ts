@@ -82,6 +82,8 @@ export const asistenciaService = {
   getUsuariosInactivos: async (): Promise<Array<{
     usuario_id: number;
     nombre: string;
+    telefono: string | null;
+    tipo_plan: string;
     ultima_asistencia: string | null;
     dias_sin_asistir: number | null;
   }>> => {

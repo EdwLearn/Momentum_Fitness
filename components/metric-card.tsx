@@ -8,14 +8,21 @@ interface MetricCardProps {
   changeLabel?: string
   icon: LucideIcon
   variant?: "default" | "warning" | "success" | "danger"
+  onClick?: () => void
 }
 
-export function MetricCard({ title, value, change, changeLabel, icon: Icon, variant = "default" }: MetricCardProps) {
+export function MetricCard({ title, value, change, changeLabel, icon: Icon, variant = "default", onClick }: MetricCardProps) {
   const isPositive = change && change > 0
   const isNegative = change && change < 0
 
   return (
-    <div className="rounded-xl bg-card border border-border p-6 glow-green-sm">
+    <div
+      className={cn(
+        "rounded-xl bg-card border border-border p-6 glow-green-sm",
+        onClick && "cursor-pointer hover:border-primary/50 transition-colors"
+      )}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>

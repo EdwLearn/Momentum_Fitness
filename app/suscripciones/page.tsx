@@ -7,8 +7,10 @@ import { ChartCard } from "@/components/chart-card"
 import { FilterableDataTable } from "@/components/filterable-data-table"
 import { StatusBadge } from "@/components/data-table"
 import { HistorialUsuarioModal } from "@/components/historial-usuario-modal"
-import { CreditCard, Calendar, Repeat, Clock, Trophy, Gift } from "lucide-react"
+import { CreditCard, Calendar, Repeat, Clock, Trophy, Gift, X, UserCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
 import { useMembresias, useSuscripcionesStats } from "@/lib/hooks/useMembresias"
 import { useUsuarios } from "@/lib/hooks/useUsuarios"
@@ -19,6 +21,8 @@ export default function SuscripcionesPage() {
   const { data: usuarios, isLoading: isLoadingUsuarios } = useUsuarios()
   const { data: stats, isLoading: isLoadingStats } = useSuscripcionesStats()
   const [selectedCliente, setSelectedCliente] = useState<{ id: number; nombre: string } | null>(null)
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
 
   // Crear lookup map de usuarios
   const usuariosMap = useMemo(() => {
@@ -116,6 +120,27 @@ export default function SuscripcionesPage() {
         return a.diasRestantes - b.diasRestantes
       })
   }, [membresias, usuarios, usuariosMap])
+
+  // Obtener usuarios del plan seleccionado
+  const usuariosDelPlanSeleccionado = useMemo(() => {
+    if (!selectedPlanKey || !subscriptionsData) return []
+    const planNameMapLocal: Record<string, string> = {
+      "pase_diario": "Pase Diario",
+      "pase_flex": "Pase Flex",
+      "mensual": "Mensual",
+      "plan_3_meses": "Plan 3 Meses",
+      "plan_6_meses": "Plan 6 Meses",
+      "elite_anual": "Elite Anual",
+    }
+    const planName = planNameMapLocal[selectedPlanKey]
+    return subscriptionsData.filter(s => s.plan === planName && s.estado === "Activa")
+  }, [selectedPlanKey, subscriptionsData])
+
+  // Handler para click en tarjeta de plan
+  const handlePlanClick = (planKey: string) => {
+    setSelectedPlanKey(planKey)
+    setShowPlanModal(true)
+  }
 
   // Obtener totales del backend
   const totalActivas = stats?.total_activas || 0
@@ -285,7 +310,11 @@ export default function SuscripcionesPage() {
       {/* Plan Count Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         {planCounts.map((plan) => (
-          <div key={plan.key} className="bg-card border border-border rounded-xl p-4 glow-green-sm">
+          <div
+            key={plan.key}
+            className="bg-card border border-border rounded-xl p-4 glow-green-sm cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => handlePlanClick(plan.key)}
+          >
             <div className="flex items-center gap-2 mb-2">
               <plan.icon className={`h-5 w-5 ${plan.color}`} />
               <span className="text-sm text-muted-foreground">{plan.name}</span>
@@ -368,6 +397,94 @@ export default function SuscripcionesPage() {
           clienteNombre={selectedCliente.nombre}
           onClose={() => setSelectedCliente(null)}
         />
+      )}
+
+      {/* Modal de Usuarios por Plan */}
+      {showPlanModal && selectedPlanKey && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+            onClick={() => {
+              setShowPlanModal(false)
+              setSelectedPlanKey(null)
+            }}
+          />
+
+          {/* Modal */}
+          <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 p-4">
+            <Card className="bg-card border-border max-h-[80vh] flex flex-col">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    {planCounts.find(p => p.key === selectedPlanKey)?.name || selectedPlanKey}
+                  </CardTitle>
+                  <CardDescription>
+                    {usuariosDelPlanSeleccionado.length} usuarios con este plan
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowPlanModal(false)
+                    setSelectedPlanKey(null)
+                  }}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </CardHeader>
+
+              <CardContent className="flex-1 overflow-y-auto pt-4">
+                {usuariosDelPlanSeleccionado.length > 0 ? (
+                  <div className="space-y-3">
+                    {usuariosDelPlanSeleccionado.map((suscripcion) => (
+                      <div
+                        key={suscripcion.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border hover:border-primary/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <UserCheck className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{suscripcion.usuario}</p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Vence: {new Date(suscripcion.fechaFin).toLocaleDateString('es-CO', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <StatusBadge status={suscripcion.estado} />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {suscripcion.diasRestantes > 0
+                              ? `${suscripcion.diasRestantes} dias restantes`
+                              : "Vencido"
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium text-foreground">Sin usuarios</p>
+                    <p className="text-sm text-muted-foreground">
+                      No hay usuarios activos con este plan
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
     </ProtectedRoute>
   )

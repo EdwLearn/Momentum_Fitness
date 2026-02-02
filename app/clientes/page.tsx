@@ -6,14 +6,16 @@ import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
 import { FilterableDataTable } from "@/components/filterable-data-table"
 import { StatusBadge } from "@/components/data-table"
-import { Users, UserCheck, UserX, Plus, Edit, RefreshCw, Scale, TrendingUp } from "lucide-react"
+import { Users, UserCheck, UserX, Plus, Edit, RefreshCw, Scale, TrendingUp, X, Calendar, Gift, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { UsuarioDetailModal } from "@/components/usuario-detail-modal"
 import { NewUsuarioDrawer } from "@/components/new-usuario-drawer"
 import { EditUsuarioDrawer } from "@/components/edit-usuario-drawer"
 import { RenewMembershipDrawer } from "@/components/renew-membership-drawer"
 import { WeightLogDrawer } from "@/components/weight-log-drawer"
 import { UsuarioProgressDrawer } from "@/components/usuario-progress-drawer"
+import { CourtesyDrawer } from "@/components/courtesy-drawer"
 import { SuccessToast } from "@/components/success-toast"
 import { useUsuarios } from "@/lib/hooks/useUsuarios"
 import { useMembresias } from "@/lib/hooks/useMembresias"
@@ -32,9 +34,11 @@ function mapUsuarioToClient(usuario: Usuario, membresias: Membresia[], todosUsua
     "pase_diario": "Pase Diario",
     "pase_flex": "Pase Flex",
     "mensual": "Mensual",
+    "estudiante": "Estudiante",
     "plan_3_meses": "Plan 3 Meses",
     "plan_6_meses": "Plan 6 Meses",
     "elite_anual": "Elite Anual",
+    "cortesia": "Cortesía",
   }
 
   // Buscar quién refirió a este usuario (buscar en la membresía activa)
@@ -56,11 +60,18 @@ function mapUsuarioToClient(usuario: Usuario, membresias: Membresia[], todosUsua
     estado = "Sin membresía"
   }
 
+  // Buscar última membresía (para usuarios inactivos mostrar qué plan tenían)
+  const ultimaMembresia = membresias
+    .filter(m => m.usuario_id === usuario.id)
+    .sort((a, b) => new Date(b.fecha_fin).getTime() - new Date(a.fecha_fin).getTime())[0]
+
   return {
     id: usuario.id,
     nombre: `${usuario.nombre} ${usuario.apellido}`,
-    cedula: usuario.telefono || "N/A",
+    cedula: usuario.cedula || "N/A",
+    telefono: usuario.telefono || null,
     plan: membresiaActiva ? planMap[membresiaActiva.tipo_plan] || membresiaActiva.tipo_plan : "Sin plan",
+    ultimoPlan: ultimaMembresia ? planMap[ultimaMembresia.tipo_plan] || ultimaMembresia.tipo_plan : "Nunca tuvo",
     fechaInicio: membresiaActiva
       ? membresiaActiva.fecha_inicio.split('T')[0]
       : usuario.fecha_registro.split('T')[0],
@@ -100,7 +111,7 @@ function mapUsuarioToEmployee(usuario: Usuario) {
   return {
     id: usuario.id,
     nombre: `${usuario.nombre} ${usuario.apellido}`,
-    cedula: usuario.telefono || "N/A",
+    cedula: usuario.cedula || "N/A",
     plan: rolMap[usuario.tipo || TipoUsuario.ENTRENADOR] || "Entrenador",
     fechaInicio: usuario.fecha_registro.split('T')[0],
     fechaFin: "N/A",
@@ -123,12 +134,15 @@ export default function ClientesPage() {
   const [isRenewDrawerOpen, setIsRenewDrawerOpen] = useState(false)
   const [isWeightDrawerOpen, setIsWeightDrawerOpen] = useState(false)
   const [isProgressDrawerOpen, setIsProgressDrawerOpen] = useState(false)
+  const [isCourtesyDrawerOpen, setIsCourtesyDrawerOpen] = useState(false)
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null)
   const [renewUsuario, setRenewUsuario] = useState<Usuario | null>(null)
   const [weightUsuario, setWeightUsuario] = useState<Usuario | null>(null)
   const [progressUsuario, setProgressUsuario] = useState<Usuario | null>(null)
+  const [courtesyUsuario, setCourtesyUsuario] = useState<Usuario | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState("Usuario creado correctamente.")
+  const [showInactivosModal, setShowInactivosModal] = useState(false)
 
   // Fetch usuarios and membresias from API
   const { data: usuarios, isLoading: isLoadingUsuarios, isError: isErrorUsuarios } = useUsuarios()
@@ -190,9 +204,11 @@ export default function ClientesPage() {
           { label: "Pase Diario", value: "Pase Diario" },
           { label: "Pase Flex", value: "Pase Flex" },
           { label: "Mensual", value: "Mensual" },
+          { label: "Estudiante", value: "Estudiante" },
           { label: "Plan 3 Meses", value: "Plan 3 Meses" },
           { label: "Plan 6 Meses", value: "Plan 6 Meses" },
           { label: "Elite Anual", value: "Elite Anual" },
+          { label: "Cortesía", value: "Cortesía" },
           { label: "Sin plan", value: "Sin plan" },
         ],
         placeholder: "Filtrar por plan..."
@@ -288,6 +304,15 @@ export default function ClientesPage() {
             <TrendingUp className="h-4 w-4 mr-1" />
             Ver Progreso
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleCourtesyClick(item.id)}
+            className="text-amber-600 hover:text-amber-600 hover:bg-amber-600/10"
+          >
+            <Gift className="h-4 w-4 mr-1" />
+            Cortesía
+          </Button>
         </div>
       ),
     },
@@ -379,6 +404,19 @@ export default function ClientesPage() {
     }
   }
 
+  const handleCourtesyClick = (clientId: number) => {
+    const usuario = usuarios?.find(u => u.id === clientId)
+    if (usuario) {
+      setCourtesyUsuario(usuario)
+      setIsCourtesyDrawerOpen(true)
+    }
+  }
+
+  const handleCourtesyGranted = () => {
+    setToastMessage("Cortesía otorgada correctamente.")
+    setShowToast(true)
+  }
+
   // Loading state
   if (isLoading) {
     return (
@@ -415,7 +453,13 @@ export default function ClientesPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <MetricCard title="Total Usuarios" value={totalClientes} icon={Users} />
         <MetricCard title="Usuarios Activos" value={clientesActivos} icon={UserCheck} />
-        <MetricCard title="Usuarios Inactivos" value={clientesInactivos} variant="warning" icon={UserX} />
+        <MetricCard
+          title="Usuarios Inactivos"
+          value={clientesInactivos}
+          variant="warning"
+          icon={UserX}
+          onClick={() => setShowInactivosModal(true)}
+        />
       </div>
 
       {/* Clients Table */}
@@ -492,12 +536,110 @@ export default function ClientesPage() {
         usuario={progressUsuario}
       />
 
+      {/* Courtesy Drawer */}
+      <CourtesyDrawer
+        isOpen={isCourtesyDrawerOpen}
+        onClose={() => {
+          setIsCourtesyDrawerOpen(false)
+          setCourtesyUsuario(null)
+        }}
+        onSuccess={handleCourtesyGranted}
+        usuario={courtesyUsuario}
+      />
+
       {/* Success Toast */}
       <SuccessToast
         isVisible={showToast}
         message={toastMessage}
         onClose={() => setShowToast(false)}
       />
+
+      {/* Modal de Usuarios Inactivos */}
+      {showInactivosModal && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowInactivosModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 p-4">
+            <Card className="bg-card border-border max-h-[80vh] flex flex-col">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <UserX className="h-5 w-5 text-warning" />
+                    Usuarios Inactivos
+                  </CardTitle>
+                  <CardDescription>
+                    {clientesInactivos} usuarios sin membresía activa
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowInactivosModal(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </CardHeader>
+
+              <CardContent className="flex-1 overflow-y-auto pt-4">
+                {clients.filter(c => c.estado === "Inactivo" || c.estado === "Sin membresía").length > 0 ? (
+                  <div className="space-y-3">
+                    {clients
+                      .filter(c => c.estado === "Inactivo" || c.estado === "Sin membresía")
+                      .map((cliente) => (
+                        <div
+                          key={cliente.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border hover:border-warning/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-warning/20 flex items-center justify-center">
+                              <UserX className="h-5 w-5 text-warning" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{cliente.nombre}</p>
+                              <div className="flex flex-col gap-0.5">
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {cliente.telefono || "Sin teléfono"}
+                                </p>
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {cliente.ultimaAsistencia !== "N/A"
+                                    ? `Última visita: ${new Date(cliente.ultimaAsistencia).toLocaleDateString('es-CO', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      })}`
+                                    : "Sin asistencias registradas"
+                                  }
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right flex flex-col gap-1">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary">
+                              {cliente.ultimoPlan}
+                            </span>
+                            <StatusBadge status={cliente.estado} />
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UserCheck className="h-12 w-12 text-primary mb-4" />
+                    <p className="text-lg font-medium text-foreground">¡Todos activos!</p>
+                    <p className="text-sm text-muted-foreground">
+                      No hay usuarios inactivos en este momento
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </DashboardLayout>
   )
 }

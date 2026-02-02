@@ -98,13 +98,13 @@ export function NewEmployeeDrawer({ isOpen, onClose, onSuccess }: NewEmployeeDra
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Centrado */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4">
-        <div className="max-h-[90vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl">
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-2 sm:p-4">
+        <div className="max-h-[95vh] sm:max-h-[90vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl">
           {/* Header */}
-          <div className="sticky top-0 bg-secondary px-6 py-4 border-b border-border">
+          <div className="sticky top-0 bg-secondary px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Nuevo Empleado</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Nuevo Empleado</h2>
                 <p className="text-sm text-muted-foreground">
                   Completa la información del empleado
                 </p>
@@ -116,7 +116,7 @@ export function NewEmployeeDrawer({ isOpen, onClose, onSuccess }: NewEmployeeDra
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-6 py-6">
+          <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-6">
             <div className="space-y-6">
               {error && (
                 <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
@@ -126,9 +126,9 @@ export function NewEmployeeDrawer({ isOpen, onClose, onSuccess }: NewEmployeeDra
 
               {/* Datos Personales */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b border-border pb-2">Datos Personales</h3>
+                <h3 className="text-base sm:text-lg font-semibold border-b border-border pb-2">Datos Personales</h3>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2 sm:p-4">
                   <div className="space-y-2">
                     <Label htmlFor="nombre">
                       Nombre <span className="text-destructive">*</span>
@@ -234,11 +234,11 @@ export function NewEmployeeDrawer({ isOpen, onClose, onSuccess }: NewEmployeeDra
 
               {/* Datos Laborales */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b border-border pb-2 text-foreground">
+                <h3 className="text-base sm:text-lg font-semibold border-b border-border pb-2 text-foreground">
                   Datos Laborales
                 </h3>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2 sm:p-4">
                   <div className="space-y-2">
                     <Label htmlFor="tipoEmpleado">
                       Tipo de Empleado <span className="text-destructive">*</span>
@@ -272,7 +272,7 @@ export function NewEmployeeDrawer({ isOpen, onClose, onSuccess }: NewEmployeeDra
               </div>
 
               {/* Footer */}
-              <div className="flex gap-3 pt-6 mt-6 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6 mt-6 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"

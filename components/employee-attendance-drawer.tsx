@@ -119,17 +119,17 @@ export function EmployeeAttendanceDrawer({
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Centrado */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 p-4">
-        <div className="max-h-[90vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl">
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 p-2 sm:p-4">
+        <div className="max-h-[95vh] sm:max-h-[90vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl">
           {/* Header */}
-          <div className="sticky top-0 bg-card border-b border-border px-6 py-4">
+          <div className="sticky top-0 bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${isEntrada ? "bg-green-600/10" : "bg-orange-600/10"}`}>
                   <Icon className={`h-6 w-6 ${isEntrada ? "text-green-600" : "text-orange-600"}`} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">{title}</h2>
                   <p className="text-sm text-muted-foreground">Empleados</p>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export function EmployeeAttendanceDrawer({
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Información */}
-            <div className="bg-secondary/50 border border-border rounded-lg p-4">
+            <div className="bg-secondary/50 border border-border rounded-lg p-2 sm:p-4">
               <div className="flex items-start gap-3">
                 <Clock className="h-5 w-5 text-primary mt-0.5" />
                 <div>

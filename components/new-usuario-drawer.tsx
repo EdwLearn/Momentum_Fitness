@@ -15,6 +15,14 @@ import { useCreateAsistencia } from "@/lib/hooks/useAsistencia"
 import { useCupones } from "@/lib/hooks/useCupones"
 import { TipoUsuario, TipoPlan, TipoPago, OBJETIVOS_FITNESS, Cupon } from "@/types"
 
+// Configuración de métodos de pago
+const METODOS_PAGO = [
+  { id: TipoPago.EFECTIVO, nombre: "Efectivo" },
+  { id: TipoPago.TRANSFERENCIA, nombre: "Transferencia" },
+  { id: TipoPago.TARJETA, nombre: "Tarjeta" },
+  { id: TipoPago.OTRO, nombre: "Especies" },
+]
+
 interface NewClientDrawerProps {
   isOpen: boolean
   onClose: () => void
@@ -26,10 +34,23 @@ interface NewClientDrawerProps {
 const PLANES = [
   { id: TipoPlan.PASE_DIARIO, nombre: "Pase Diario", precio: 5000, duracion: 1 },
   { id: TipoPlan.PASE_FLEX, nombre: "Pase Flex (14 días)", precio: 39900, duracion: 14 },
+  { id: TipoPlan.ESTUDIANTE, nombre: "Estudiante", precio: 45000, duracion: 30 },
   { id: TipoPlan.MENSUAL, nombre: "Mensual", precio: 59900, duracion: 30 },
   { id: TipoPlan.PLAN_3_MESES, nombre: "Plan 3 Meses", precio: 149900, duracion: 90 },
   { id: TipoPlan.PLAN_6_MESES, nombre: "Plan 6 Meses", precio: 269900, duracion: 180 },
   { id: TipoPlan.ELITE_ANUAL, nombre: "Membresía Platinum", precio: 479900, duracion: 365 },
+  { id: TipoPlan.SOCIO, nombre: "Socio (De por vida)", precio: 0, duracion: 36500 },
+  { id: TipoPlan.CORTESIA, nombre: "Cortesía (Gratis)", precio: 0, duracion: 0 },
+]
+
+// Opciones de duración para Cortesía
+const DURACIONES_CORTESIA = [
+  { id: "1", nombre: "1 día", duracion: 1 },
+  { id: "14", nombre: "14 días (Flex)", duracion: 14 },
+  { id: "30", nombre: "30 días (Mes)", duracion: 30 },
+  { id: "90", nombre: "90 días (3 Meses)", duracion: 90 },
+  { id: "180", nombre: "180 días (6 Meses)", duracion: 180 },
+  { id: "365", nombre: "365 días (Anual)", duracion: 365 },
 ]
 
 export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo = TipoUsuario.CLIENTE }: NewClientDrawerProps) {
@@ -50,6 +71,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
 
     // Plan
     tipoPlan: "",
+    tipoPago: TipoPago.EFECTIVO,
     fechaInicio: "",
 
     // Referido (opcional)
@@ -109,10 +131,11 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
       }
     }
 
-    // Validar que el plan sea elegible (no Pase Diario ni Pase Flex)
-    if (formData.tipoPlan === TipoPlan.PASE_DIARIO || formData.tipoPlan === TipoPlan.PASE_FLEX) {
+    // Validar que el plan sea elegible (no planes especiales)
+    const planesEspeciales = [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX, TipoPlan.SOCIO, TipoPlan.CORTESIA]
+    if (planesEspeciales.includes(formData.tipoPlan as TipoPlan)) {
       setCuponValidado(null)
-      setCuponError("Cupones no aplican a Pase Día o Pase Flex")
+      setCuponError("Cupones no aplican a este tipo de plan")
       return
     }
 
@@ -175,8 +198,9 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
         let descuento = 0
         let tipo: "referido" | "cupon" | null = null
 
-        // VALIDACIÓN: Pase Día y Pase Flex NO pueden recibir cupones ni referidos
-        const esPlanBasico = formData.tipoPlan === TipoPlan.PASE_DIARIO || formData.tipoPlan === TipoPlan.PASE_FLEX
+        // VALIDACIÓN: Planes especiales NO pueden recibir cupones ni referidos
+        const planesEspeciales = [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX, TipoPlan.SOCIO, TipoPlan.CORTESIA]
+        const esPlanBasico = planesEspeciales.includes(formData.tipoPlan as TipoPlan)
 
         if (esPlanBasico) {
           // No aplicar descuentos
@@ -254,7 +278,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
     }
 
     // Validar que la cédula sea única
-    const cedulaExiste = usuarios?.some(u => u.telefono === formData.cedula)
+    const cedulaExiste = usuarios?.some(u => u.cedula === formData.cedula)
     if (cedulaExiste) {
       setError("Ya existe un usuario con esta cédula")
       return
@@ -269,14 +293,15 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
       }
     }
 
-    // Validar que Pase Día y Pase Flex NO tengan cupones ni referidos
-    if (formData.tipoPlan === TipoPlan.PASE_DIARIO || formData.tipoPlan === TipoPlan.PASE_FLEX) {
+    // Validar que planes especiales NO tengan cupones ni referidos
+    const planesEspecialesSubmit = [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX, TipoPlan.SOCIO, TipoPlan.CORTESIA]
+    if (planesEspecialesSubmit.includes(formData.tipoPlan as TipoPlan)) {
       if (formData.codigoCupon) {
-        setError("Pase Día y Pase Flex no pueden recibir cupones")
+        setError("Este tipo de plan no puede recibir cupones")
         return
       }
       if (formData.usarPlanReferidos || formData.referidoPorCedula) {
-        setError("Pase Día y Pase Flex no pueden recibir beneficios de referidos")
+        setError("Este tipo de plan no puede recibir beneficios de referidos")
         return
       }
     }
@@ -284,7 +309,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
     // Validar que el referido existe si se marcó checkbox y se proporcionó
     let referidoId: number | null = null
     if (formData.usarPlanReferidos && formData.referidoPorCedula) {
-      const referido = usuarios?.find(u => u.telefono === formData.referidoPorCedula)
+      const referido = usuarios?.find(u => u.cedula === formData.referidoPorCedula)
       if (!referido) {
         setError("El referido no existe en el sistema")
         return
@@ -302,8 +327,9 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
       const usuarioData = {
         nombre: formData.nombre,
         apellido: formData.apellido || formData.nombre,
+        cedula: formData.cedula,
         email: formData.email || `${formData.cedula}@temp.com`,
-        telefono: formData.cedula,
+        telefono: formData.telefono || null,
         tipo: tipoUsuarioFijo || TipoUsuario.CLIENTE,
         fecha_nacimiento: formData.fechaNacimiento || null,
         genero: formData.genero || null,
@@ -312,10 +338,20 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
         objetivo: formData.objetivos.length > 0 ? formData.objetivos.join(", ") : null,
       }
 
+      console.log('📤 Enviando datos de usuario:', usuarioData)
+      console.log('📝 Tipo de usuario (valor enum):', TipoUsuario.CLIENTE)
+      console.log('📝 Tipo de usuario enviado:', usuarioData.tipo)
+
       const nuevoUsuario = await createUsuario.mutateAsync(usuarioData)
 
       // Crear membresía si se seleccionó plan
+      console.log('🔍 Verificando creación de membresía...')
+      console.log('  - Tipo de plan:', formData.tipoPlan)
+      console.log('  - Fecha de inicio:', formData.fechaInicio)
+
       if (formData.tipoPlan && formData.fechaInicio) {
+        console.log('✅ Creando membresía para el usuario...')
+
         // Preparar datos de membresía
         const cuponCodigo = (tipoDescuento === "cupon" && formData.codigoCupon) ? formData.codigoCupon.toUpperCase() : null
         const referidoIdFinal = tipoDescuento === "referido" ? referidoId : null
@@ -323,29 +359,36 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
         await createMembresia.mutateAsync({
           usuario_id: nuevoUsuario.id,
           tipo_plan: formData.tipoPlan as TipoPlan,
-          tipo_pago: TipoPago.EFECTIVO, // Default, puede cambiarse después
+          tipo_pago: formData.tipoPago,
           descripcion: null, // El backend lo generará automáticamente
           referido_por_id: referidoIdFinal,
           cupon_codigo: cuponCodigo,
         })
 
-        // Si es Pase Diario, registrar asistencia automáticamente
-        if (formData.tipoPlan === TipoPlan.PASE_DIARIO) {
-          try {
-            const now = new Date()
-            const horaEntrada = now.toTimeString().split(' ')[0] // "HH:MM:SS"
+        console.log('✅ Membresía creada exitosamente - El usuario ahora tiene estado ACTIVO')
 
-            await createAsistencia.mutateAsync({
-              usuario_id: nuevoUsuario.id,
-              hora_entrada: horaEntrada,
-            })
-          } catch (asistenciaError: any) {
-            // Si falla el registro de asistencia, mostrar error pero no bloquear la creación del usuario
-            console.error('Error al registrar asistencia automática:', asistenciaError)
-            setError(`Usuario creado exitosamente, pero hubo un error al registrar la asistencia automática: ${asistenciaError.response?.data?.detail || 'Error desconocido'}`)
-          }
+        // Registrar asistencia automáticamente para todos los planes
+        try {
+          const now = new Date()
+          const horaEntrada = now.toTimeString().split(' ')[0] // "HH:MM:SS"
+
+          await createAsistencia.mutateAsync({
+            usuario_id: nuevoUsuario.id,
+            hora_entrada: horaEntrada,
+          })
+          console.log('✅ Asistencia registrada automáticamente')
+        } catch (asistenciaError: any) {
+          // Si falla el registro de asistencia, mostrar error pero no bloquear la creación del usuario
+          console.error('Error al registrar asistencia automática:', asistenciaError)
+          setError(`Usuario creado exitosamente, pero hubo un error al registrar la asistencia automática: ${asistenciaError.response?.data?.detail || 'Error desconocido'}`)
         }
+      } else {
+        console.log('⚠️ Usuario creado SIN membresía (no se seleccionó plan o fecha de inicio)')
+        console.log('   Nota: El usuario aparecerá como "Sin membresía" hasta que se le asigne un plan')
       }
+
+      // Esperar un momento para que el backend procese completamente antes de actualizar
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       onSuccess()
       onClose()
@@ -363,6 +406,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
         altura: "",
         objetivos: [],
         tipoPlan: "",
+        tipoPago: TipoPago.EFECTIVO,
         fechaInicio: "",
         usarPlanReferidos: false,
         referidoPorCedula: "",
@@ -376,7 +420,54 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
       setCuponValidado(null)
       setCuponError(null)
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Error al crear el usuario")
+      console.error('Error completo al crear usuario:', err)
+      console.error('Response data:', err.response?.data)
+
+      // Manejar diferentes tipos de errores
+      if (err.response?.data?.detail) {
+        // Error con mensaje específico del backend
+        if (Array.isArray(err.response.data.detail)) {
+          // Errores de validación de Pydantic (array de objetos)
+          const errorMessages = err.response.data.detail.map((e: any) => {
+            const field = e.loc?.[e.loc.length - 1] || 'campo desconocido'
+            const fieldNames: Record<string, string> = {
+              'nombre': 'Nombre',
+              'apellido': 'Apellido',
+              'email': 'Email',
+              'telefono': 'Teléfono',
+              'cedula': 'Cédula',
+              'tipo': 'Tipo de usuario',
+            }
+            const fieldName = fieldNames[field] || field
+
+            // Mejorar mensajes de Pydantic
+            let msg = e.msg
+            if (msg.includes('valid email')) {
+              msg = 'debe ser un email válido'
+            } else if (msg.includes('field required')) {
+              msg = 'es obligatorio'
+            } else if (msg.includes('not a valid')) {
+              msg = 'tiene un formato inválido'
+            } else if (msg.includes('Input should be') && field === 'tipo') {
+              // Error específico del tipo de usuario
+              console.error('❌ Error de tipo de usuario. Expected:', e.ctx?.expected, 'Received:', e.input)
+              msg = `tiene un valor inválido (recibido: "${e.input}"). Esto podría ser un error del sistema.`
+            }
+
+            return `${fieldName} ${msg}`
+          }).join('. ')
+          setError(errorMessages)
+        } else {
+          // Mensaje de error simple
+          setError(err.response.data.detail)
+        }
+      } else if (err.message) {
+        // Error de red o timeout
+        setError(`Error de conexión: ${err.message}`)
+      } else {
+        // Error genérico
+        setError("Error desconocido al crear el usuario. Por favor verifica los datos e intenta nuevamente.")
+      }
     }
   }
 
@@ -411,10 +502,9 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
     return edad
   }
 
-  // Determinar si debe mostrar el campo de referido (todos los planes excepto Pase Diario y Pase Flex)
-  const mostrarReferido = formData.tipoPlan &&
-    formData.tipoPlan !== TipoPlan.PASE_DIARIO &&
-    formData.tipoPlan !== TipoPlan.PASE_FLEX
+  // Determinar si debe mostrar el campo de referido (todos los planes excepto planes especiales)
+  const planesEspecialesUI = [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX, TipoPlan.SOCIO, TipoPlan.CORTESIA]
+  const mostrarReferido = formData.tipoPlan && !planesEspecialesUI.includes(formData.tipoPlan as TipoPlan)
 
   if (!isOpen) return null
 
@@ -424,14 +514,14 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Centrado */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4">
-        <div className="max-h-[90vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl">
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-2 sm:p-4">
+        <div className="max-h-[95vh] sm:max-h-[90vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl">
           {/* Header */}
-          <div className="sticky top-0 bg-secondary px-6 py-4 border-b border-border">
+          <div className="sticky top-0 bg-secondary px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Nuevo Usuario</h2>
-                <p className="text-sm text-muted-foreground">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Nuevo Usuario</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                   Completa la información del usuario y su membresía
                 </p>
               </div>
@@ -442,7 +532,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-6 py-6">
+          <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-6">
             <div className="space-y-6">
               {error && (
                 <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
@@ -452,9 +542,9 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
 
               {/* Datos Personales */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b border-border pb-2">Datos Personales</h3>
+                <h3 className="text-base sm:text-lg font-semibold border-b border-border pb-2">Datos Personales</h3>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="nombre">
                       Nombre <span className="text-destructive">*</span>
@@ -569,9 +659,9 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
 
               {/* Información Física */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b border-border pb-2 text-foreground">Información Física</h3>
+                <h3 className="text-base sm:text-lg font-semibold border-b border-border pb-2 text-foreground">Información Física</h3>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="peso">Peso (kg)</Label>
                     <Input
@@ -601,7 +691,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
 
                 <div className="space-y-2">
                   <Label>Objetivo(s) Fitness</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {OBJETIVOS_FITNESS.map((objetivo) => (
                       <label key={objetivo} className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -625,13 +715,27 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
 
               {/* Información del Plan */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b border-border pb-2">Información del Plan</h3>
+                <h3 className="text-base sm:text-lg font-semibold border-b border-border pb-2">Información del Plan</h3>
+
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                    ℹ️ <strong>Opcional:</strong> Si no seleccionas un plan ahora, el usuario se creará sin membresía. Podrás agregar la membresía después desde la lista de clientes.
+                  </p>
+                </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tipoPlan">Tipo de Plan</Label>
+                  <Label htmlFor="tipoPlan">Tipo de Plan (Opcional)</Label>
                   <Select
                     value={formData.tipoPlan}
-                    onValueChange={(value) => setFormData({ ...formData, tipoPlan: value })}
+                    onValueChange={(value) => {
+                      // Auto-establecer fecha de inicio a hoy si no hay fecha seleccionada
+                      const fechaHoy = new Date().toISOString().split('T')[0]
+                      setFormData({
+                        ...formData,
+                        tipoPlan: value,
+                        fechaInicio: formData.fechaInicio || fechaHoy
+                      })
+                    }}
                   >
                     <SelectTrigger className="bg-secondary border-border">
                       <SelectValue placeholder="Selecciona un plan" />
@@ -654,8 +758,26 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
                         value={formData.fechaInicio}
                         onChange={(date) => setFormData({ ...formData, fechaInicio: date })}
                         placeholder="Seleccionar fecha de inicio"
-                        minDate={new Date().toISOString().split('T')[0]}
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tipoPago">Método de Pago</Label>
+                      <Select
+                        value={formData.tipoPago}
+                        onValueChange={(value) => setFormData({ ...formData, tipoPago: value as TipoPago })}
+                      >
+                        <SelectTrigger className="bg-secondary border-border">
+                          <SelectValue placeholder="Selecciona método de pago" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {METODOS_PAGO.map((metodo) => (
+                            <SelectItem key={metodo.id} value={metodo.id}>
+                              {metodo.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {fechaFin && (
@@ -782,7 +904,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
               </div>
 
               {/* Footer */}
-              <div className="flex gap-3 pt-6 mt-6 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6 mt-6 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"

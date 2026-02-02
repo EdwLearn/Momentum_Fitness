@@ -33,12 +33,12 @@ export function EmployeeDetailModal({ employee, onClose }: EmployeeDetailModalPr
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[90vh] overflow-y-auto">
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <Card className="bg-card border-border p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">{employee.nombre}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">{employee.nombre}</h2>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">{employee.rol}</span>
                 <StatusBadge status={employee.estado === "Activo" ? "Activo" : "Vencido"} />
@@ -51,24 +51,24 @@ export function EmployeeDetailModal({ employee, onClose }: EmployeeDetailModalPr
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-secondary/50 rounded-lg p-4">
+            <div className="bg-secondary/50 rounded-lg p-2 sm:p-4">
               <p className="text-sm text-muted-foreground mb-1">Última Entrada</p>
-              <p className="text-lg font-semibold text-foreground">{employee.ultimaEntrada}</p>
+              <p className="text-base sm:text-lg font-semibold text-foreground">{employee.ultimaEntrada}</p>
             </div>
-            <div className="bg-secondary/50 rounded-lg p-4">
+            <div className="bg-secondary/50 rounded-lg p-2 sm:p-4">
               <p className="text-sm text-muted-foreground mb-1">Horas Esta Semana</p>
-              <p className="text-lg font-semibold text-foreground">{employee.horasEstaSemana}h</p>
+              <p className="text-base sm:text-lg font-semibold text-foreground">{employee.horasEstaSemana}h</p>
             </div>
-            <div className="bg-secondary/50 rounded-lg p-4">
+            <div className="bg-secondary/50 rounded-lg p-2 sm:p-4">
               <p className="text-sm text-muted-foreground mb-1">Promedio Diario</p>
-              <p className="text-lg font-semibold text-foreground">{(employee.horasEstaSemana / 7).toFixed(1)}h</p>
+              <p className="text-base sm:text-lg font-semibold text-foreground">{(employee.horasEstaSemana / 7).toFixed(1)}h</p>
             </div>
           </div>
 
           {/* Chart */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Horas trabajadas (últimos 7 días)</h3>
-            <div className="h-64 bg-secondary/30 rounded-lg p-4">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Horas trabajadas (últimos 7 días)</h3>
+            <div className="h-64 bg-secondary/30 rounded-lg p-2 sm:p-4">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -89,7 +89,7 @@ export function EmployeeDetailModal({ employee, onClose }: EmployeeDetailModalPr
 
           {/* History Table */}
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Historial de Asistencia</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Historial de Asistencia</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

@@ -59,7 +59,7 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
       setFormData({
         nombre: usuario.nombre || "",
         apellido: usuario.apellido || "",
-        cedula: usuario.telefono || "",
+        cedula: usuario.cedula || "",
         edad: "", // No se guarda edad directamente
         genero: "", // No se guarda género directamente
         fechaNacimiento: usuario.fecha_nacimiento ? usuario.fecha_nacimiento.split("T")[0] : "",
@@ -122,8 +122,9 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
       const usuarioData = {
         nombre: formData.nombre,
         apellido: formData.apellido,
+        cedula: formData.cedula,
         email: formData.email || `${formData.cedula}@temp.com`,
-        telefono: formData.telefono || formData.cedula,
+        telefono: formData.telefono || null,
         tipo: tipoUsuarioMap[formData.tipoUsuario] || TipoUsuario.CLIENTE,
         fecha_nacimiento: formData.fechaNacimiento ? `${formData.fechaNacimiento}T00:00:00` : undefined,
         referido_por_cedula: formData.referidoPorCedula || undefined,
@@ -131,17 +132,37 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
         altura: formData.altura ? parseFloat(formData.altura) : undefined,
       }
 
+      console.log('📤 Enviando datos de actualización:', usuarioData)
+      console.log('📝 ID del usuario:', usuario.id)
+
       // Update usuario
       await updateUsuario.mutateAsync({
         id: usuario.id,
         data: usuarioData,
       })
 
+      console.log('✅ Usuario actualizado exitosamente')
+
       onSuccess()
       onClose()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error updating usuario:", err)
-      setError("Error al actualizar el usuario. Por favor intenta de nuevo.")
+      console.error("Response data:", err.response?.data)
+
+      // Mostrar error específico del backend
+      if (err.response?.data?.detail) {
+        if (Array.isArray(err.response.data.detail)) {
+          const errorMessages = err.response.data.detail.map((e: any) => {
+            const field = e.loc?.[e.loc.length - 1] || 'campo'
+            return `${field}: ${e.msg}`
+          }).join('. ')
+          setError(errorMessages)
+        } else {
+          setError(err.response.data.detail)
+        }
+      } else {
+        setError("Error al actualizar el usuario. Por favor intenta de nuevo.")
+      }
     }
   }
 
@@ -176,12 +197,12 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
       <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Centrado */}
-      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[90vh] overflow-y-auto">
+      <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 p-4 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <Card className="bg-card border-border p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Editar Usuario</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Editar Usuario</h2>
               <p className="text-sm text-muted-foreground">Actualiza la información del usuario</p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -193,9 +214,9 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
           <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Información Básica</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">Información Básica</h3>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-2 sm:p-4">
               <div className="space-y-2">
                 <Label htmlFor="nombre">
                   Nombre <span className="text-destructive">*</span>
@@ -308,9 +329,9 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
 
           {/* Contact Info Section */}
           <div className="space-y-4 pt-4 border-t border-border">
-            <h3 className="text-lg font-semibold text-foreground">Información de Contacto</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">Información de Contacto</h3>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-2 sm:p-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -339,9 +360,9 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
 
           {/* Physical Info Section */}
           <div className="space-y-4 pt-4 border-t border-border">
-            <h3 className="text-lg font-semibold text-foreground">Información Física</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">Información Física</h3>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-2 sm:p-4">
               <div className="space-y-2">
                 <Label htmlFor="pesoInicial">Peso Inicial (kg)</Label>
                 <Input
@@ -426,12 +447,12 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
           }} />
           <div className="fixed left-1/2 top-1/2 z-60 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-lg shadow-2xl p-6">
             <div className="space-y-4">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-2 sm:p-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
                   <Trash2 className="h-6 w-6 text-destructive" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground">¿Eliminar usuario?</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-foreground">¿Eliminar usuario?</h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     Esta acción no se puede deshacer. Se eliminará toda la información del usuario.
                   </p>
@@ -462,7 +483,7 @@ export function EditUsuarioDrawer({ isOpen, onClose, onSuccess, usuario }: EditC
                 </div>
               )}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"

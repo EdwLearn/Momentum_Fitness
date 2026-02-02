@@ -12,9 +12,12 @@ export enum TipoPlan {
   PASE_DIARIO = "pase_diario",
   PASE_FLEX = "pase_flex",
   MENSUAL = "mensual",
+  ESTUDIANTE = "estudiante",
   PLAN_3_MESES = "plan_3_meses",
   PLAN_6_MESES = "plan_6_meses",
   ELITE_ANUAL = "elite_anual",
+  SOCIO = "socio",
+  CORTESIA = "cortesia",
 }
 
 // Mantener compatibilidad legacy
@@ -67,6 +70,7 @@ export const OBJETIVOS_FITNESS = [
 export interface UsuarioBase {
   nombre: string;
   apellido: string;
+  cedula: string;
   email: string;
   telefono?: string | null;
   tipo?: TipoUsuario;
@@ -87,6 +91,7 @@ export interface UsuarioCreate extends UsuarioBase {}
 export interface UsuarioUpdate {
   nombre?: string;
   apellido?: string;
+  cedula?: string;
   email?: string;
   telefono?: string | null;
   tipo?: TipoUsuario;
@@ -116,6 +121,7 @@ export interface UsuarioBusqueda {
   id: number;
   nombre: string;
   apellido: string;
+  cedula: string;
   telefono?: string | null;
 }
 
@@ -139,6 +145,14 @@ export interface MembresiaCreateSimple {
   descripcion?: string | null;
   referido_por_id?: number | null;
   cupon_codigo?: string | null;
+}
+
+// Schema para crear cortesía flexible
+export interface CortesiaCreate {
+  usuario_id: number;
+  duracion_dias: number; // 1-365 días
+  visitas_disponibles?: number | null; // null = ilimitadas
+  motivo?: string | null;
 }
 
 // Schema completo de membresía (respuesta del backend)

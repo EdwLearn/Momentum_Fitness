@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { MetricCard } from "@/components/metric-card"
 import { ChartCard } from "@/components/chart-card"
 import { DataTable } from "@/components/data-table"
-import { UserCheck, TrendingUp, UserX, Search, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { UserCheck, TrendingUp, UserX, Search, Loader2, CheckCircle2, AlertCircle, X, Calendar, Phone } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +24,7 @@ export default function AsistenciaPage() {
   const [searchError, setSearchError] = useState("")
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
+  const [showInactivosModal, setShowInactivosModal] = useState(false)
 
   // Obtener fecha local en formato YYYY-MM-DD
   const getLocalDate = () => {
@@ -58,9 +59,9 @@ export default function AsistenciaPage() {
   const hourlyData = useMemo(() => {
     if (!asistenciasHoy) return []
 
-    // Crear array de horas de 6 AM a 10 PM
-    const hours = Array.from({ length: 17 }, (_, i) => {
-      const hour = i + 6 // Empieza en 6 AM
+    // Crear array de horas de 5 AM a 11 PM (19 horas de operación)
+    const hours = Array.from({ length: 19 }, (_, i) => {
+      const hour = i + 5 // Empieza en 5 AM
       return {
         hora: `${hour.toString().padStart(2, '0')}:00`,
         asistencias: 0,
@@ -70,7 +71,7 @@ export default function AsistenciaPage() {
     // Contar asistencias por hora
     asistenciasHoy.forEach((asistencia) => {
       const horaEntrada = asistencia.hora_entrada.split(':')[0] // Obtener solo la hora
-      const hourIndex = parseInt(horaEntrada) - 6 // Índice relativo a 6 AM
+      const hourIndex = parseInt(horaEntrada) - 5 // Índice relativo a 5 AM
 
       if (hourIndex >= 0 && hourIndex < hours.length) {
         hours[hourIndex].asistencias++
@@ -102,10 +103,12 @@ export default function AsistenciaPage() {
   const planMap: Record<string, string> = {
     "pase_diario": "Pase Diario",
     "pase_flex": "Pase Flex",
+    "estudiante": "Estudiante",
     "mensual": "Mensual",
     "plan_3_meses": "Plan 3 Meses",
     "plan_6_meses": "Plan 6 Meses",
     "elite_anual": "Elite Anual",
+    "cortesia": "Cortesía",
   }
 
   // Mapear asistencias para la tabla con datos reales
@@ -212,7 +215,13 @@ export default function AsistenciaPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <MetricCard title="Asistencias Hoy" value={asistenciasHoyCount} icon={UserCheck} />
         <MetricCard title="Promedio Diario (30 días)" value={promedioMensual} icon={TrendingUp} />
-        <MetricCard title="Sin asistir (+4 días)" value={usuariosSinAsistir} variant="warning" icon={UserX} />
+        <MetricCard
+          title="Sin asistir (+4 días)"
+          value={usuariosSinAsistir}
+          variant="warning"
+          icon={UserX}
+          onClick={() => setShowInactivosModal(true)}
+        />
       </div>
 
       {/* Check-in Section */}
@@ -352,6 +361,98 @@ export default function AsistenciaPage() {
         message={successMessage}
         onClose={() => setShowSuccessToast(false)}
       />
+
+      {/* Modal de Usuarios Sin Asistir */}
+      {showInactivosModal && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowInactivosModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 p-4">
+            <Card className="bg-card border-border max-h-[80vh] flex flex-col">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <UserX className="h-5 w-5 text-warning" />
+                    Usuarios Sin Asistir (+4 días)
+                  </CardTitle>
+                  <CardDescription>
+                    {usuariosInactivos?.length || 0} usuarios no han asistido en más de 4 días
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowInactivosModal(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </CardHeader>
+
+              <CardContent className="flex-1 overflow-y-auto pt-4">
+                {usuariosInactivos && usuariosInactivos.length > 0 ? (
+                  <div className="space-y-3">
+                    {usuariosInactivos
+                      .sort((a, b) => (b.dias_sin_asistir || 999) - (a.dias_sin_asistir || 999))
+                      .map((usuario) => (
+                        <div
+                          key={usuario.usuario_id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border hover:border-warning/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-warning/20 flex items-center justify-center">
+                              <UserX className="h-5 w-5 text-warning" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{usuario.nombre}</p>
+                              <div className="flex flex-col gap-0.5">
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {usuario.telefono || "Sin teléfono"}
+                                </p>
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {usuario.ultima_asistencia
+                                    ? `Última visita: ${new Date(usuario.ultima_asistencia).toLocaleDateString('es-CO', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      })}`
+                                    : "Sin asistencias registradas"
+                                  }
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right flex flex-col gap-1">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary">
+                              {planMap[usuario.tipo_plan] || usuario.tipo_plan}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning">
+                              {usuario.dias_sin_asistir !== null
+                                ? `${usuario.dias_sin_asistir} días`
+                                : "Nunca asistió"
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <CheckCircle2 className="h-12 w-12 text-primary mb-4" />
+                    <p className="text-lg font-medium text-foreground">¡Todos al día!</p>
+                    <p className="text-sm text-muted-foreground">
+                      No hay usuarios inactivos en este momento
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </DashboardLayout>
   )
 }

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from "recharts"
 import { NewCouponDrawer } from "@/components/new-coupon-drawer"
+import { PreVentaCouponDrawer } from "@/components/preventa-coupon-drawer"
 import { SuccessToast } from "@/components/success-toast"
 import { useCupones, useCuponesStats, useToggleCuponActivo } from "@/lib/hooks/useCupones"
 import { useReferidosDetallados, useReferidosStats } from "@/lib/hooks/useReferidos"
@@ -18,6 +19,7 @@ import { Cupon } from "@/types"
 
 export default function CuponesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isPreVentaDrawerOpen, setIsPreVentaDrawerOpen] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [selectedPieIndex, setSelectedPieIndex] = useState<number | null>(null)
@@ -290,6 +292,14 @@ export default function CuponesPage() {
             <Plus className="h-4 w-4 mr-2" />
             Nuevo cupón
           </Button>
+          <Button
+            onClick={() => setIsPreVentaDrawerOpen(true)}
+            variant="outline"
+            className="border-primary/50 text-primary hover:bg-primary/10 hover:border-primary"
+          >
+            <Ticket className="h-4 w-4 mr-2" />
+            Cupón Pre-Venta (25%)
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -409,6 +419,12 @@ export default function CuponesPage() {
       </div>
 
       <NewCouponDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onSuccess={handleSuccess} />
+
+      <PreVentaCouponDrawer
+        isOpen={isPreVentaDrawerOpen}
+        onClose={() => setIsPreVentaDrawerOpen(false)}
+        onSuccess={handleSuccess}
+      />
 
       <SuccessToast
         show={showSuccessToast}

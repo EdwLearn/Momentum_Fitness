@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { PlanDisponible, Membresia, MembresiaCreateSimple, MembresiaUpdate } from '@/types';
+import { PlanDisponible, Membresia, MembresiaCreateSimple, MembresiaUpdate, CortesiaCreate } from '@/types';
 
 const BASE_URL = '/api/membresias';
 
@@ -13,6 +13,7 @@ export interface SuscripcionesStats {
   plan_3_meses: number;
   plan_6_meses: number;
   elite_anual: number;
+  cortesia: number;
 }
 
 export const membresiasService = {
@@ -74,6 +75,12 @@ export const membresiasService = {
   // Renovar una membresía (desactiva la anterior y crea una nueva)
   renovar: async (usuarioId: number, data: MembresiaCreateSimple): Promise<Membresia> => {
     const response = await api.post<Membresia>(`${BASE_URL}/renovar/${usuarioId}`, data);
+    return response.data;
+  },
+
+  // Crear una cortesía flexible
+  createCortesia: async (data: CortesiaCreate): Promise<Membresia> => {
+    const response = await api.post<Membresia>(`${BASE_URL}/cortesia`, data);
     return response.data;
   },
 };

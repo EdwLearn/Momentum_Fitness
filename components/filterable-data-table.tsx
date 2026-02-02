@@ -369,9 +369,10 @@ export function FilterableDataTable<T extends Record<string, any>>({
         )}
       </div>
 
-      {/* Tabla */}
+      {/* Tabla - Con scroll horizontal en móviles */}
       <div className="rounded-lg border border-border overflow-hidden">
-        <Table>
+        <div className="overflow-x-auto">
+          <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow className="bg-secondary/50 hover:bg-secondary/50">
               {columns.map((column) => (
@@ -432,53 +433,54 @@ export function FilterableDataTable<T extends Record<string, any>>({
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* Controles de paginación */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-2">
+          <div className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1">
             Mostrando {startIndex + 1} - {Math.min(endIndex, filteredAndSortedData.length)} de {filteredAndSortedData.length} registros
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
             <Button
               variant="outline"
               size="sm"
               onClick={goToFirstPage}
               disabled={currentPage === 1}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
             >
-              <ChevronsLeft className="h-4 w-4" />
+              <ChevronsLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={goToPreviousPage}
               disabled={currentPage === 1}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
-            <div className="text-sm font-medium">
-              Página {currentPage} de {totalPages}
+            <div className="text-xs sm:text-sm font-medium px-2">
+              Pág. {currentPage}/{totalPages}
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={goToNextPage}
               disabled={currentPage === totalPages}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={goToLastPage}
               disabled={currentPage === totalPages}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
             >
-              <ChevronsRight className="h-4 w-4" />
+              <ChevronsRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>

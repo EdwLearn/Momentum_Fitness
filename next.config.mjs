@@ -12,7 +12,7 @@ const nextConfig = {
   },
 
   // Configuración adicional para export
-  trailingSlash: true,  // Añade / al final de las URLs para mejor compatibilidad
+  trailingSlash: false,  // Desactivado para evitar problemas de navegación con puerto diferente
 }
 
 export default nextConfig
