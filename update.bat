@@ -8,7 +8,7 @@ echo ==================================
 echo.
 
 REM URL base del repositorio (cambiar por tu repo)
-set REPO_URL=https://raw.githubusercontent.com/edwlearn/momentum/main
+set REPO_URL=https://raw.githubusercontent.com/EdwLearn/v0-dashboard-de-gimnasio/main
 
 echo Descargando archivos actualizados...
 

@@ -9,7 +9,7 @@ echo "=================================="
 echo ""
 
 # URL base del repositorio (cambiar por tu repo)
-REPO_URL="https://raw.githubusercontent.com/edwlearn/momentum/main"
+REPO_URL="https://raw.githubusercontent.com/EdwLearn/v0-dashboard-de-gimnasio/main"
 
 echo "Descargando archivos actualizados..."
 
