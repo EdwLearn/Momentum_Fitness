@@ -145,7 +145,7 @@ export default function AsistenciaPage() {
     setSearchedUser(null)
 
     try {
-      const user = await usuariosService.buscarPorCedula(cedula)
+      const user = await usuariosService.buscarPorCedulaAsistencia(cedula)
       setSearchedUser(user)
       setSearchError("")
     } catch (error: any) {

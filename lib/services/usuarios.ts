@@ -82,4 +82,12 @@ export const usuariosService = {
     const response = await api.get<UsuarioBusqueda>(`${BASE_PATH}/buscar-cedula/${cedula}`);
     return response.data;
   },
+
+  /**
+   * Buscar usuario por cédula para asistencia (sin restricción de referidos)
+   */
+  buscarPorCedulaAsistencia: async (cedula: string): Promise<UsuarioBusqueda> => {
+    const response = await api.get<UsuarioBusqueda>(`${BASE_PATH}/buscar-cedula-asistencia/${cedula}`);
+    return response.data;
+  },
 };

@@ -76,6 +76,21 @@ def buscar_usuario_por_cedula(cedula: str, db: Session = Depends(get_db)):
 
     return db_usuario
 
+@router.get("/buscar-cedula-asistencia/{cedula}", response_model=schemas.UsuarioBusqueda)
+def buscar_usuario_por_cedula_asistencia(cedula: str, db: Session = Depends(get_db)):
+    """
+    Busca un usuario por su cédula para marcar asistencia.
+    No valida si puede referir - disponible para todos los planes.
+    """
+    db_usuario = crud.get_usuario_by_cedula(db, cedula=cedula)
+    if db_usuario is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado con esa cédula"
+        )
+
+    return db_usuario
+
 @router.get("/estadisticas-referidos/{cedula}")
 def obtener_estadisticas_referidos(cedula: str, db: Session = Depends(get_db)):
     """
