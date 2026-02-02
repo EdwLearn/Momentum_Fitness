@@ -6,6 +6,7 @@ from app.models.usuario import TipoUsuario
 class UsuarioBase(BaseModel):
     nombre: str
     apellido: str
+    cedula: str
     email: EmailStr
     telefono: Optional[str] = None
     tipo: TipoUsuario = TipoUsuario.CLIENTE
@@ -28,6 +29,7 @@ class UsuarioCreate(UsuarioBase):
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     apellido: Optional[str] = None
+    cedula: Optional[str] = None
     email: Optional[EmailStr] = None
     telefono: Optional[str] = None
     tipo: Optional[TipoUsuario] = None
@@ -62,6 +64,7 @@ class UsuarioBusqueda(BaseModel):
     id: int
     nombre: str
     apellido: str
+    cedula: str
     telefono: Optional[str] = None
 
     class Config:

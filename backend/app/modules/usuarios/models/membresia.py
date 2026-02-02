@@ -9,9 +9,12 @@ class TipoPlan(str, enum.Enum):
     PASE_DIARIO = "pase_diario"
     PASE_FLEX = "pase_flex"
     MENSUAL = "mensual"
+    ESTUDIANTE = "estudiante"
     PLAN_3_MESES = "plan_3_meses"
     PLAN_6_MESES = "plan_6_meses"
     ELITE_ANUAL = "elite_anual"
+    SOCIO = "socio"
+    CORTESIA = "cortesia"
 
 class EstadoMembresia(str, enum.Enum):
     ACTIVA = "activa"
@@ -29,13 +32,17 @@ class TipoPago(str, enum.Enum):
     OTRO = "otro"
 
 # Configuración de planes con precios y duración
+# Para PASE_FLEX: dias=30 (vigencia 1 mes), visitas=14 (días de entrada disponibles)
 PLANES_CONFIG = {
-    TipoPlan.PASE_DIARIO: {"nombre": "Pase Diario", "precio": 5000, "dias": 1, "puede_referir": False},
-    TipoPlan.PASE_FLEX: {"nombre": "Pase Flex", "precio": 39900, "dias": 14, "puede_referir": False},
-    TipoPlan.MENSUAL: {"nombre": "Mensual", "precio": 59900, "dias": 30, "puede_referir": True},
-    TipoPlan.PLAN_3_MESES: {"nombre": "Plan 3 Meses", "precio": 149900, "dias": 90, "puede_referir": True},
-    TipoPlan.PLAN_6_MESES: {"nombre": "Plan 6 Meses", "precio": 269900, "dias": 180, "puede_referir": True},
-    TipoPlan.ELITE_ANUAL: {"nombre": "Membresía Platinum", "precio": 479900, "dias": 365, "puede_referir": True},
+    TipoPlan.PASE_DIARIO: {"nombre": "Pase Diario", "precio": 5000, "dias": 1, "puede_referir": False, "visitas": None},
+    TipoPlan.PASE_FLEX: {"nombre": "Pase Flex", "precio": 39900, "dias": 30, "puede_referir": False, "visitas": 14},
+    TipoPlan.MENSUAL: {"nombre": "Mensual", "precio": 59900, "dias": 30, "puede_referir": True, "visitas": None},
+    TipoPlan.ESTUDIANTE: {"nombre": "Estudiante", "precio": 45000, "dias": 30, "puede_referir": True, "visitas": None},
+    TipoPlan.PLAN_3_MESES: {"nombre": "Plan 3 Meses", "precio": 149900, "dias": 90, "puede_referir": True, "visitas": None},
+    TipoPlan.PLAN_6_MESES: {"nombre": "Plan 6 Meses", "precio": 269900, "dias": 180, "puede_referir": True, "visitas": None},
+    TipoPlan.ELITE_ANUAL: {"nombre": "Membresía Platinum", "precio": 479900, "dias": 365, "puede_referir": True, "visitas": None},
+    TipoPlan.SOCIO: {"nombre": "Socio", "precio": 0, "dias": 36500, "puede_referir": False, "visitas": None},
+    TipoPlan.CORTESIA: {"nombre": "Cortesía", "precio": 0, "dias": 36500, "puede_referir": False, "visitas": None},
 }
 
 # Planes válidos para referir (solo planes largos)
@@ -81,6 +88,9 @@ class Membresia(Base):
     precio_final = Column(Integer, nullable=True)     # Precio con descuento aplicado
     duracion_dias = Column(Integer, nullable=False)  # Duración en días
 
+    # Para planes con visitas limitadas (ej: PASE_FLEX = 14 visitas en 30 días)
+    visitas_disponibles = Column(Integer, nullable=True)  # None = ilimitadas, número = restantes
+
     # Referido (ahora por membresía, no por usuario)
     referido_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
 
@@ -109,4 +119,8 @@ class Membresia(Base):
 
     def esta_activa(self) -> bool:
         """Verifica si la membresía está activa y vigente"""
-        return self.activo and self.estado == EstadoMembresia.ACTIVA and self.fecha_fin >= datetime.utcnow()
+        vigente = self.activo and self.estado == EstadoMembresia.ACTIVA and self.fecha_fin >= datetime.utcnow()
+        # Para planes con visitas limitadas, verificar que aún tenga visitas
+        if vigente and self.visitas_disponibles is not None:
+            return self.visitas_disponibles > 0
+        return vigente

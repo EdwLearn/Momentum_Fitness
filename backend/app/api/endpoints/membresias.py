@@ -23,6 +23,7 @@ class SuscripcionesStats(BaseModel):
     plan_3_meses: int
     plan_6_meses: int
     elite_anual: int
+    cortesia: int
 
 @router.get("/stats", response_model=SuscripcionesStats)
 def get_suscripciones_stats(db: Session = Depends(get_db)):
@@ -74,13 +75,14 @@ def get_suscripciones_stats(db: Session = Depends(get_db)):
     return SuscripcionesStats(
         total_activas=total_activas,
         por_referidos=por_referidos,
-        tipos_planes=6,  # Número fijo de tipos de planes disponibles
+        tipos_planes=7,  # Número fijo de tipos de planes disponibles (incluyendo cortesía)
         pase_diario=planes_dict[TipoPlan.PASE_DIARIO],
         pase_flex=planes_dict[TipoPlan.PASE_FLEX],
         mensual=planes_dict[TipoPlan.MENSUAL],
         plan_3_meses=planes_dict[TipoPlan.PLAN_3_MESES],
         plan_6_meses=planes_dict[TipoPlan.PLAN_6_MESES],
-        elite_anual=planes_dict[TipoPlan.ELITE_ANUAL]
+        elite_anual=planes_dict[TipoPlan.ELITE_ANUAL],
+        cortesia=planes_dict[TipoPlan.CORTESIA]
     )
 
 @router.get("/planes", response_model=List[schemas.PlanDisponible])
@@ -165,6 +167,38 @@ def renovar_membresia_usuario(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+@router.post("/cortesia", response_model=schemas.Membresia, status_code=status.HTTP_201_CREATED)
+def create_cortesia(cortesia: schemas.CortesiaCreate, db: Session = Depends(get_db)):
+    """
+    Crea una cortesía flexible para un usuario.
+
+    Permite configurar:
+    - duración en días (1-365)
+    - visitas limitadas (opcional, como pase flex)
+    - motivo de la cortesía
+
+    Características:
+    - Precio siempre es 0
+    - No aplican cupones ni referidos
+    - Desactiva membresías anteriores del usuario
+    """
+    # Validar que el usuario existe
+    db_usuario = usuarios_crud.get_usuario(db, usuario_id=cortesia.usuario_id)
+    if not db_usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Usuario con ID {cortesia.usuario_id} no encontrado"
+        )
+
+    try:
+        return crud.create_cortesia(db=db, cortesia=cortesia)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
 
 @router.get("/", response_model=List[schemas.Membresia])
 def read_membresias(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

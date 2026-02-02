@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, and_, or_
 from app.models.asistencia import Asistencia
 from app.models.usuario import Usuario
-from app.models.membresia import Membresia
+from app.models.membresia import Membresia, TipoPlan, EstadoMembresia
 from app.schemas.asistencia import AsistenciaCreate, AsistenciaUpdate
 from typing import List, Optional, Dict
 from datetime import datetime, date, timezone, timedelta
@@ -49,6 +49,23 @@ def create_asistencia(db: Session, asistencia: AsistenciaCreate) -> Asistencia:
         usuario.ultima_asistencia = db_asistencia.timestamp_entrada or datetime.now(COLOMBIA_TZ)
         # Incrementar contador de días entrenados
         usuario.dias_entrenados = (usuario.dias_entrenados or 0) + 1
+
+    # Decrementar visitas disponibles si la membresía tiene límite de visitas (ej: PASE_FLEX)
+    now = datetime.now(COLOMBIA_TZ)
+    membresia_activa = db.query(Membresia).filter(
+        and_(
+            Membresia.usuario_id == asistencia.usuario_id,
+            Membresia.activo == True,
+            Membresia.estado == EstadoMembresia.ACTIVA,
+            Membresia.fecha_inicio <= now,
+            Membresia.fecha_fin >= now,
+            Membresia.visitas_disponibles != None,  # Solo para planes con límite de visitas
+            Membresia.visitas_disponibles > 0
+        )
+    ).first()
+
+    if membresia_activa and membresia_activa.visitas_disponibles is not None:
+        membresia_activa.visitas_disponibles -= 1
 
     db.commit()
     db.refresh(db_asistencia)
@@ -107,7 +124,7 @@ def get_usuarios_sin_asistir_4_dias(db: Session) -> List[Dict]:
     planes_elegibles = ["pase_flex", "mensual", "plan_3_meses", "plan_6_meses", "elite_anual"]
 
     # Obtener usuarios con membresías activas en planes elegibles
-    usuarios_con_membresia = db.query(Usuario).join(
+    usuarios_con_membresia = db.query(Usuario, Membresia).join(
         Membresia, Usuario.id == Membresia.usuario_id
     ).filter(
         Membresia.activo == True,
@@ -117,7 +134,7 @@ def get_usuarios_sin_asistir_4_dias(db: Session) -> List[Dict]:
 
     usuarios_sin_asistir = []
 
-    for usuario in usuarios_con_membresia:
+    for usuario, membresia in usuarios_con_membresia:
         # Obtener última asistencia del usuario
         ultima_asistencia = db.query(Asistencia).filter(
             Asistencia.usuario_id == usuario.id
@@ -126,9 +143,16 @@ def get_usuarios_sin_asistir_4_dias(db: Session) -> List[Dict]:
         # Si no tiene asistencias o la última fue hace más de 4 días
         if not ultima_asistencia or ultima_asistencia.fecha < fecha_limite:
             dias_sin_asistir = (hoy - ultima_asistencia.fecha).days if ultima_asistencia else None
+            # Solo incluir teléfono si es diferente a la cédula y tiene más de 6 dígitos
+            telefono_valido = None
+            if usuario.telefono and usuario.telefono != usuario.cedula and len(usuario.telefono) >= 7:
+                telefono_valido = usuario.telefono
+
             usuarios_sin_asistir.append({
                 "usuario_id": usuario.id,
                 "nombre": f"{usuario.nombre} {usuario.apellido}",
+                "telefono": telefono_valido,
+                "tipo_plan": membresia.tipo_plan,
                 "ultima_asistencia": ultima_asistencia.fecha if ultima_asistencia else None,
                 "dias_sin_asistir": dias_sin_asistir
             })

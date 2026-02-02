@@ -35,6 +35,3 @@ class MetricasUsuario(Base):
 
     # Última actualización
     actualizado_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relación
-    usuario = relationship("Usuario", back_populates="metricas")

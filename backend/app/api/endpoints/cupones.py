@@ -145,3 +145,22 @@ def reset_usos_anuales(db: Session = Depends(get_db)):
     """
     count = crud_cupones.reset_usos_anuales(db)
     return {"message": f"Se resetearon {count} cupones"}
+
+
+@router.post("/preventa", response_model=Cupon, status_code=201)
+def crear_cupon_preventa(cupon: CuponCreate, db: Session = Depends(get_db)):
+    """
+    Crear un cupón de pre-venta con 25% de descuento
+    """
+    # Verificar que no exista un cupón con el mismo código
+    existing_cupon = crud_cupones.get_cupon_by_codigo(db, codigo=cupon.codigo)
+    if existing_cupon:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ya existe un cupón con el código '{cupon.codigo}'"
+        )
+
+    # Forzar descuento de 25% para cupones de pre-venta
+    cupon.descuento = 25
+
+    return crud_cupones.create_cupon(db=db, cupon=cupon)

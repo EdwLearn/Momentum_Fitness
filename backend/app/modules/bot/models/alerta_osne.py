@@ -29,9 +29,6 @@ class AlertaOsne(Base):
 
     timestamp = Column(DateTime, default=datetime.utcnow)
 
-    # Relación
-    usuario = relationship("Usuario", back_populates="alertas_osne")
-
     __table_args__ = (
         CheckConstraint('prioridad BETWEEN 1 AND 5', name='check_prioridad'),
     )

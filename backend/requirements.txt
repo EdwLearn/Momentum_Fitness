@@ -31,5 +31,7 @@ pytz==2024.2
 # WhatsApp Business API
 httpx==0.28.1
 
-# Testing (opcional)
-# pytest==8.3.4
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+httpx==0.28.1

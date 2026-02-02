@@ -34,12 +34,21 @@ class MembresiaCreate(BaseModel):
     tipo_pago: Optional[TipoPago] = None
     descripcion: Optional[str] = None
     referido_por_id: Optional[int] = None
+    visitas_disponibles: Optional[int] = None  # Para planes con visitas limitadas (ej: PASE_FLEX)
 
 class MembresiaUpdate(BaseModel):
     estado: Optional[EstadoMembresia] = None
     fecha_fin: Optional[datetime] = None
     activo: Optional[bool] = None
     descripcion: Optional[str] = None
+
+# Schema para crear cortesía flexible
+class CortesiaCreate(BaseModel):
+    """Schema para crear una cortesía con duración flexible"""
+    usuario_id: int = Field(..., description="ID del usuario")
+    duracion_dias: int = Field(..., ge=1, le=365, description="Duración en días (1-365)")
+    visitas_disponibles: Optional[int] = Field(None, ge=1, le=100, description="Número de visitas (None = ilimitadas)")
+    motivo: Optional[str] = Field(None, max_length=200, description="Motivo de la cortesía")
 
 # Schema de respuesta
 class Membresia(BaseModel):
@@ -57,6 +66,7 @@ class Membresia(BaseModel):
     descripcion: Optional[str] = None
     activo: bool
     referido_por_id: Optional[int] = None
+    visitas_disponibles: Optional[int] = None  # Para planes con visitas limitadas
 
     class Config:
         from_attributes = True

@@ -35,10 +35,10 @@ class Cupon(Base):
     fecha_creacion = Column(DateTime, default=datetime.utcnow, nullable=False)
     fecha_expiracion = Column(DateTime, nullable=True)
 
-    # Constraints - Descuento máximo 20% según reglas de negocio
+    # Constraints - Descuento máximo 25% (incluye cupones de pre-venta)
     # (Los cupones NO son acumulables con descuentos por referido)
     __table_args__ = (
-        CheckConstraint('descuento > 0 AND descuento <= 20', name='check_descuento_valido'),
+        CheckConstraint('descuento > 0 AND descuento <= 25', name='check_descuento_valido'),
         CheckConstraint('usos_total >= 0', name='check_usos_total_positivo'),
         CheckConstraint('usos_anio >= 0', name='check_usos_anio_positivo'),
     )

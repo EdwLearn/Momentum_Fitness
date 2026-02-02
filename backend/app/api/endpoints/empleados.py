@@ -24,10 +24,10 @@ def get_empleados(
     return empleados
 
 
-@router.get("/{empleado_id}", response_model=schemas.Empleado)
-def get_empleado(empleado_id: int, db: Session = Depends(get_db)):
-    """Obtener un empleado por ID"""
-    empleado = crud.empleados.get_empleado(db, empleado_id=empleado_id)
+@router.get("/cedula/{cedula}", response_model=schemas.Empleado)
+def get_empleado_by_cedula(cedula: str, db: Session = Depends(get_db)):
+    """Obtener un empleado por cédula"""
+    empleado = crud.empleados.get_empleado_by_cedula(db, cedula=cedula)
     if not empleado:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -36,10 +36,16 @@ def get_empleado(empleado_id: int, db: Session = Depends(get_db)):
     return empleado
 
 
-@router.get("/cedula/{cedula}", response_model=schemas.Empleado)
-def get_empleado_by_cedula(cedula: str, db: Session = Depends(get_db)):
-    """Obtener un empleado por cédula"""
-    empleado = crud.empleados.get_empleado_by_cedula(db, cedula=cedula)
+@router.get("/activos/list", response_model=List[schemas.Empleado])
+def get_empleados_activos(db: Session = Depends(get_db)):
+    """Obtener empleados activos"""
+    return crud.empleados.get_empleados_activos(db)
+
+
+@router.get("/{empleado_id}", response_model=schemas.Empleado)
+def get_empleado(empleado_id: int, db: Session = Depends(get_db)):
+    """Obtener un empleado por ID"""
+    empleado = crud.empleados.get_empleado(db, empleado_id=empleado_id)
     if not empleado:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -88,9 +94,3 @@ def delete_empleado(empleado_id: int, db: Session = Depends(get_db)):
             detail="Empleado no encontrado"
         )
     return None
-
-
-@router.get("/activos/list", response_model=List[schemas.Empleado])
-def get_empleados_activos(db: Session = Depends(get_db)):
-    """Obtener empleados activos"""
-    return crud.empleados.get_empleados_activos(db)

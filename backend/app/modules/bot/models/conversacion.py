@@ -27,6 +27,3 @@ class Conversacion(Base):
     # Tracking de respuestas
     fue_respondido = Column(Boolean, default=False)
     fecha_respuesta = Column(DateTime, nullable=True)
-
-    # Relación
-    usuario = relationship("Usuario", back_populates="conversaciones")

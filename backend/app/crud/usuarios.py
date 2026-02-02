@@ -36,8 +36,8 @@ def get_usuario_by_email(db: Session, email: str) -> Optional[Usuario]:
     return db.query(Usuario).filter(Usuario.email == email).first()
 
 def get_usuario_by_cedula(db: Session, cedula: str) -> Optional[Usuario]:
-    """Busca un usuario por su cédula (campo telefono)"""
-    return db.query(Usuario).filter(Usuario.telefono == cedula).first()
+    """Busca un usuario por su cédula"""
+    return db.query(Usuario).filter(Usuario.cedula == cedula).first()
 
 def get_usuarios(db: Session, skip: int = 0, limit: int = 100) -> List[Usuario]:
     usuarios = db.query(Usuario).offset(skip).limit(limit).all()
@@ -76,7 +76,16 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100) -> List[Usuario]:
     return usuarios
 
 def create_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
-    db_usuario = Usuario(**usuario.model_dump())
+    from app.models.usuario import TipoUsuario
+
+    # Crear usuario con los datos proporcionados
+    usuario_dict = usuario.model_dump()
+    db_usuario = Usuario(**usuario_dict)
+
+    # Activar automáticamente si es ADMIN o ENTRENADOR (no necesitan membresía)
+    if db_usuario.tipo in [TipoUsuario.ADMIN, TipoUsuario.ENTRENADOR]:
+        db_usuario.activo = True
+
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)
@@ -122,13 +131,13 @@ def delete_usuario(db: Session, usuario_id: int) -> bool:
         from app.modules.metricas.models.metrica import Metrica
         db.query(Metrica).filter(Metrica.usuario_id == usuario_id).delete()
 
-        # 4. Eliminar conversaciones
-        from app.modules.bot.models.conversacion import Conversacion
-        db.query(Conversacion).filter(Conversacion.usuario_id == usuario_id).delete()
+        # 4. Eliminar conversaciones (DESACTIVADO - bot desactivado)
+        # from app.modules.bot.models.conversacion import Conversacion
+        # db.query(Conversacion).filter(Conversacion.usuario_id == usuario_id).delete()
 
-        # 5. Eliminar logros
-        from app.modules.bot.models.logro import Logro
-        db.query(Logro).filter(Logro.usuario_id == usuario_id).delete()
+        # 5. Eliminar logros (DESACTIVADO - bot desactivado)
+        # from app.modules.bot.models.logro import Logro
+        # db.query(Logro).filter(Logro.usuario_id == usuario_id).delete()
 
         # 6. Actualizar referencias de referidos (SET NULL)
         db.query(Membresia).filter(Membresia.referido_por_id == usuario_id).update(

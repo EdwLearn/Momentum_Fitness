@@ -23,10 +23,18 @@ def create_asistencia(asistencia: schemas.AsistenciaCreate, db: Session = Depend
     # Verificar que el usuario tiene una membresía activa
     membresia_activa = membresias_crud.get_membresia_activa_by_usuario(db, usuario_id=asistencia.usuario_id)
     if not membresia_activa:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El usuario no tiene una membresía activa"
-        )
+        # Verificar si tiene alguna membresía (para dar mejor mensaje)
+        todas_membresias = membresias_crud.get_membresias_by_usuario(db, usuario_id=asistencia.usuario_id)
+        if not todas_membresias:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="El usuario no tiene ninguna membresía registrada"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="El usuario no tiene una membresía activa y vigente en este momento"
+            )
 
     # Intentar crear la asistencia
     try:

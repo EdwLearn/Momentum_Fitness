@@ -15,10 +15,11 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
     apellido = Column(String, nullable=False)
+    cedula = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     telefono = Column(String)
     tipo = Column(Enum(TipoUsuario, values_callable=lambda x: [e.value for e in x]), default=TipoUsuario.CLIENTE)
-    activo = Column(Boolean, default=True)
+    activo = Column(Boolean, default=False)  # Por defecto False, se activa al crear membresía
 
     # Campo de referido
     referido_por_cedula = Column(String, nullable=True, index=True)

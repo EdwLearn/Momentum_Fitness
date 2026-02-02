@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from app.modules.usuarios.models.membresia import Membresia, TipoPlan, EstadoMembresia, PLANES_CONFIG, REFERIDOS_CONFIG
 from app.models.usuario import Usuario
 from app.models.cupon import Cupon
-from app.schemas.membresia import MembresiaCreate, MembresiaUpdate, MembresiaCreateSimple
+from app.schemas.membresia import MembresiaCreate, MembresiaUpdate, MembresiaCreateSimple, CortesiaCreate
 from app.schemas.asistencia import AsistenciaCreate
 from app.schemas.referido import ReferidoCreate
 from app.crud import asistencias as asistencias_crud
@@ -33,7 +33,13 @@ def get_membresia_activa_by_usuario(db: Session, usuario_id: int) -> Optional[Me
             Membresia.usuario_id == usuario_id,
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
-            Membresia.fecha_fin >= now
+            Membresia.fecha_inicio <= now,  # La membresía ya debe haber iniciado
+            Membresia.fecha_fin >= now,  # Y no debe haber expirado
+            # Para planes con visitas limitadas, debe tener visitas disponibles
+            or_(
+                Membresia.visitas_disponibles == None,  # Ilimitadas
+                Membresia.visitas_disponibles > 0  # O tiene visitas restantes
+            )
         )
     ).order_by(Membresia.fecha_fin.desc()).first()
 
@@ -66,12 +72,14 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
     if not config_plan:
         raise ValueError(f"Plan no válido: {membresia_simple.tipo_plan}")
 
-    # 2. VALIDAR: Pase Día y Pase Flex NO pueden recibir cupones ni referidos
-    if membresia_simple.tipo_plan in [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX]:
+    # 2. VALIDAR: Planes especiales NO pueden recibir cupones ni referidos
+    # (Pase Día, Pase Flex, Socio, Cortesía)
+    planes_sin_descuento = [TipoPlan.PASE_DIARIO, TipoPlan.PASE_FLEX, TipoPlan.SOCIO, TipoPlan.CORTESIA]
+    if membresia_simple.tipo_plan in planes_sin_descuento:
         if membresia_simple.cupon_codigo:
-            raise ValueError("Pase Día y Pase Flex no pueden recibir cupones")
+            raise ValueError(f"El plan {membresia_simple.tipo_plan.value} no puede recibir cupones")
         if membresia_simple.referido_por_id:
-            raise ValueError("Pase Día y Pase Flex no pueden recibir beneficios de referidos")
+            raise ValueError(f"El plan {membresia_simple.tipo_plan.value} no puede recibir beneficios de referidos")
 
     # 3. VALIDAR CUPÓN si se proporcionó
     cupon_aplicado = None
@@ -193,6 +201,9 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
     # Solo guardar referido_por_id si efectivamente se usó el descuento de referido
     referido_final = membresia_simple.referido_por_id if descuento_aplicado_tipo == "referido" else None
 
+    # Obtener visitas disponibles del plan (None para planes ilimitados)
+    visitas_plan = config_plan.get("visitas")
+
     membresia_data = MembresiaCreate(
         usuario_id=membresia_simple.usuario_id,
         tipo_plan=membresia_simple.tipo_plan,
@@ -204,7 +215,8 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
         fecha_fin=fecha_fin,
         tipo_pago=membresia_simple.tipo_pago,
         descripcion=descripcion_final,
-        referido_por_id=referido_final  # Solo si se aplicó descuento de referido
+        referido_por_id=referido_final,  # Solo si se aplicó descuento de referido
+        visitas_disponibles=visitas_plan  # Para PASE_FLEX = 14, otros = None (ilimitadas)
     )
 
     # 9. Crear el objeto Membresia y guardar en BD
@@ -238,9 +250,9 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
             # Si falla la creación del referido, no queremos que falle toda la membresía
             print(f"Warning: No se pudo crear registro de referido: {e}")
 
-    # 12. Activar usuario (ya que tiene una membresía activa y vigente)
+    # 12. Activar usuario automáticamente (ya que tiene una membresía activa y vigente)
     usuario = db.query(Usuario).filter(Usuario.id == membresia_simple.usuario_id).first()
-    if usuario and not usuario.activo:
+    if usuario:
         usuario.activo = True
         db.commit()
 
@@ -318,3 +330,93 @@ def renovar_membresia(
     )
 
     return create_membresia_simple(db, membresia_simple)
+
+
+def create_cortesia(db: Session, cortesia: CortesiaCreate) -> Membresia:
+    """
+    Crea una cortesía flexible con duración personalizada.
+
+    Características:
+    - Duración personalizable (1-365 días)
+    - Opcionalmente con visitas limitadas (tipo pase flex)
+    - Precio siempre 0 (es cortesía)
+    - No aplican cupones ni referidos
+    - Si el usuario tiene membresía activa, la cortesía inicia cuando termine
+    """
+    # 1. Validar que el usuario existe
+    usuario = db.query(Usuario).filter(Usuario.id == cortesia.usuario_id).first()
+    if not usuario:
+        raise ValueError(f"Usuario {cortesia.usuario_id} no encontrado")
+
+    # 2. Verificar si tiene membresía activa
+    membresia_activa = get_membresia_activa_by_usuario(db, cortesia.usuario_id)
+
+    # 3. Calcular fechas
+    if membresia_activa:
+        # La cortesía inicia cuando termine la membresía actual
+        fecha_inicio = membresia_activa.fecha_fin
+    else:
+        # Sin membresía activa: inicia ahora y desactivar anteriores
+        desactivar_membresias_anteriores(db, cortesia.usuario_id)
+        fecha_inicio = datetime.now(COLOMBIA_TZ)
+
+    # Si es solo 1 día y no tiene membresía activa, expira el mismo día a las 23:59:59
+    if cortesia.duracion_dias == 1 and not membresia_activa:
+        fecha_fin = fecha_inicio.replace(hour=23, minute=59, second=59, microsecond=999999)
+    else:
+        fecha_fin = Membresia.calcular_fecha_fin(fecha_inicio, cortesia.duracion_dias)
+
+    # 4. Preparar descripción
+    descripcion_final = cortesia.motivo or "Cortesía"
+    if cortesia.visitas_disponibles:
+        descripcion_final += f" ({cortesia.visitas_disponibles} visitas)"
+    if membresia_activa:
+        descripcion_final += f" - Programada después de {membresia_activa.tipo_plan.value}"
+
+    # 5. Crear membresía de cortesía
+    membresia_data = MembresiaCreate(
+        usuario_id=cortesia.usuario_id,
+        tipo_plan=TipoPlan.CORTESIA,
+        precio=0,
+        precio_original=0,
+        precio_final=0,
+        duracion_dias=cortesia.duracion_dias,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        tipo_pago=None,  # Cortesía no tiene pago
+        descripcion=descripcion_final,
+        referido_por_id=None,
+        visitas_disponibles=cortesia.visitas_disponibles  # None = ilimitadas, número = limitadas
+    )
+
+    # 6. Crear el objeto Membresia y guardar en BD
+    db_membresia = Membresia(**membresia_data.model_dump())
+
+    db.add(db_membresia)
+    db.commit()
+    db.refresh(db_membresia)
+
+    # 7. Solo si la cortesía inicia ahora (sin membresía activa previa)
+    if not membresia_activa:
+        # Activar usuario automáticamente
+        usuario.activo = True
+        db.commit()
+
+        # Registrar asistencia automática (primera visita)
+        try:
+            ahora_colombia = datetime.now(COLOMBIA_TZ)
+            asistencia_data = AsistenciaCreate(
+                usuario_id=cortesia.usuario_id,
+                hora_entrada=ahora_colombia.strftime("%H:%M:%S"),
+                notas="Primera asistencia - Cortesía otorgada"
+            )
+            asistencias_crud.create_asistencia(db, asistencia_data)
+        except ValueError as e:
+            if "ya tiene asistencia registrada" in str(e):
+                print(f"Info: Usuario ya tiene asistencia hoy, omitiendo registro automático")
+            else:
+                print(f"Warning: Error al registrar asistencia automática: {e}")
+        except Exception as e:
+            print(f"Warning: No se pudo registrar asistencia automática: {e}")
+
+    return db_membresia
