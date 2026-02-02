@@ -11,9 +11,12 @@ frontend/node_modules/
 
 # Backend Python
 venv/
+.venv/
+backend/.venv/
 env/
 ENV/
 momentum/
+.claude/
 .Python
 *.egg
 *.egg-info/
