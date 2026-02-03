@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.schemas import asistencia as schemas
 from app.crud import asistencias as crud
 from app.crud import usuarios as usuarios_crud
+from app.crud import membresias as membresias_crud
 
 router = APIRouter()
 
@@ -18,6 +19,22 @@ def create_asistencia(asistencia: schemas.AsistenciaCreate, db: Session = Depend
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuario no encontrado"
         )
+
+    # Verificar que el usuario tiene una membresía activa
+    membresia_activa = membresias_crud.get_membresia_activa_by_usuario(db, usuario_id=asistencia.usuario_id)
+    if not membresia_activa:
+        # Verificar si tiene alguna membresía (para dar mejor mensaje)
+        todas_membresias = membresias_crud.get_membresias_by_usuario(db, usuario_id=asistencia.usuario_id)
+        if not todas_membresias:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="El usuario no tiene ninguna membresía registrada"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="El usuario no tiene una membresía activa y vigente en este momento"
+            )
 
     # Intentar crear la asistencia
     try:
