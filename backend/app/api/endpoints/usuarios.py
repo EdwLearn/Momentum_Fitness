@@ -22,36 +22,7 @@ def read_usuarios(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
     usuarios = crud.get_usuarios(db, skip=skip, limit=limit)
     return usuarios
 
-@router.get("/{usuario_id}", response_model=schemas.Usuario)
-def read_usuario(usuario_id: int, db: Session = Depends(get_db)):
-    db_usuario = crud.get_usuario(db, usuario_id=usuario_id)
-    if db_usuario is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
-        )
-    return db_usuario
-
-@router.put("/{usuario_id}", response_model=schemas.Usuario)
-def update_usuario(usuario_id: int, usuario: schemas.UsuarioUpdate, db: Session = Depends(get_db)):
-    db_usuario = crud.update_usuario(db, usuario_id=usuario_id, usuario=usuario)
-    if db_usuario is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
-        )
-    return db_usuario
-
-@router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
-    success = crud.delete_usuario(db, usuario_id=usuario_id)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
-        )
-    return None
-
+# IMPORTANTE: Rutas estáticas ANTES de rutas con parámetros dinámicos
 @router.get("/buscar-cedula/{cedula}", response_model=schemas.UsuarioBusqueda)
 def buscar_usuario_por_cedula(cedula: str, db: Session = Depends(get_db)):
     """
@@ -124,3 +95,34 @@ def actualizar_estados_por_membresia(db: Session = Depends(get_db)):
     """
     resultado = crud.actualizar_estado_usuarios_por_membresia(db)
     return resultado
+
+# Rutas con parámetros dinámicos al final
+@router.get("/{usuario_id}", response_model=schemas.Usuario)
+def read_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    db_usuario = crud.get_usuario(db, usuario_id=usuario_id)
+    if db_usuario is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    return db_usuario
+
+@router.put("/{usuario_id}", response_model=schemas.Usuario)
+def update_usuario(usuario_id: int, usuario: schemas.UsuarioUpdate, db: Session = Depends(get_db)):
+    db_usuario = crud.update_usuario(db, usuario_id=usuario_id, usuario=usuario)
+    if db_usuario is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    return db_usuario
+
+@router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_usuario(db, usuario_id=usuario_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    return None
