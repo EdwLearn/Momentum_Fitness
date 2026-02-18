@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
+from sqlalchemy import and_, or_, func
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 from app.core.database import get_db
 from app.schemas import membresia as schemas
 from app.crud import membresias as crud
@@ -31,19 +34,22 @@ def get_suscripciones_stats(db: Session = Depends(get_db)):
     Obtiene estadísticas de suscripciones para las tarjetas de la página de suscripciones.
     Retorna total activas, por referidos, tipos de planes, y conteo por cada tipo de plan.
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
-    # Total de membresías activas
+    # Total de membresías activas (verificando visitas para planes limitados)
     total_activas = db.query(Membresia).filter(
         and_(
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
-            Membresia.fecha_fin >= now
+            Membresia.fecha_fin >= now,
+            or_(
+                Membresia.visitas_disponibles == None,
+                Membresia.visitas_disponibles > 0
+            )
         )
     ).count()
 
     # Membresías activas por referidos
-    # Necesitamos hacer join con usuarios para saber si fueron referidos
     por_referidos = db.query(Membresia).join(
         Usuario, Usuario.id == Membresia.usuario_id
     ).filter(
@@ -51,11 +57,15 @@ def get_suscripciones_stats(db: Session = Depends(get_db)):
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
             Membresia.fecha_fin >= now,
+            or_(
+                Membresia.visitas_disponibles == None,
+                Membresia.visitas_disponibles > 0
+            ),
             Usuario.referido_por_cedula.isnot(None)
         )
     ).count()
 
-    # Contar por tipo de plan (solo activas)
+    # Contar por tipo de plan (solo activas, verificando visitas)
     conteo_planes = db.query(
         Membresia.tipo_plan,
         func.count(Membresia.id).label('count')
@@ -63,7 +73,11 @@ def get_suscripciones_stats(db: Session = Depends(get_db)):
         and_(
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
-            Membresia.fecha_fin >= now
+            Membresia.fecha_fin >= now,
+            or_(
+                Membresia.visitas_disponibles == None,
+                Membresia.visitas_disponibles > 0
+            )
         )
     ).group_by(Membresia.tipo_plan).all()
 

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import enum
 from app.core.database import Base
 
@@ -119,7 +119,9 @@ class Membresia(Base):
 
     def esta_activa(self) -> bool:
         """Verifica si la membresía está activa y vigente"""
-        vigente = self.activo and self.estado == EstadoMembresia.ACTIVA and self.fecha_fin >= datetime.utcnow()
+        colombia_tz = timezone(timedelta(hours=-5))
+        now = datetime.now(colombia_tz)
+        vigente = self.activo and self.estado == EstadoMembresia.ACTIVA and self.fecha_fin >= now
         # Para planes con visitas limitadas, verificar que aún tenga visitas
         if vigente and self.visitas_disponibles is not None:
             return self.visitas_disponibles > 0

@@ -1,6 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, CheckConstraint
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import enum
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 from app.core.database import Base
 
 
@@ -48,7 +51,7 @@ class Cupon(Base):
         if not self.activo:
             return False
         if self.fecha_expiracion:
-            return self.fecha_expiracion >= datetime.utcnow()
+            return self.fecha_expiracion >= datetime.now(COLOMBIA_TZ)
         return True
 
     def incrementar_uso(self):

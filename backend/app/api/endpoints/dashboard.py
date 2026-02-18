@@ -7,9 +7,13 @@ from app.modules.usuarios.models.membresia import Membresia, EstadoMembresia, Ti
 from app.modules.asistencia.models.asistencia import Asistencia
 from app.modules.empleados.models.empleado import Empleado
 from app.modules.empleados.models.asistencia_empleado import AsistenciaEmpleado
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
+from sqlalchemy import or_
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 
 router = APIRouter()
 
@@ -70,7 +74,7 @@ def get_clientes_activos_stats(db: Session = Depends(get_db)):
     """
     Retorna el número de usuarios activos y el cambio porcentual vs el mes anterior
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     # Usuarios activos actuales (con membresía activa)
     clientes_activos_actuales = db.query(Usuario.id).join(
@@ -79,7 +83,11 @@ def get_clientes_activos_stats(db: Session = Depends(get_db)):
         and_(
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
-            Membresia.fecha_fin >= now
+            Membresia.fecha_fin >= now,
+            or_(
+                Membresia.visitas_disponibles == None,
+                Membresia.visitas_disponibles > 0
+            )
         )
     ).distinct().count()
 
@@ -120,10 +128,7 @@ def get_asistencias_hoy_stats(db: Session = Depends(get_db)):
     """
     Retorna el número de asistencias de hoy y el cambio porcentual vs ayer
     """
-    # Usar timezone de Colombia (UTC-5) para obtener la fecha correcta
-    from datetime import timezone
-    colombia_tz = timezone(timedelta(hours=-5))
-    now = datetime.now(colombia_tz)
+    now = datetime.now(COLOMBIA_TZ)
     today = now.date()
     yesterday = today - timedelta(days=1)
 
@@ -153,7 +158,7 @@ def get_planes_por_vencer_stats(db: Session = Depends(get_db)):
     """
     Retorna el número de planes que vencen en los próximos 7 días
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
     fecha_limite = now + timedelta(days=7)
 
     # Planes que vencen en los próximos 7 días
@@ -175,7 +180,7 @@ def get_ingresos_mes_stats(db: Session = Depends(get_db)):
     """
     Retorna los ingresos del mes actual y el cambio porcentual vs el mes anterior
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     # Primer día del mes actual
     primer_dia_mes_actual = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -229,10 +234,7 @@ def get_asistencia_semanal(db: Session = Depends(get_db)):
     """
     Retorna las asistencias de la semana actual (Lunes a Domingo)
     """
-    # Usar timezone de Colombia (UTC-5) para obtener la fecha correcta
-    from datetime import timezone
-    colombia_tz = timezone(timedelta(hours=-5))
-    now = datetime.now(colombia_tz)
+    now = datetime.now(COLOMBIA_TZ)
     today = now.date()
 
     # Definir nombres de días en español
@@ -265,7 +267,7 @@ def get_distribucion_planes(db: Session = Depends(get_db)):
     """
     Retorna la distribución de usuarios activos por tipo de plan
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     # Mapeo de colores por tipo de plan
     colores_planes = {
@@ -295,7 +297,11 @@ def get_distribucion_planes(db: Session = Depends(get_db)):
         and_(
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
-            Membresia.fecha_fin >= now
+            Membresia.fecha_fin >= now,
+            or_(
+                Membresia.visitas_disponibles == None,
+                Membresia.visitas_disponibles > 0
+            )
         )
     ).group_by(Membresia.tipo_plan).all()
 
@@ -319,7 +325,7 @@ def get_proximas_renovaciones(db: Session = Depends(get_db)):
     """
     Retorna los usuarios con planes que vencen en los próximos 7 días
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
     fecha_limite = now + timedelta(days=7)
 
     # Nombres amigables para los planes
@@ -410,7 +416,7 @@ def get_historial_cliente(cliente_id: int, db: Session = Depends(get_db)):
     fecha_primera_inscripcion = membresias[0].fecha_inicio.strftime("%Y-%m-%d")
 
     # Obtener fecha actual para comparar estados
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     # Construir lista de membresías con detalles
     membresias_detalle = []
@@ -446,7 +452,7 @@ def get_empleados_dashboard(db: Session = Depends(get_db)):
     """
     Retorna todos los empleados con estadísticas del mes actual
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     # Primer día del mes actual
     primer_dia_mes_actual = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -547,9 +553,7 @@ def get_historial_empleado(empleado_id: int, db: Session = Depends(get_db)):
         })
 
     # Calcular comparación con otros empleados (últimos 6 meses)
-    from datetime import timezone
-    colombia_tz = timezone(timedelta(hours=-5))
-    now = datetime.now(colombia_tz)
+    now = datetime.now(COLOMBIA_TZ)
     seis_meses_atras = (now - timedelta(days=180)).date()
 
     # Obtener todos los empleados

@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date, time, datetime, timedelta
+from datetime import date, time, datetime, timedelta, timezone
 
 from app.modules.empleados.models import AsistenciaEmpleado, Empleado
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 
 
 def get_asistencia(db: Session, asistencia_id: int) -> Optional[AsistenciaEmpleado]:
@@ -42,7 +45,7 @@ def get_asistencias_empleado(
 
 def marcar_entrada(db: Session, empleado_id: int, hora_entrada: Optional[time] = None) -> AsistenciaEmpleado:
     """Marcar entrada de un empleado"""
-    fecha_hoy = date.today()
+    fecha_hoy = datetime.now(COLOMBIA_TZ).date()
 
     # Verificar si ya existe una asistencia para hoy
     asistencia_existente = get_asistencia_empleado_fecha(db, empleado_id, fecha_hoy)
@@ -50,9 +53,9 @@ def marcar_entrada(db: Session, empleado_id: int, hora_entrada: Optional[time] =
     if asistencia_existente and asistencia_existente.hora_entrada:
         raise ValueError("Ya existe una entrada registrada para hoy")
 
-    # Si no se proporciona hora, usar hora actual
+    # Si no se proporciona hora, usar hora actual (Colombia)
     if not hora_entrada:
-        hora_entrada = datetime.now().time()
+        hora_entrada = datetime.now(COLOMBIA_TZ).time()
 
     # Actualizar estado del empleado a activo
     empleado = db.query(Empleado).filter(Empleado.id == empleado_id).first()
@@ -81,7 +84,7 @@ def marcar_entrada(db: Session, empleado_id: int, hora_entrada: Optional[time] =
 
 def marcar_salida(db: Session, empleado_id: int, hora_salida: Optional[time] = None) -> AsistenciaEmpleado:
     """Marcar salida de un empleado y calcular horas trabajadas"""
-    fecha_hoy = date.today()
+    fecha_hoy = datetime.now(COLOMBIA_TZ).date()
 
     # Buscar asistencia del día
     asistencia = get_asistencia_empleado_fecha(db, empleado_id, fecha_hoy)
@@ -95,9 +98,9 @@ def marcar_salida(db: Session, empleado_id: int, hora_salida: Optional[time] = N
     if asistencia.hora_salida:
         raise ValueError("Ya existe una salida registrada para hoy")
 
-    # Si no se proporciona hora, usar hora actual
+    # Si no se proporciona hora, usar hora actual (Colombia)
     if not hora_salida:
-        hora_salida = datetime.now().time()
+        hora_salida = datetime.now(COLOMBIA_TZ).time()
 
     # Calcular horas trabajadas
     entrada_datetime = datetime.combine(fecha_hoy, asistencia.hora_entrada)
@@ -127,7 +130,7 @@ def marcar_salida(db: Session, empleado_id: int, hora_salida: Optional[time] = N
 
 def get_horas_semanales_empleado(db: Session, empleado_id: int) -> float:
     """Calcular horas trabajadas en la semana actual"""
-    hoy = date.today()
+    hoy = datetime.now(COLOMBIA_TZ).date()
     inicio_semana = hoy - timedelta(days=hoy.weekday())  # Lunes
     fin_semana = inicio_semana + timedelta(days=6)  # Domingo
 
@@ -143,7 +146,7 @@ def get_horas_semanales_empleado(db: Session, empleado_id: int) -> float:
 
 def get_empleados_trabajando_hoy(db: Session) -> List[dict]:
     """Obtener empleados que están trabajando hoy"""
-    fecha_hoy = date.today()
+    fecha_hoy = datetime.now(COLOMBIA_TZ).date()
 
     asistencias = db.query(AsistenciaEmpleado, Empleado).join(
         Empleado, AsistenciaEmpleado.empleado_id == Empleado.id

@@ -7,7 +7,10 @@ from app.modules.usuarios.models.membresia import Membresia, EstadoMembresia, Ti
 from app.modules.asistencia.models.asistencia import Asistencia
 from app.modules.empleados.models.empleado import Empleado
 from app.modules.empleados.models.asistencia_empleado import AsistenciaEmpleado
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 from typing import List
 from pydantic import BaseModel
 
@@ -144,7 +147,7 @@ def get_nuevas_vs_renovaciones(meses: int = 6, db: Session = Depends(get_db)):
     """
     Retorna las nuevas suscripciones vs renovaciones por mes
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     # Nombres de meses en español
     meses_nombres = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
@@ -236,7 +239,7 @@ def get_ingresos_por_mes(meses: int = 6, db: Session = Depends(get_db)):
     """
     Retorna los ingresos de los últimos N meses
     """
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     # Nombres de meses en español
     meses_nombres = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]

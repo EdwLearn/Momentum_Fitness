@@ -1,21 +1,28 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from app.models.usuario import Usuario
 from app.modules.usuarios.models.membresia import Membresia, EstadoMembresia, PLANES_VALIDOS_REFERIR
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 
 
 def _agregar_info_membresia(db: Session, usuario: Usuario) -> None:
     """Agrega información de la membresía activa al objeto usuario"""
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
     membresia_activa = db.query(Membresia).filter(
         and_(
             Membresia.usuario_id == usuario.id,
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
-            Membresia.fecha_fin >= now
+            Membresia.fecha_fin >= now,
+            or_(
+                Membresia.visitas_disponibles == None,
+                Membresia.visitas_disponibles > 0
+            )
         )
     ).order_by(Membresia.fecha_fin.desc()).first()
 
@@ -44,8 +51,9 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100) -> List[Usuario]:
 
     # Optimización: Obtener todas las membresías activas en una sola query
     if usuarios:
+        from sqlalchemy import or_
         usuario_ids = [u.id for u in usuarios]
-        now = datetime.utcnow()
+        now = datetime.now(COLOMBIA_TZ)
 
         # Query para obtener la membresía más reciente activa de cada usuario
         membresias_activas = db.query(Membresia).filter(
@@ -53,7 +61,11 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100) -> List[Usuario]:
                 Membresia.usuario_id.in_(usuario_ids),
                 Membresia.activo == True,
                 Membresia.estado == EstadoMembresia.ACTIVA,
-                Membresia.fecha_fin >= now
+                Membresia.fecha_fin >= now,
+                or_(
+                    Membresia.visitas_disponibles == None,
+                    Membresia.visitas_disponibles > 0
+                )
             )
         ).all()
 
@@ -160,13 +172,17 @@ def puede_referir(db: Session, cedula: str) -> bool:
         return False
 
     # Buscar membresía activa del usuario
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
     membresia_activa = db.query(Membresia).filter(
         and_(
             Membresia.usuario_id == usuario.id,
             Membresia.activo == True,
             Membresia.estado == EstadoMembresia.ACTIVA,
-            Membresia.fecha_fin >= now
+            Membresia.fecha_fin >= now,
+            or_(
+                Membresia.visitas_disponibles == None,
+                Membresia.visitas_disponibles > 0
+            )
         )
     ).first()
 
@@ -185,7 +201,7 @@ def contar_referidos_activos(db: Session, cedula_referidor: str) -> int:
     referidos = db.query(Usuario).filter(Usuario.referido_por_cedula == cedula_referidor).all()
 
     count = 0
-    now = datetime.utcnow()
+    now = datetime.now(COLOMBIA_TZ)
 
     for referido in referidos:
         # Verificar si tiene membresía activa
@@ -194,7 +210,11 @@ def contar_referidos_activos(db: Session, cedula_referidor: str) -> int:
                 Membresia.usuario_id == referido.id,
                 Membresia.activo == True,
                 Membresia.estado == EstadoMembresia.ACTIVA,
-                Membresia.fecha_fin >= now
+                Membresia.fecha_fin >= now,
+                or_(
+                    Membresia.visitas_disponibles == None,
+                    Membresia.visitas_disponibles > 0
+                )
             )
         ).first()
 

@@ -94,7 +94,7 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
         if not cupon.esta_vigente():
             if not cupon.activo:
                 raise ValueError(f"Cupón '{membresia_simple.cupon_codigo}' no está activo")
-            elif cupon.fecha_expiracion and cupon.fecha_expiracion < datetime.utcnow():
+            elif cupon.fecha_expiracion and cupon.fecha_expiracion < datetime.now(COLOMBIA_TZ):
                 raise ValueError(f"Cupón '{membresia_simple.cupon_codigo}' ha expirado")
 
         # VALIDAR: Cupones 3M y 6M SOLO para usuarios con Pase Mes activo

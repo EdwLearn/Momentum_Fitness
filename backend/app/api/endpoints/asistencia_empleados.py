@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from app.core.database import get_db
 from app import crud
 from app.schemas import asistencia_empleado as schemas
+
+# Timezone de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
 
 router = APIRouter()
 
@@ -115,7 +118,7 @@ def get_estado_empleado_hoy(empleado_id: int, db: Session = Depends(get_db)):
             detail="Empleado no encontrado"
         )
 
-    fecha_hoy = date.today()
+    fecha_hoy = datetime.now(COLOMBIA_TZ).date()
     asistencia = crud.asistencia_empleados.get_asistencia_empleado_fecha(
         db, empleado_id=empleado_id, fecha=fecha_hoy
     )
