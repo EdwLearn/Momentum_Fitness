@@ -20,6 +20,7 @@ class MembresiaCreateSimple(BaseModel):
     descripcion: Optional[str] = Field(None, description="Notas adicionales opcionales")
     referido_por_id: Optional[int] = Field(None, description="ID del usuario que refirió")
     cupon_codigo: Optional[str] = Field(None, description="Código del cupón a aplicar")
+    fecha_inicio: Optional[datetime] = Field(None, description="Fecha de inicio de la membresía (si no se provee, usa la fecha actual)")
 
 # Schema completo para crear membresía (usado internamente)
 class MembresiaCreate(BaseModel):

@@ -182,7 +182,10 @@ def create_membresia_simple(db: Session, membresia_simple: MembresiaCreateSimple
         descuento_aplicado_tipo = "referido"
 
     # 6. Calcular fechas (usar hora local de Colombia)
-    fecha_inicio = datetime.now(COLOMBIA_TZ)
+    if membresia_simple.fecha_inicio:
+        fecha_inicio = membresia_simple.fecha_inicio.replace(tzinfo=COLOMBIA_TZ) if membresia_simple.fecha_inicio.tzinfo is None else membresia_simple.fecha_inicio
+    else:
+        fecha_inicio = datetime.now(COLOMBIA_TZ)
 
     # Pase Diario expira el mismo día (23:59:59), otros planes usan cálculo normal
     if membresia_simple.tipo_plan == TipoPlan.PASE_DIARIO:

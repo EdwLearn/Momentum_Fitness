@@ -363,6 +363,7 @@ export function NewUsuarioDrawer({ isOpen, onClose, onSuccess, tipoUsuarioFijo =
           descripcion: null, // El backend lo generará automáticamente
           referido_por_id: referidoIdFinal,
           cupon_codigo: cuponCodigo,
+          fecha_inicio: formData.fechaInicio || null,
         })
 
         console.log('✅ Membresía creada exitosamente - El usuario ahora tiene estado ACTIVO')

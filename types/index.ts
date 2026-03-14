@@ -145,6 +145,7 @@ export interface MembresiaCreateSimple {
   descripcion?: string | null;
   referido_por_id?: number | null;
   cupon_codigo?: string | null;
+  fecha_inicio?: string | null;
 }
 
 // Schema para crear cortesía flexible

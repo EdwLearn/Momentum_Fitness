@@ -151,7 +151,13 @@ def delete_usuario(db: Session, usuario_id: int) -> bool:
         # from app.modules.bot.models.logro import Logro
         # db.query(Logro).filter(Logro.usuario_id == usuario_id).delete()
 
-        # 6. Actualizar referencias de referidos (SET NULL)
+        # 6. Eliminar referidos donde el usuario es referidor o referido
+        from app.models.referido import Referido
+        db.query(Referido).filter(
+            (Referido.referidor_id == usuario_id) | (Referido.referido_id == usuario_id)
+        ).delete(synchronize_session=False)
+
+        # 7. Actualizar referencias de referidos en membresías (SET NULL)
         db.query(Membresia).filter(Membresia.referido_por_id == usuario_id).update(
             {Membresia.referido_por_id: None}
         )
