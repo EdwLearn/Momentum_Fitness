@@ -454,3 +454,21 @@ export interface HistorialPeso {
   circunferencia_piernas: number | null;
   notas: string | null;
 }
+
+// ==========================================
+// MEDICIONES BÁSCULA
+// ==========================================
+
+export interface MedicionBascula {
+  id: number;
+  usuario_id: number;
+  peso: number;
+  porcentaje_grasa: number | null;
+  grasa_visceral: number | null;
+  porcentaje_musculo: number | null;
+  imc: number | null;
+  metabolismo_basal: number | null;
+  edad_corporal: number | null;
+  fecha: string;
+  notas: string | null;
+}

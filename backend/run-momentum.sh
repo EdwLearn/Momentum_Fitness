@@ -40,7 +40,7 @@ DESCRIPTION=Sistema completo de gestión para gimnasios
 DATABASE_URL=sqlite:///./gimnasio.db
 
 # CORS
-ALLOWED_ORIGINS=["http://localhost:3000", "http://localhost:3001"]
+ALLOWED_ORIGINS=["http://localhost:3000"]
 
 # Pool de conexiones (para PostgreSQL)
 DB_POOL_SIZE=5

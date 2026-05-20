@@ -64,7 +64,7 @@ fi\n\
 \n\
 echo "=== Migraciones completadas ==="\n\
 echo "=== Iniciando servidor uvicorn ==="\n\
-exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload\n\
+exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}\n\
 ' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Comando para iniciar el servidor

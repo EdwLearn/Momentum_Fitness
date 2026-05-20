@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, TrendingUp, TrendingDown, Scale, Calendar, Activity } from "lucide-react"
+import { X, TrendingUp, TrendingDown, Scale, Calendar, Activity, Zap, Flame, Dumbbell, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Usuario, HistorialPeso } from "@/types"
+import { Usuario, HistorialPeso, MedicionBascula } from "@/types"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, BarChart, Bar } from "recharts"
 
 type BodyZone = 'brazos' | 'pecho' | 'cintura' | 'cadera' | 'piernas' | null
@@ -21,9 +21,14 @@ export function UsuarioProgressDrawer({ isOpen, onClose, usuario }: ClientProgre
   const [error, setError] = useState("")
   const [selectedZone, setSelectedZone] = useState<BodyZone>(null)
 
+  // Báscula
+  const [medicionesBascula, setMedicionesBascula] = useState<MedicionBascula[]>([])
+  const [isLoadingBascula, setIsLoadingBascula] = useState(false)
+
   useEffect(() => {
     if (isOpen && usuario) {
       fetchHistorial()
+      fetchMedicionesBascula()
     }
   }, [isOpen, usuario])
 
@@ -47,6 +52,23 @@ export function UsuarioProgressDrawer({ isOpen, onClose, usuario }: ClientProgre
       setError(err instanceof Error ? err.message : "Error al cargar el historial")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchMedicionesBascula = async () => {
+    if (!usuario) return
+    setIsLoadingBascula(true)
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const res = await fetch(`${API_URL}/api/mediciones-bascula/usuario/${usuario.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setMedicionesBascula(data)
+      }
+    } catch {
+      // silencioso
+    } finally {
+      setIsLoadingBascula(false)
     }
   }
 
@@ -93,6 +115,27 @@ export function UsuarioProgressDrawer({ isOpen, onClose, usuario }: ClientProgre
   }
 
   const tendencia = calcularTendencia()
+
+  // Datos báscula ordenados cronológicamente (más antiguo → más reciente)
+  const basculaData = medicionesBascula.slice().reverse()
+
+  const mkBasculaData = (fn: (m: MedicionBascula) => number | null | undefined) =>
+    basculaData
+      .map(m => ({
+        fecha: new Date(m.fecha).toLocaleDateString("es-CO", { month: "short", day: "numeric" }),
+        value: fn(m) ?? null,
+      }))
+      .filter((d): d is { fecha: string; value: number } => d.value !== null)
+
+  const basculaCharts = [
+    { label: "Peso corporal",       unit: "kg",   color: "#a4ff1a", icon: Scale,    data: mkBasculaData(m => m.peso) },
+    { label: "% Grasa corporal",    unit: "%",    color: "#f97316", icon: Flame,    data: mkBasculaData(m => m.porcentaje_grasa) },
+    { label: "Grasa visceral",      unit: "niv.", color: "#ef4444", icon: Heart,    data: mkBasculaData(m => m.grasa_visceral) },
+    { label: "% Músculo esquel.",   unit: "%",    color: "#3b82f6", icon: Dumbbell, data: mkBasculaData(m => m.porcentaje_musculo) },
+    { label: "IMC (kg/m²)",         unit: "",     color: "#a855f7", icon: Activity, data: mkBasculaData(m => m.imc) },
+    { label: "Metabolismo basal",   unit: "kcal", color: "#eab308", icon: Zap,      data: mkBasculaData(m => m.metabolismo_basal) },
+    { label: "Edad corporal",       unit: "años", color: "#06b6d4", icon: Calendar, data: mkBasculaData(m => m.edad_corporal) },
+  ]
 
   // Preparar datos para la gráfica (invertir para mostrar del más antiguo al más reciente)
   const chartData = historial.slice().reverse().map(registro => ({
@@ -780,6 +823,69 @@ export function UsuarioProgressDrawer({ isOpen, onClose, usuario }: ClientProgre
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
+                </div>
+              )}
+
+              {/* ===================== MEDICIONES BÁSCULA — GRÁFICAS INDIVIDUALES ===================== */}
+              {(isLoadingBascula || medicionesBascula.length > 0) && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
+                    <Scale className="h-5 w-5 text-primary" />
+                    Evolución — Báscula Inteligente
+                  </h3>
+
+                  {isLoadingBascula ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">Cargando...</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {basculaCharts.map(({ label, unit, color, icon: Icon, data }) => {
+                        if (data.length === 0) return null
+                        const latest = data[data.length - 1].value
+                        const diff = data.length > 1 ? latest - data[0].value : null
+                        const fmt = (v: number) => Number.isInteger(v) ? String(v) : v.toFixed(1)
+                        return (
+                          <div key={label} className="bg-secondary/30 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4" style={{ color }} />
+                                <span className="text-sm font-medium text-foreground">{label}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-lg font-bold text-foreground">{fmt(latest)}</span>
+                                {unit && <span className="text-xs text-muted-foreground ml-1">{unit}</span>}
+                                {diff !== null && (
+                                  <p className={`text-xs ${diff > 0 ? "text-green-500" : diff < 0 ? "text-orange-500" : "text-muted-foreground"}`}>
+                                    {diff > 0 ? "+" : ""}{fmt(diff)}{unit ? ` ${unit}` : ""}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {data.length >= 2 ? (
+                              <ResponsiveContainer width="100%" height={140}>
+                                <LineChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2B35" vertical={false} />
+                                  <XAxis dataKey="fecha" stroke="#9CA3AF" fontSize={10} tickLine={false} axisLine={false} />
+                                  <YAxis stroke="#9CA3AF" fontSize={10} tickLine={false} axisLine={false} domain={["dataMin - 1", "dataMax + 1"]} width={36} />
+                                  <Tooltip
+                                    contentStyle={{ backgroundColor: "#0A0B12", border: "1px solid #2A2B35", borderRadius: "8px", fontSize: "11px" }}
+                                    labelStyle={{ color: "#E5E5E5" }}
+                                    formatter={(v: number) => [`${fmt(v)}${unit ? ` ${unit}` : ""}`, label]}
+                                  />
+                                  <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={{ fill: color, r: 3 }} />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            ) : (
+                              <div className="flex items-center justify-center h-[90px]">
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Solo 1 medición. Registra más para ver la evolución.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 

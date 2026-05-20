@@ -13,6 +13,7 @@ from app.modules.usuarios.models.usuario import Usuario
 from app.modules.usuarios.models.membresia import Membresia
 from app.modules.asistencia.models.asistencia import Asistencia
 from app.modules.metricas.models.metrica import Metrica
+from app.modules.metricas.models.medicion_bascula import MedicionBascula
 
 # Modelos del bot (DESACTIVADOS)
 # from app.modules.bot.models.conversacion import Conversacion
@@ -28,7 +29,7 @@ from app.models.ticket_soporte import TicketSoporte
 
 # 3. ENDPOINTS (al final)
 # Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
-from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard, reportes, configuracion, tickets_soporte, historial_peso
+from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupones, referidos, empleados, asistencia_empleados, dashboard, reportes, configuracion, tickets_soporte, historial_peso, medicion_bascula, backup
 
 # Nuevos endpoints del bot (DESACTIVADO)
 # from app.modules.bot.endpoints import bot_endpoints, alertas_endpoints
@@ -179,6 +180,18 @@ app.include_router(
     historial_peso.router,
     prefix="/api",
     tags=["⚖️ Historial de Peso"]
+)
+
+app.include_router(
+    medicion_bascula.router,
+    prefix="/api/mediciones-bascula",
+    tags=["⚖️ Mediciones Báscula"]
+)
+
+app.include_router(
+    backup.router,
+    prefix="/api/backup",
+    tags=["💾 Backup"]
 )
 
 # Bot de Hospitalidad (DESACTIVADO)

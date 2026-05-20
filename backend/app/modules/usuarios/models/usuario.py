@@ -41,6 +41,7 @@ class Usuario(Base):
     membresias = relationship("Membresia", foreign_keys="[Membresia.usuario_id]", back_populates="usuario", cascade="all, delete-orphan")
     asistencias = relationship("Asistencia", back_populates="usuario", cascade="all, delete-orphan")
     mediciones = relationship("Metrica", back_populates="usuario", cascade="all, delete-orphan")
+    mediciones_bascula = relationship("MedicionBascula", back_populates="usuario", cascade="all, delete-orphan")
 
     # Relaciones del bot (DESACTIVADAS)
     # metricas = relationship("MetricasUsuario", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
