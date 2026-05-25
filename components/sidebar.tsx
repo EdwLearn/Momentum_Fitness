@@ -17,6 +17,7 @@ import {
   Zap,
   Lock,
   History,
+  DollarSign,
 } from "lucide-react"
 
 const mainMenuItems = [
@@ -25,6 +26,7 @@ const mainMenuItems = [
   { name: "Empleados", href: "/empleados", icon: UsersRound },
   { name: "Cupones & Referidos", href: "/cupones", icon: Ticket },
   { name: "Notificaciones", href: "/notificaciones", icon: Bell, disabled: true },
+  { name: "Contabilidad", href: "/contabilidad", icon: DollarSign },
 ]
 
 const protectedMenuItems = [

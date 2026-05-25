@@ -26,6 +26,7 @@ from app.modules.empleados.models.empleado import Empleado
 from app.modules.empleados.models.asistencia_empleado import AsistenciaEmpleado
 from app.models.configuracion import ConfiguracionGimnasio
 from app.models.ticket_soporte import TicketSoporte
+from app.modules.contabilidad.models.movimiento import MovimientoFinanciero
 
 # 3. ENDPOINTS (al final)
 # Endpoints legacy (usan modelos a través de app.models que ahora son proxies)
@@ -34,6 +35,7 @@ from app.api.endpoints import usuarios, membresias, asistencia, metricas, cupone
 # Nuevos endpoints del bot (DESACTIVADO)
 # from app.modules.bot.endpoints import bot_endpoints, alertas_endpoints
 from app.modules.computer_vision.endpoints import cv_endpoints_placeholder
+from app.modules.contabilidad.endpoints import router as contabilidad_router
 
 # Endpoints de WhatsApp (DESACTIVADO)
 # from app.modules.whatsapp.endpoints import whatsapp_endpoints
@@ -192,6 +194,12 @@ app.include_router(
     backup.router,
     prefix="/api/backup",
     tags=["💾 Backup"]
+)
+
+app.include_router(
+    contabilidad_router,
+    prefix="/api/contabilidad",
+    tags=["💰 Contabilidad"]
 )
 
 # Bot de Hospitalidad (DESACTIVADO)

@@ -20,7 +20,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=sqlite:///./data/gimnasio.db
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,http://localhost:2999
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")' || exit 1"]
@@ -37,7 +37,7 @@ services:
     image: edwlearn/momentum-fitness:frontend-latest
     container_name: momentum-frontend
     ports:
-      - "3000:3000"
+      - "2999:3000"
     depends_on:
       - backend
     restart: unless-stopped

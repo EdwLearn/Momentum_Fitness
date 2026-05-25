@@ -472,3 +472,55 @@ export interface MedicionBascula {
   fecha: string;
   notas: string | null;
 }
+
+// ==========================================
+// CONTABILIDAD
+// ==========================================
+
+export type TipoMovimiento = "ingreso" | "egreso";
+
+export type CategoriaMovimiento =
+  | "Membresías"
+  | "Servicios"
+  | "Arriendo"
+  | "Nómina"
+  | "Equipos"
+  | "Servicios públicos"
+  | "Marketing"
+  | "Otro";
+
+export const CATEGORIAS_MOVIMIENTO: CategoriaMovimiento[] = [
+  "Membresías",
+  "Servicios",
+  "Arriendo",
+  "Nómina",
+  "Equipos",
+  "Servicios públicos",
+  "Marketing",
+  "Otro",
+];
+
+export interface MovimientoFinanciero {
+  id: number;
+  tipo: TipoMovimiento;
+  descripcion: string;
+  monto: number;
+  categoria: CategoriaMovimiento;
+  fecha: string;
+  created_at: string;
+}
+
+export interface MovimientoCreate {
+  tipo: TipoMovimiento;
+  descripcion: string;
+  monto: number;
+  categoria: CategoriaMovimiento;
+  fecha: string;
+}
+
+export interface ResumenFinanciero {
+  total_ingresos: number;
+  total_egresos: number;
+  balance_neto: number;
+  total_movimientos: number;
+}
