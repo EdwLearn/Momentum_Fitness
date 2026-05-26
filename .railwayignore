@@ -1,0 +1,49 @@
+# Railway deploy exclusions (independent of .gitignore)
+
+# Dependencies
+node_modules/
+.next/
+out/
+
+# Backend (frontend service only)
+backend/
+
+# Python virtualenvs
+momentum/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Environment secrets
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test output
+coverage/
+.pytest_cache/
+
+# Build info
+*.tsbuildinfo
+
+# Backups
+*.zip
